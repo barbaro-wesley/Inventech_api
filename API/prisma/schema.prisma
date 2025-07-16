@@ -13,3 +13,133 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Usuario {
+  id           Int            @id @default(autoincrement())
+  nome         String
+  email        String         @unique
+  senha        String
+  papel        PapelUsuario
+  tecnico      Tecnico?       @relation(fields: [tecnicoId], references: [id])
+  tecnicoId    Int?
+  OrdemServico OrdemServico[]
+}
+
+enum PapelUsuario {
+  admin
+  cadastro
+  tecnico
+  visualizador
+  usuario_comum
+}
+
+model GrupoManutencao {
+  id        Int               @id @default(autoincrement())
+  nome      String
+  descricao String?
+  tecnicos  Tecnico[]
+  tipos     TipoEquipamento[]
+}
+
+model TipoEquipamento {
+  id                 Int                  @id @default(autoincrement())
+  nome               String               @unique
+  grupoId            Int?
+  grupo              GrupoManutencao?     @relation(fields: [grupoId], references: [id])
+  OrdemServico       OrdemServico[]
+  HcrComputer        HcrComputer[]
+  HcrPrinter         HcrPrinter[]
+  HcrAirConditioning HcrAirConditioning[]
+  HcrMobilia         HcrMobilia[]
+}
+
+model Tecnico {
+  id             Int             @id @default(autoincrement())
+  nome           String
+  email          String          @unique
+  telefone       String
+  cpf            String?         @unique
+  matricula      String?
+  admissao       DateTime?
+  ativo          Boolean         @default(true)
+  telegramChatId String?
+  grupoId        Int
+  grupo          GrupoManutencao @relation(fields: [grupoId], references: [id])
+  os             OrdemServico[]
+  Usuario        Usuario[]
+}
+
+model OrdemServico {
+  id                Int             @id @default(autoincrement())
+  descricao         String
+  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+  tipoEquipamentoId Int
+  equipamentoId     Int
+  tecnicoId         Int?
+  tecnico           Tecnico?        @relation(fields: [tecnicoId], references: [id])
+  solicitanteId     Int
+  solicitante       Usuario         @relation(fields: [solicitanteId], references: [id])
+  status            StatusOS        @default(ABERTA)
+  criadoEm          DateTime        @default(now())
+  finalizadoEm      DateTime?
+  resolucao         String?
+  arquivos          String[] // array de caminhos de anexos
+  preventiva        Boolean         @default(false)
+}
+
+enum StatusOS {
+  ABERTA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+model HcrComputer {
+  id                 Int             @id @default(autoincrement())
+  nPatrimonio        String
+  nomePC             String
+  ip                 String?
+  sistemaOperacional String
+  setor              String
+  localizacao        String
+  tipoEquipamentoId  Int
+  tipoEquipamento    TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
+
+model HcrPrinter {
+  id                Int             @id @default(autoincrement())
+  nPatrimonio       String
+  ip                String?
+  marca             String
+  modelo            String
+  setor             String
+  localizacao       String
+  tipoEquipamentoId Int
+  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
+
+model HcrAirConditioning {
+  id                Int             @id @default(autoincrement())
+  nPatrimonio       String
+  nControle         String
+  marca             String
+  modelo            String
+  setor             String
+  localizacao       String
+  tipoEquipamentoId Int
+  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
+
+model HcrMobilia {
+  id                Int             @id @default(autoincrement())
+  nPatrimonio       String
+  nome              String
+  tipo              String
+  material          String
+  estado            String
+  setor             String
+  localizacao       String
+  obs               String?
+  tipoEquipamentoId Int
+  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
