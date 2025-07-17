@@ -14,15 +14,14 @@ datasource db {
 }
 
 model Setor {
-  id                     Int                      @id @default(autoincrement())
-  nome                   String                   @unique
-  localizacoes           Localizacao[]
-  os                     OrdemServico[] // se quiser rastrear OS por setor
-  HcrComputer            HcrComputer[]
-  HcrPrinter             HcrPrinter[]
-  HcrAirConditioning     HcrAirConditioning[]
-  HcrMobilia             HcrMobilia[]
-  HcrEquipamentosMedicos HcrEquipamentosMedicos[]
+  id                 Int                  @id @default(autoincrement())
+  nome               String               @unique
+  localizacoes       Localizacao[]
+  os                 OrdemServico[] // se quiser rastrear OS por setor
+  HcrComputer        HcrComputer[]
+  HcrPrinter         HcrPrinter[]
+  HcrAirConditioning HcrAirConditioning[]
+  HcrMobilia         HcrMobilia[]
 }
 
 model Localizacao {
@@ -31,11 +30,10 @@ model Localizacao {
   setor   Setor  @relation(fields: [setorId], references: [id])
   setorId Int
 
-  HcrComputer            HcrComputer[]
-  HcrPrinter             HcrPrinter[]
-  HcrAirConditioning     HcrAirConditioning[]
-  HcrMobilia             HcrMobilia[]
-  HcrEquipamentosMedicos HcrEquipamentosMedicos[]
+  HcrComputer        HcrComputer[]
+  HcrPrinter         HcrPrinter[]
+  HcrAirConditioning HcrAirConditioning[]
+  HcrMobilia         HcrMobilia[]
 }
 
 model Usuario {
@@ -179,25 +177,25 @@ model HcrMobilia {
 }
 
 model HcrEquipamentosMedicos {
-  id               Int       @id @default(autoincrement())
-  numeroPatrimonio String
-  numeroSerie      String?
-  numeroAnvisa     String?
-  nomeEquipamento  String
-  modelo           String?
-  valorCompra      Float?
-  dataCompra       DateTime?
-  inicioGarantia   DateTime?
-  terminoGarantia  DateTime?
-  notaFiscal       String?
-  obs              String?
+  id                 Int          @id @default(autoincrement())
+  numeroPatrimonio   String
+  numeroSerie        String?
+  numeroAnvisa       String?
+  nomeEquipamento    String
+  modelo             String?
+  valorCompra        Float?
+  dataCompra         DateTime?
+  inicioGarantia     DateTime?
+  terminoGarantia    DateTime?
+  notaFiscal         String?
+  obs                String?
+  setor              Setor        @relation(fields: [setorId], references: [id])
+  setorId            Int
 
-  setor   Setor @relation(fields: [setorId], references: [id])
-  setorId Int
+  localizacao        Localizacao  @relation(fields: [localizacaoId], references: [id])
+  localizacaoId      Int
 
-  localizacao   Localizacao @relation(fields: [localizacaoId], references: [id])
-  localizacaoId Int
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 }
+
