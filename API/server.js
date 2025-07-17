@@ -10,10 +10,12 @@ const usuarioRoutes = require('./src/routes/usuarioRoutes');
 const tipoEquipamentoRoutes = require('./src/routes/tipoEquipamentoRoutes');
 const grupoRoutes = require('./src/routes/grupoManutencaoRoutes');
 const tecnicoRoutes = require('./src/routes/tecnicoRoutes');
+const hcrComputerRoutes = require('./src/routes/hcrComputerRoutes');
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
 app.use('/api/tecnicos', tecnicoRoutes);
+app.use('/api/hcr-computers', hcrComputerRoutes);
 const PORT = process.env.PORT ;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
