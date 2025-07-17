@@ -1,5 +1,4 @@
-import { Request, Response } from 'express';
-import hcrEquipamentosMedicosService from '../services/hcrEquipamentosMedicosService';
+const hcrEquipamentosMedicosService = require('../services/hcrEquipamentosMedicosService');
 
 const hcrEquipamentosMedicosController = {
   async criar(req, res) {
@@ -7,11 +6,11 @@ const hcrEquipamentosMedicosController = {
       const equipamento = await hcrEquipamentosMedicosService.criar(req.body);
       res.status(201).json(equipamento);
     } catch (error) {
-      res.status(400).json({ error: 'Erro ao criar equipamento médico', detalhes: error });
+      res.status(400).json({ error: 'Erro ao criar equipamento médico', detalhes: error.message });
     }
   },
 
-  async listar(req,res) {
+  async listar(req, res) {
     try {
       const equipamentos = await hcrEquipamentosMedicosService.listar();
       res.status(200).json(equipamentos);
@@ -54,4 +53,4 @@ const hcrEquipamentosMedicosController = {
   }
 };
 
-export default hcrEquipamentosMedicosController;
+module.exports = hcrEquipamentosMedicosController;

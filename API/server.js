@@ -14,6 +14,7 @@ const hcrComputerRoutes = require('./src/routes/hcrComputerRoutes');
 const setor = require('./src/routes/setorRouter')
 const localizacao = require('./src/routes/localizacaoRouter')
 const hcrEquipamentosMedicosRouter = require('./src/routes/hcrEquipamentosMedicosRouter');
+const ordemServicoRoutes = require('./src/routes/ordemServicoRoutes');
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
@@ -22,6 +23,7 @@ app.use('/api/hcr-computers', hcrComputerRoutes);
 app.use('/api/setor',setor);
 app.use('/api/localizacao',localizacao);
 app.use('/api/equipamentos-medicos', hcrEquipamentosMedicosRouter);
+app.use('/api/os', ordemServicoRoutes);
 
 const PORT = process.env.PORT ;
 app.listen(PORT, () => {

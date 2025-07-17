@@ -14,14 +14,15 @@ datasource db {
 }
 
 model Setor {
-  id                 Int                  @id @default(autoincrement())
-  nome               String               @unique
-  localizacoes       Localizacao[]
-  os                 OrdemServico[] // se quiser rastrear OS por setor
-  HcrComputer        HcrComputer[]
-  HcrPrinter         HcrPrinter[]
-  HcrAirConditioning HcrAirConditioning[]
-  HcrMobilia         HcrMobilia[]
+  id                     Int                      @id @default(autoincrement())
+  nome                   String                   @unique
+  localizacoes           Localizacao[]
+  os                     OrdemServico[] // se quiser rastrear OS por setor
+  HcrComputer            HcrComputer[]
+  HcrPrinter             HcrPrinter[]
+  HcrAirConditioning     HcrAirConditioning[]
+  HcrMobilia             HcrMobilia[]
+  HcrEquipamentosMedicos HcrEquipamentosMedicos[]
 }
 
 model Localizacao {
@@ -30,10 +31,11 @@ model Localizacao {
   setor   Setor  @relation(fields: [setorId], references: [id])
   setorId Int
 
-  HcrComputer        HcrComputer[]
-  HcrPrinter         HcrPrinter[]
-  HcrAirConditioning HcrAirConditioning[]
-  HcrMobilia         HcrMobilia[]
+  HcrComputer            HcrComputer[]
+  HcrPrinter             HcrPrinter[]
+  HcrAirConditioning     HcrAirConditioning[]
+  HcrMobilia             HcrMobilia[]
+  HcrEquipamentosMedicos HcrEquipamentosMedicos[]
 }
 
 model Usuario {
@@ -73,6 +75,7 @@ model TipoEquipamento {
   HcrPrinter         HcrPrinter[]
   HcrAirConditioning HcrAirConditioning[]
   HcrMobilia         HcrMobilia[]
+  HcrEquipamentosMedicos  HcrEquipamentosMedicos[]
 }
 
 model Tecnico {
@@ -177,7 +180,7 @@ model HcrMobilia {
 }
 
 model HcrEquipamentosMedicos {
-  id                 Int          @id @default(autoincrement())
+  id                 Int             @id @default(autoincrement())
   numeroPatrimonio   String
   numeroSerie        String?
   numeroAnvisa       String?
@@ -189,13 +192,16 @@ model HcrEquipamentosMedicos {
   terminoGarantia    DateTime?
   notaFiscal         String?
   obs                String?
-  setor              Setor        @relation(fields: [setorId], references: [id])
+
+  setor              Setor           @relation(fields: [setorId], references: [id])
   setorId            Int
 
-  localizacao        Localizacao  @relation(fields: [localizacaoId], references: [id])
+  localizacao        Localizacao     @relation(fields: [localizacaoId], references: [id])
   localizacaoId      Int
 
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-}
+  tipoEquipamento    TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+  tipoEquipamentoId  Int
 
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+}
