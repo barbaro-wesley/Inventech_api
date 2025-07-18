@@ -153,14 +153,17 @@ model HcrAirConditioning {
   id                Int             @id @default(autoincrement())
   nPatrimonio       String
   nControle         String
+  numeroSerie        String?
   marca             String
   modelo            String
-  setor             Setor           @relation(fields: [setorId], references: [id])
-  setorId           Int
-  localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
-  localizacaoId     Int
-  tipoEquipamentoId Int
-  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+  BTUS              String
+  obs               String?
+  setor             Setor?           @relation(fields: [setorId], references: [id])
+  setorId           Int?
+  localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
+  localizacaoId     Int?
+  tipoEquipamentoId Int?
+  tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
 }
 
 model HcrMobilia {
