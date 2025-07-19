@@ -153,8 +153,10 @@ model HcrAirConditioning {
   id                Int             @id @default(autoincrement())
   nPatrimonio       String
   nControle         String
+  numeroSerie       String
   marca             String
   modelo            String
+  BTUS              String
   setor             Setor           @relation(fields: [setorId], references: [id])
   setorId           Int
   localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
