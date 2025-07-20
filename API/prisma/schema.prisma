@@ -154,12 +154,10 @@ model HcrAirConditioning {
   nPatrimonio       String
   nControle         String
   numeroSerie        String?
-  numeroSerie       String
   marca             String
   modelo            String
   BTUS              String
   obs               String?
-  BTUS              String
   setor             Setor?           @relation(fields: [setorId], references: [id])
   setorId           Int?
   localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])

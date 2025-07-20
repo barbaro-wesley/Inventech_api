@@ -1,19 +1,30 @@
 const ordemServicoService = require('../services/ordemServicoService');
 
 const ordemServicoController = {
- async criar(req, res) {
-  try {
-    const solicitanteId = req.usuario.id;
+async criar(req, res) {
+    // Mapeia os arquivos enviados (se houver)
+    const arquivos = req.files ? req.files.map(file => file.path) : [];
+
+    // Monta o objeto data formatado
     const data = {
-      ...req.body,
-      solicitanteId,
+      descricao: req.body.descricao,
+      tipoEquipamentoId: Number(req.body.tipoEquipamentoId),
+      tecnicoId: Number(req.body.tecnicoId),
+      status: req.body.status,
+      preventiva: req.body.preventiva === 'true',
+      setorId: Number(req.body.setorId),
+      equipamentoId: Number(req.body.equipamentoId),
+      solicitanteId: Number(req.usuario.id),  
+      arquivos,
     };
-    const os = await ordemServicoService.criar(data);
-    res.status(201).json(os);
-  } catch (error) {
-    res.status(400).json({ error: 'Erro ao criar Ordem de Serviço', detalhes: error.message });
-  }
-},
+
+    try {
+      const os = await ordemServicoService.criar(data);
+      res.status(201).json(os);
+    } catch (error) {
+      res.status(400).json({ error: 'Erro ao criar Ordem de Serviço', detalhes: error.message });
+    }
+  },
 
   async listar(req, res) {
     try {
