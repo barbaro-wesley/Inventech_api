@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,26 +10,25 @@ datasource db {
 model Setor {
   id                     Int                      @id @default(autoincrement())
   nome                   String                   @unique
-  localizacoes           Localizacao[]
-  os                     OrdemServico[] // se quiser rastrear OS por setor
-  HcrComputer            HcrComputer[]
-  HcrPrinter             HcrPrinter[]
   HcrAirConditioning     HcrAirConditioning[]
-  HcrMobilia             HcrMobilia[]
+  HcrComputer            HcrComputer[]
   HcrEquipamentosMedicos HcrEquipamentosMedicos[]
+  HcrMobilia             HcrMobilia[]
+  HcrPrinter             HcrPrinter[]
+  localizacoes           Localizacao[]
+  os                     OrdemServico[]
 }
 
 model Localizacao {
-  id      Int    @id @default(autoincrement())
-  nome    String @unique
-  setor   Setor  @relation(fields: [setorId], references: [id])
-  setorId Int
-
-  HcrComputer            HcrComputer[]
-  HcrPrinter             HcrPrinter[]
+  id                     Int                      @id @default(autoincrement())
+  nome                   String                   @unique
+  setorId                Int
   HcrAirConditioning     HcrAirConditioning[]
-  HcrMobilia             HcrMobilia[]
+  HcrComputer            HcrComputer[]
   HcrEquipamentosMedicos HcrEquipamentosMedicos[]
+  HcrMobilia             HcrMobilia[]
+  HcrPrinter             HcrPrinter[]
+  setor                  Setor                    @relation(fields: [setorId], references: [id])
 }
 
 model Usuario {
@@ -44,17 +37,9 @@ model Usuario {
   email        String         @unique
   senha        String
   papel        PapelUsuario
-  tecnico      Tecnico?       @relation(fields: [tecnicoId], references: [id])
   tecnicoId    Int?
   OrdemServico OrdemServico[]
-}
-
-enum PapelUsuario {
-  admin
-  cadastro
-  tecnico
-  visualizador
-  usuario_comum
+  tecnico      Tecnico?       @relation(fields: [tecnicoId], references: [id])
 }
 
 model GrupoManutencao {
@@ -66,16 +51,16 @@ model GrupoManutencao {
 }
 
 model TipoEquipamento {
-  id                 Int                  @id @default(autoincrement())
-  nome               String               @unique
-  grupoId            Int?
-  grupo              GrupoManutencao?     @relation(fields: [grupoId], references: [id])
-  OrdemServico       OrdemServico[]
-  HcrComputer        HcrComputer[]
-  HcrPrinter         HcrPrinter[]
-  HcrAirConditioning HcrAirConditioning[]
-  HcrMobilia         HcrMobilia[]
-  HcrEquipamentosMedicos  HcrEquipamentosMedicos[]
+  id                     Int                      @id @default(autoincrement())
+  nome                   String                   @unique
+  grupoId                Int?
+  HcrAirConditioning     HcrAirConditioning[]
+  HcrComputer            HcrComputer[]
+  HcrEquipamentosMedicos HcrEquipamentosMedicos[]
+  HcrMobilia             HcrMobilia[]
+  HcrPrinter             HcrPrinter[]
+  OrdemServico           OrdemServico[]
+  grupo                  GrupoManutencao?         @relation(fields: [grupoId], references: [id])
 }
 
 model Tecnico {
@@ -89,36 +74,29 @@ model Tecnico {
   ativo          Boolean         @default(true)
   telegramChatId String?
   grupoId        Int
-  grupo          GrupoManutencao @relation(fields: [grupoId], references: [id])
   os             OrdemServico[]
+  grupo          GrupoManutencao @relation(fields: [grupoId], references: [id])
   Usuario        Usuario[]
 }
 
 model OrdemServico {
   id                Int             @id @default(autoincrement())
   descricao         String
-  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
   tipoEquipamentoId Int
   equipamentoId     Int
   tecnicoId         Int?
-  tecnico           Tecnico?        @relation(fields: [tecnicoId], references: [id])
   solicitanteId     Int
-  solicitante       Usuario         @relation(fields: [solicitanteId], references: [id])
   status            StatusOS        @default(ABERTA)
   criadoEm          DateTime        @default(now())
   finalizadoEm      DateTime?
   resolucao         String?
-  arquivos          String[] // array de caminhos de anexos
+  arquivos          String[]
   preventiva        Boolean         @default(false)
-  Setor             Setor?          @relation(fields: [setorId], references: [id])
   setorId           Int?
-}
-
-enum StatusOS {
-  ABERTA
-  EM_ANDAMENTO
-  CONCLUIDA
-  CANCELADA
+  Setor             Setor?          @relation(fields: [setorId], references: [id])
+  solicitante       Usuario         @relation(fields: [solicitanteId], references: [id])
+  tecnico           Tecnico?        @relation(fields: [tecnicoId], references: [id])
+  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
 }
 
 model HcrComputer {
@@ -127,11 +105,11 @@ model HcrComputer {
   nomePC             String
   ip                 String?
   sistemaOperacional String
-  setor              Setor           @relation(fields: [setorId], references: [id])
+  tipoEquipamentoId  Int
+  localizacaoId      Int
   setorId            Int
   localizacao        Localizacao     @relation(fields: [localizacaoId], references: [id])
-  localizacaoId      Int
-  tipoEquipamentoId  Int
+  setor              Setor           @relation(fields: [setorId], references: [id])
   tipoEquipamento    TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
 }
 
@@ -141,28 +119,28 @@ model HcrPrinter {
   ip                String?
   marca             String
   modelo            String
-  setor             Setor           @relation(fields: [setorId], references: [id])
+  tipoEquipamentoId Int
+  localizacaoId     Int
   setorId           Int
   localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
-  localizacaoId     Int
-  tipoEquipamentoId Int
+  setor             Setor           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
 }
 
 model HcrAirConditioning {
-  id                Int             @id @default(autoincrement())
+  id                Int              @id @default(autoincrement())
   nPatrimonio       String
   nControle         String
-  numeroSerie        String?
   marca             String
   modelo            String
-  BTUS              String
-  obs               String?
-  setor             Setor?           @relation(fields: [setorId], references: [id])
-  setorId           Int?
-  localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
-  localizacaoId     Int?
   tipoEquipamentoId Int?
+  localizacaoId     Int?
+  setorId           Int?
+  BTUS              String
+  numeroSerie       String?
+  obs               String?
+  localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
+  setor             Setor?           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
 }
 
@@ -173,38 +151,52 @@ model HcrMobilia {
   tipo              String
   material          String
   estado            String
-  setor             Setor           @relation(fields: [setorId], references: [id])
-  setorId           Int
-  localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
-  localizacaoId     Int
   obs               String?
   tipoEquipamentoId Int
+  localizacaoId     Int
+  setorId           Int
+  localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
+  setor             Setor           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
 }
 
 model HcrEquipamentosMedicos {
-  id                 Int             @id @default(autoincrement())
-  numeroPatrimonio   String
-  numeroSerie        String?
-  numeroAnvisa       String?
-  nomeEquipamento    String
-  modelo             String?
-  valorCompra        Float?
-  dataCompra         DateTime?
-  inicioGarantia     DateTime?
-  terminoGarantia    DateTime?
-  notaFiscal         String?
-  obs                String?
+  id                Int             @id @default(autoincrement())
+  numeroPatrimonio  String
+  numeroSerie       String?
+  numeroAnvisa      String?
+  nomeEquipamento   String
+  Identificacao     String?
+  modelo            String?
+  Fabricante	      String?
+  Fornecedor        String?
+  valorCompra       Float?
+  dataCompra        DateTime?
+  inicioGarantia    DateTime?
+  terminoGarantia   DateTime?
+  notaFiscal        String?
+  obs               String?
+  setorId           Int
+  localizacaoId     Int
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  tipoEquipamentoId Int
+  localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
+  setor             Setor           @relation(fields: [setorId], references: [id])
+  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
 
-  setor              Setor           @relation(fields: [setorId], references: [id])
-  setorId            Int
+enum PapelUsuario {
+  admin
+  cadastro
+  tecnico
+  visualizador
+  usuario_comum
+}
 
-  localizacao        Localizacao     @relation(fields: [localizacaoId], references: [id])
-  localizacaoId      Int
-
-  tipoEquipamento    TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
-  tipoEquipamentoId  Int
-
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+enum StatusOS {
+  ABERTA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
 }
