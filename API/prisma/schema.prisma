@@ -28,8 +28,8 @@ model Setor {
 model Localizacao {
   id      Int    @id @default(autoincrement())
   nome    String @unique
-  setor   Setor  @relation(fields: [setorId], references: [id])
-  setorId Int
+  setor   Setor?  @relation(fields: [setorId], references: [id])
+  setorId Int?
 
   HcrComputer            HcrComputer[]
   HcrPrinter             HcrPrinter[]
@@ -184,11 +184,14 @@ model HcrMobilia {
 
 model HcrEquipamentosMedicos {
   id                 Int             @id @default(autoincrement())
-  numeroPatrimonio   String
+  numeroPatrimonio   String?
+  Identificação      String?
   numeroSerie        String?
   numeroAnvisa       String?
   nomeEquipamento    String
   modelo             String?
+  Fabricante         String?
+
   valorCompra        Float?
   dataCompra         DateTime?
   inicioGarantia     DateTime?
@@ -196,15 +199,15 @@ model HcrEquipamentosMedicos {
   notaFiscal         String?
   obs                String?
 
-  setor              Setor           @relation(fields: [setorId], references: [id])
-  setorId            Int
+  setor              Setor?           @relation(fields: [setorId], references: [id])
+  setorId            Int?
 
-  localizacao        Localizacao     @relation(fields: [localizacaoId], references: [id])
-  localizacaoId      Int
+  localizacao        Localizacao?     @relation(fields: [localizacaoId], references: [id])
+  localizacaoId      Int?
 
-  tipoEquipamento    TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
-  tipoEquipamentoId  Int
+  tipoEquipamento    TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
+  tipoEquipamentoId  Int?
 
   createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  updatedAt          DateTime?       @updatedAt
 }

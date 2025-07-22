@@ -1,7 +1,7 @@
 /*
   Warnings:
 
-  - Added the required column `BTUS` to the `HcrAirConditioning` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `Identificação` to the `HcrEquipamentosMedicos` table without a default value. This is not possible if the table is not empty.
 
 */
 -- DropForeignKey
@@ -14,10 +14,15 @@ ALTER TABLE "HcrAirConditioning" DROP CONSTRAINT "HcrAirConditioning_setorId_fke
 ALTER TABLE "HcrAirConditioning" DROP CONSTRAINT "HcrAirConditioning_tipoEquipamentoId_fkey";
 
 -- AlterTable
-ALTER TABLE "HcrAirConditioning" ADD COLUMN     "BTUS" TEXT NOT NULL,
+ALTER TABLE "HcrAirConditioning" ADD COLUMN     "obs" TEXT,
 ALTER COLUMN "tipoEquipamentoId" DROP NOT NULL,
 ALTER COLUMN "localizacaoId" DROP NOT NULL,
-ALTER COLUMN "setorId" DROP NOT NULL;
+ALTER COLUMN "setorId" DROP NOT NULL,
+ALTER COLUMN "numeroSerie" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "HcrEquipamentosMedicos" ADD COLUMN     "Fabricante" TEXT,
+ADD COLUMN     "Identificação" TEXT NOT NULL;
 
 -- AddForeignKey
 ALTER TABLE "HcrAirConditioning" ADD CONSTRAINT "HcrAirConditioning_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
