@@ -27,4 +27,13 @@ router.get('/', ordemServicoController.listar);
 router.get('/:id', ordemServicoController.buscarPorId);
 router.put('/:id', autenticarUsuario, permitirSomente('admin'),ordemServicoController.atualizar);
 router.delete('/:id',autenticarUsuario, permitirSomente('admin'), ordemServicoController.deletar);
+router.put(
+  '/:id/concluir',
+  autenticarUsuario,
+  permitirSomente('admin', 'TECNICO'),
+  upload.array('arquivos'), // isso aqui permite receber arquivos + campos textuais no body
+  ordemServicoController.concluir
+);
+
 module.exports = router;
+

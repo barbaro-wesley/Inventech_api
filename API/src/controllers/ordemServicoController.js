@@ -64,7 +64,31 @@ async criar(req, res) {
     } catch (error) {
       res.status(400).json({ error: 'Erro ao deletar ordem de serviço' });
     }
+  },
+  async concluir(req, res) {
+  try {
+    const { id } = req.params;
+    const { resolucao, tecnicoId, finalizadoEm } = req.body;
+
+    const caminhosArquivos = req.files?.map((file) => file.path) || [];
+
+    const dadosAtualizacao = {
+      resolucao,
+      tecnicoId: Number(tecnicoId),
+      finalizadoEm: new Date(finalizadoEm),
+      status: 'CONCLUIDA',
+      arquivos: caminhosArquivos,
+    };
+
+  const osAtualizada = await ordemServicoService.concluir(Number(id), dadosAtualizacao);
+    res.status(200).json(osAtualizada);
+  } catch (error) {
+    res.status(400).json({
+      error: 'Erro ao concluir a OS',
+      detalhes: error.message,
+    });
   }
+}
 };
 
 module.exports = ordemServicoController;
