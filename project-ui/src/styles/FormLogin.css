@@ -5,19 +5,25 @@
   align-items: center;
   background: #e3f2fd;
   padding: 2rem;
+  overflow-y: auto; /* permite rolagem quando necessário */
 }
-
 .login-box {
   background: #ffffffcc;
   backdrop-filter: blur(10px);
   padding: 2.5rem;
   border-radius: 12px;
   width: 100%;
-  max-width: 100%; /* remover limite de 400px */
+  max-width: 100%;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
   text-align: center;
 }
 
+.logo-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
 
 .logo-wrapper img {
   width: 80px;
@@ -89,6 +95,8 @@ h1 {
   justify-content: space-between;
   font-size: 0.85rem;
   margin: 1rem 0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .options a {
@@ -123,25 +131,56 @@ h1 {
   color: #007bff;
   text-decoration: none;
 }
-.logo-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 1rem;
-}
 
-
-@media (max-width: 480px) {
-  .login-box {
+/* 📱 Telas até 768px (tablets e celulares grandes) */
+@media (max-width: 768px) {
+  .login-container {
     padding: 1.5rem;
-    max-width: 90%;
+  }
+
+  .login-box {
+    padding: 2rem;
+    max-width: 95%;
   }
 
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
   }
 
   .submit-button {
     font-size: 0.95rem;
+  }
+}
+
+/* 📱 Telas até 480px (celulares pequenos) */
+@media (max-width: 480px) {
+  .login-container {
+    align-items: flex-start; /* evita "corte" do formulário no topo */
+    padding: 2rem 1rem;
+  }
+
+  .login-box {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    max-width: 100%;
+  }
+
+  .logo-wrapper img {
+    width: 20px;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+  }
+
+  .input-wrapper input {
+    font-size: 0.95rem;
+    padding-left: 2.2rem;
+  }
+
+  .submit-button {
+    font-size: 0.9rem;
+    padding: 0.75rem;
   }
 }

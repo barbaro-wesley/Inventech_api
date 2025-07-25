@@ -62,19 +62,13 @@ function EquipamentosMedicosPage() {
             <th>Nº Patrimônio</th>
             <th>Identificação</th>
             <th>Nº Série</th>
-            <th>Nº Anvisa</th>
             <th>Nome Equipamento</th>
             <th>Modelo</th>
             <th>Fabricante</th>
-            <th>Valor Compra</th>
-            <th>Data Compra</th>
-            <th>Início Garantia</th>
-            <th>Término Garantia</th>
             <th>Nota Fiscal</th>
-            <th>Observações</th>
+            <th>Obs</th>
             <th>Setor</th>
             <th>Localização</th>
-            <th>Tipo Equipamento</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -84,20 +78,13 @@ function EquipamentosMedicosPage() {
               <td>{item.numeroPatrimonio || '-'}</td>
               <td>{item.Identificação || '-'}</td>
               <td>{item.numeroSerie || '-'}</td>
-              <td>{item.numeroAnvisa || '-'}</td>
               <td>{item.nomeEquipamento}</td>
               <td>{item.modelo || '-'}</td>
               <td>{item.Fabricante || '-'}</td>
-              <td>{item.valorCompra ? `R$${item.valorCompra.toFixed(2)}` : '-'}</td>
-              <td>{item.dataCompra ? new Date(item.dataCompra).toLocaleDateString() : '-'}</td>
-              <td>{item.inicioGarantia ? new Date(item.inicioGarantia).toLocaleDateString() : '-'}</td>
-              <td>{item.terminoGarantia ? new Date(item.terminoGarantia).toLocaleDateString() : '-'}</td>
               <td>{item.notaFiscal || '-'}</td>
               <td>{item.obs || '-'}</td>
               <td>{item.setor?.nome || '-'}</td>
               <td>{item.localizacao?.nome || '-'}</td>
-              <td>{item.tipoEquipamento?.nome || '-'}</td>
-              <td>{/* Placeholder for future actions */}</td>
             </tr>
           ))}
         </tbody>

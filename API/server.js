@@ -17,6 +17,8 @@ const hcrEquipamentosMedicosRouter = require('./src/routes/hcrEquipamentosMedico
 const ordemServicoRoutes = require('./src/routes/ordemServicoRoutes');
 const hcrAirConditioningRoutes = require('./src/routes/hcrAirConditioningRoutes');
 const uploadRouter = require('./src/routes/uploadRouter');
+const sistemaRoutes = require('./src/routes/sistemaRoutes.js');
+const chamado = require('./src/routes/chamadoRoutes.js');
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
@@ -27,8 +29,11 @@ app.use('/api/localizacao',localizacao);
 app.use('/api/equipamentos-medicos', hcrEquipamentosMedicosRouter);
 app.use('/api/os', ordemServicoRoutes);
 app.use('/api/condicionadores', hcrAirConditioningRoutes);
+app.use('/api/sistemas', sistemaRoutes);
 app.use('/api/upload', uploadRouter);
 app.use('/uploads', express.static('uploads'));
+app.use("/api/chamados",chamado)
+
 
 const PORT = process.env.PORT ;
 app.listen(PORT, () => {
