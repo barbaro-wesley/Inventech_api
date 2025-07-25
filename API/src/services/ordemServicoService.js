@@ -1,12 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const enviarNotificacaoTelegram = require('../utils/telegram');
 
 class OrdemServicoService {
   async criar(data) {
-  return await prisma.ordemServico.create({
+  const novaOS = await prisma.ordemServico.create({
     data: {
       ...data,
-      arquivos: ['uploads/169999_img1.jpg', 'uploads/170000_img2.png'], // ✅ aqui está correto
+      arquivos: ['uploads/169999_img1.jpg', 'uploads/170000_img2.png'], // ou data.arquivos se quiser receber dinamicamente
     },
     include: {
       tipoEquipamento: true,
@@ -19,7 +20,14 @@ class OrdemServicoService {
       Setor: true,
     },
   });
-} 
+
+  if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
+  const msg = `📄 <b>Nova OS Atribuída</b>\n\n🔧 Técnico: ${novaOS.tecnico.nome}\n📌 Descrição: ${novaOS.descricao}`;
+  await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
+}
+
+  return novaOS;
+}
 
   async listar() {
     return await prisma.ordemServico.findMany({
@@ -56,6 +64,19 @@ class OrdemServicoService {
       where: { id },
     });
   }
+
+  async concluir(id, data) {
+  return await prisma.ordemServico.update({
+    where: { id },
+    data,
+    include: {
+      tipoEquipamento: true,
+      tecnico: true,
+      solicitante: true,
+      Setor: true
+    },
+  });
+}
 }
 
 module.exports = new OrdemServicoService();
