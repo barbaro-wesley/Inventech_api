@@ -5,7 +5,7 @@ import Sidebar from '../componets/Sidebar';
 import PcPage from '../pages/PcPage';
 import ArCondicionadoPage from '../pages/ArCondicionadoPage';
 import EquipamentosMedicosPage from '../pages/EquipamentosMedicosPage';
-
+import ChamadoPage from "../pages/ChamadoPage"
 function Layout() {
   const [content, setContent] = useState('home');
 
@@ -22,7 +22,7 @@ function Layout() {
       case 'calendario':
         return <div><h1>Calendário</h1><p>Conteúdo em desenvolvimento.</p></div>;
       case 'chamados':
-        return <div><h1>Chamados</h1><p>Conteúdo em desenvolvimento.</p></div>;
+        return <ChamadoPage/>;
       case 'registros_adversos':
         return <div><h1>Registros Adversos</h1><p>Conteúdo em desenvolvimento.</p></div>;
       case 'dashboard':
