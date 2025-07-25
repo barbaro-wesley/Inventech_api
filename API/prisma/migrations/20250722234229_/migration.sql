@@ -16,7 +16,7 @@ CREATE TABLE "Setor" (
 CREATE TABLE "Localizacao" (
     "id" SERIAL NOT NULL,
     "nome" TEXT NOT NULL,
-    "setorId" INTEGER NOT NULL,
+    "setorId" INTEGER,
 
     CONSTRAINT "Localizacao_pkey" PRIMARY KEY ("id")
 );
@@ -93,9 +93,9 @@ CREATE TABLE "HcrComputer" (
     "nomePC" TEXT NOT NULL,
     "ip" TEXT,
     "sistemaOperacional" TEXT NOT NULL,
-    "tipoEquipamentoId" INTEGER NOT NULL,
-    "localizacaoId" INTEGER NOT NULL,
     "setorId" INTEGER NOT NULL,
+    "localizacaoId" INTEGER NOT NULL,
+    "tipoEquipamentoId" INTEGER NOT NULL,
 
     CONSTRAINT "HcrComputer_pkey" PRIMARY KEY ("id")
 );
@@ -107,9 +107,9 @@ CREATE TABLE "HcrPrinter" (
     "ip" TEXT,
     "marca" TEXT NOT NULL,
     "modelo" TEXT NOT NULL,
-    "tipoEquipamentoId" INTEGER NOT NULL,
-    "localizacaoId" INTEGER NOT NULL,
     "setorId" INTEGER NOT NULL,
+    "localizacaoId" INTEGER NOT NULL,
+    "tipoEquipamentoId" INTEGER NOT NULL,
 
     CONSTRAINT "HcrPrinter_pkey" PRIMARY KEY ("id")
 );
@@ -119,14 +119,14 @@ CREATE TABLE "HcrAirConditioning" (
     "id" SERIAL NOT NULL,
     "nPatrimonio" TEXT NOT NULL,
     "nControle" TEXT NOT NULL,
+    "numeroSerie" TEXT,
     "marca" TEXT NOT NULL,
     "modelo" TEXT NOT NULL,
-    "tipoEquipamentoId" INTEGER,
-    "localizacaoId" INTEGER,
-    "setorId" INTEGER,
     "BTUS" TEXT NOT NULL,
-    "numeroSerie" TEXT,
     "obs" TEXT,
+    "setorId" INTEGER,
+    "localizacaoId" INTEGER,
+    "tipoEquipamentoId" INTEGER,
 
     CONSTRAINT "HcrAirConditioning_pkey" PRIMARY KEY ("id")
 );
@@ -139,10 +139,10 @@ CREATE TABLE "HcrMobilia" (
     "tipo" TEXT NOT NULL,
     "material" TEXT NOT NULL,
     "estado" TEXT NOT NULL,
+    "setorId" INTEGER NOT NULL,
+    "localizacaoId" INTEGER NOT NULL,
     "obs" TEXT,
     "tipoEquipamentoId" INTEGER NOT NULL,
-    "localizacaoId" INTEGER NOT NULL,
-    "setorId" INTEGER NOT NULL,
 
     CONSTRAINT "HcrMobilia_pkey" PRIMARY KEY ("id")
 );
@@ -150,25 +150,24 @@ CREATE TABLE "HcrMobilia" (
 -- CreateTable
 CREATE TABLE "HcrEquipamentosMedicos" (
     "id" SERIAL NOT NULL,
-    "numeroPatrimonio" TEXT NOT NULL,
+    "numeroPatrimonio" TEXT,
+    "Identificação" TEXT,
     "numeroSerie" TEXT,
     "numeroAnvisa" TEXT,
     "nomeEquipamento" TEXT NOT NULL,
-    "Identificacao" TEXT,
     "modelo" TEXT,
     "Fabricante" TEXT,
-    "Fornecedor" TEXT,
     "valorCompra" DOUBLE PRECISION,
     "dataCompra" TIMESTAMP(3),
     "inicioGarantia" TIMESTAMP(3),
     "terminoGarantia" TIMESTAMP(3),
     "notaFiscal" TEXT,
     "obs" TEXT,
-    "setorId" INTEGER NOT NULL,
-    "localizacaoId" INTEGER NOT NULL,
+    "setorId" INTEGER,
+    "localizacaoId" INTEGER,
+    "tipoEquipamentoId" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "tipoEquipamentoId" INTEGER NOT NULL,
+    "updatedAt" TIMESTAMP(3),
 
     CONSTRAINT "HcrEquipamentosMedicos_pkey" PRIMARY KEY ("id")
 );
@@ -192,7 +191,7 @@ CREATE UNIQUE INDEX "Tecnico_email_key" ON "Tecnico"("email");
 CREATE UNIQUE INDEX "Tecnico_cpf_key" ON "Tecnico"("cpf");
 
 -- AddForeignKey
-ALTER TABLE "Localizacao" ADD CONSTRAINT "Localizacao_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Localizacao" ADD CONSTRAINT "Localizacao_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Usuario" ADD CONSTRAINT "Usuario_tecnicoId_fkey" FOREIGN KEY ("tecnicoId") REFERENCES "Tecnico"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -204,58 +203,58 @@ ALTER TABLE "TipoEquipamento" ADD CONSTRAINT "TipoEquipamento_grupoId_fkey" FORE
 ALTER TABLE "Tecnico" ADD CONSTRAINT "Tecnico_grupoId_fkey" FOREIGN KEY ("grupoId") REFERENCES "GrupoManutencao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrdemServico" ADD CONSTRAINT "OrdemServico_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "OrdemServico" ADD CONSTRAINT "OrdemServico_solicitanteId_fkey" FOREIGN KEY ("solicitanteId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OrdemServico" ADD CONSTRAINT "OrdemServico_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OrdemServico" ADD CONSTRAINT "OrdemServico_tecnicoId_fkey" FOREIGN KEY ("tecnicoId") REFERENCES "Tecnico"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrdemServico" ADD CONSTRAINT "OrdemServico_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OrdemServico" ADD CONSTRAINT "OrdemServico_solicitanteId_fkey" FOREIGN KEY ("solicitanteId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrComputer" ADD CONSTRAINT "HcrComputer_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OrdemServico" ADD CONSTRAINT "OrdemServico_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "HcrComputer" ADD CONSTRAINT "HcrComputer_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrComputer" ADD CONSTRAINT "HcrComputer_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "HcrComputer" ADD CONSTRAINT "HcrComputer_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrPrinter" ADD CONSTRAINT "HcrPrinter_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "HcrComputer" ADD CONSTRAINT "HcrComputer_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "HcrPrinter" ADD CONSTRAINT "HcrPrinter_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrPrinter" ADD CONSTRAINT "HcrPrinter_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "HcrPrinter" ADD CONSTRAINT "HcrPrinter_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrAirConditioning" ADD CONSTRAINT "HcrAirConditioning_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "HcrPrinter" ADD CONSTRAINT "HcrPrinter_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "HcrAirConditioning" ADD CONSTRAINT "HcrAirConditioning_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrAirConditioning" ADD CONSTRAINT "HcrAirConditioning_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "HcrAirConditioning" ADD CONSTRAINT "HcrAirConditioning_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrMobilia" ADD CONSTRAINT "HcrMobilia_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "HcrAirConditioning" ADD CONSTRAINT "HcrAirConditioning_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "HcrMobilia" ADD CONSTRAINT "HcrMobilia_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "HcrMobilia" ADD CONSTRAINT "HcrMobilia_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "HcrMobilia" ADD CONSTRAINT "HcrMobilia_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrEquipamentosMedicos" ADD CONSTRAINT "HcrEquipamentosMedicos_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "HcrEquipamentosMedicos" ADD CONSTRAINT "HcrEquipamentosMedicos_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrEquipamentosMedicos" ADD CONSTRAINT "HcrEquipamentosMedicos_setorId_fkey" FOREIGN KEY ("setorId") REFERENCES "Setor"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "HcrEquipamentosMedicos" ADD CONSTRAINT "HcrEquipamentosMedicos_localizacaoId_fkey" FOREIGN KEY ("localizacaoId") REFERENCES "Localizacao"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "HcrEquipamentosMedicos" ADD CONSTRAINT "HcrEquipamentosMedicos_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "HcrEquipamentosMedicos" ADD CONSTRAINT "HcrEquipamentosMedicos_tipoEquipamentoId_fkey" FOREIGN KEY ("tipoEquipamentoId") REFERENCES "TipoEquipamento"("id") ON DELETE SET NULL ON UPDATE CASCADE;

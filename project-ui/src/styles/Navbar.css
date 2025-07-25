@@ -1,0 +1,55 @@
+/* src/components/Navbar.css */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgb(245, 245, 245);
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgb(15, 50, 70);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.navbar-icon {
+  color: rgb(15, 50, 70);
+}
+
+.navbar-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-btn {
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+/* Botão 1 - DASBOARD */
+.btn-1 {
+  background-color: #FF8C00;
+  color: #0A157A;
+}
+
+/* Botão 2 - CALENDARIO */
+.btn-2 {
+  background-color: #FFFFFF;
+  color: #0A157A;
+  border: 1px solid #ccc;
+}
+
+/* Botão 3 - CHAMADOS */
+.btn-3 {
+  background-color: #0A157A;
+  color: #FF8C00;
+}

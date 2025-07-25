@@ -1,0 +1,73 @@
+/* src/styles/LoginPage.css */
+.login-page {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Painel esquerdo ocupa 50% da tela */
+.left-panel {
+  flex: 1;
+  padding: 3rem 2rem;
+  background-color: #f7f7f7;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.left-panel .logo {
+  max-width: 140px;
+  margin-bottom: 2rem;
+}
+
+.left-panel h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.left-panel p {
+  font-size: 1.1rem;
+  color: #555;
+}
+
+/* Painel direito com fundo azul e o form centralizado */
+.right-panel {
+  flex: 1;
+  background-color: #e3f2fd;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* FormLogin ficará maior aqui */
+.form-wrapper {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Responsividade: empilha verticalmente */
+@media (max-width: 768px) {
+  .login-page {
+    flex-direction: column;
+  }
+
+  .left-panel,
+  .right-panel {
+    flex: none;
+    width: 100%;
+    height: auto;
+    padding: 2rem 1rem;
+  }
+
+  .left-panel h1 {
+    font-size: 2rem;
+  }
+
+  .form-wrapper {
+    max-width: 100%;
+  }
+}
