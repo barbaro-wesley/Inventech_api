@@ -1,6 +1,6 @@
 // src/components/FormPc.jsx
 import { useState } from "react";
-import "../styles/FormPc.css";
+import "../styles/PcPage.css";
 
 function FormPc({ onClose }) {
   const [formData, setFormData] = useState({

@@ -3,7 +3,8 @@ import { useState } from 'react';
 import Navbar from '../componets/Navbar';
 import Sidebar from '../componets/Sidebar';
 import PcPage from '../pages/PcPage';
-
+import ArCondicionadoPage from '../pages/ArCondicionadoPage';
+import EquipamentosMedicosPage from '../pages/EquipamentosMedicosPage';
 
 function Layout() {
   const [content, setContent] = useState('home');
@@ -13,9 +14,9 @@ function Layout() {
       case 'computadores':
         return <PcPage />;
       case 'equipamentos_medicos':
-        return <div><h1>Equipamentos Médicos</h1><p>Conteúdo em desenvolvimento.</p></div>;
+        return <EquipamentosMedicosPage/>;
       case 'ares_condicionados':
-        return <div><h1>Ares-Condicionados</h1><p>Conteúdo em desenvolvimento.</p></div>;
+        return <ArCondicionadoPage/>;
       case 'impressoras':
         return <div><h1>Impressoras</h1><p>Conteúdo em desenvolvimento.</p></div>;
       case 'calendario':
