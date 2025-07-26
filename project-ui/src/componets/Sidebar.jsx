@@ -60,7 +60,8 @@ function Sidebar({ setContent, isOpen, onClose }) {
           {openMenu === 'registros' && (
             <ul className="submenu">
               <li onClick={() => handleContentChange('chamados')}>Chamados</li>
-              <li onClick={() => handleContentChange('registros_adversos')}>Registros Adversos</li>
+              <li onClick={() => handleContentChange('registro_Sobreaviso')}>registro de Sobreaviso</li>
+              <li onClick={() => handleContentChange('Incidente')}>registro de incidente </li>
             </ul>
           )}
         </div>

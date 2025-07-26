@@ -19,6 +19,9 @@ const hcrAirConditioningRoutes = require('./src/routes/hcrAirConditioningRoutes'
 const uploadRouter = require('./src/routes/uploadRouter');
 const sistemaRoutes = require('./src/routes/sistemaRoutes.js');
 const chamado = require('./src/routes/chamadoRoutes.js');
+const sobreavisoRoutes = require('./src/routes/sobreavisoRoutes.js');
+const incidenteRoutes = require('./src/routes/incidente.routes');
+
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
@@ -33,8 +36,8 @@ app.use('/api/sistemas', sistemaRoutes);
 app.use('/api/upload', uploadRouter);
 app.use('/uploads', express.static('uploads'));
 app.use("/api/chamados",chamado)
-
-
+app.use("/api/sobreaviso",sobreavisoRoutes)
+app.use('/api/incidentes', incidenteRoutes);
 const PORT = process.env.PORT ;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

@@ -64,7 +64,17 @@ async listarAbertos() {
     include: { Sistema: true },
     orderBy: { dataCriacao: 'desc' },
   });
-}
+},
+
+ async finalizar(id) {
+    return await prisma.chamado.update({
+      where: { id: Number(id) },
+      data: {
+        status: 'Finalizado',
+        dataFinalizacao: new Date(), // só se esse campo existir
+      },
+    });
+  }
 };
 
 module.exports = chamadoService;

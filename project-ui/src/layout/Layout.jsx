@@ -1,11 +1,14 @@
 // src/layout/Layout.jsx
 import { useState } from 'react';
+import Home from '../pages/Home';
 import Navbar from '../componets/Navbar';
 import Sidebar from '../componets/Sidebar';
 import PcPage from '../pages/PcPage';
 import ArCondicionadoPage from '../pages/ArCondicionadoPage';
 import EquipamentosMedicosPage from '../pages/EquipamentosMedicosPage';
 import ChamadoPage from "../pages/ChamadoPage"
+import SobreAvisoPage from '../pages/SobreAvisoPage';
+import IncidentePage from '../pages/IncidentePage';
 function Layout() {
   const [content, setContent] = useState('home');
 
@@ -23,17 +26,18 @@ function Layout() {
         return <div><h1>Calendário</h1><p>Conteúdo em desenvolvimento.</p></div>;
       case 'chamados':
         return <ChamadoPage/>;
-      case 'registros_adversos':
-        return <div><h1>Registros Adversos</h1><p>Conteúdo em desenvolvimento.</p></div>;
+      case 'registro_Sobreaviso':
+        return <SobreAvisoPage/>;
+      case 'Incidente':
+        return <IncidentePage/>;
       case 'dashboard':
         return <div><h1>Dashboard</h1><p>Conteúdo em desenvolvimento.</p></div>;
       case 'home':
       default:
         return (
-          <div className="home-content">
-            <h1>Bem-vindo ao FIXLAB</h1>
-            <p>Escolha uma opção no menu ao lado para começar.</p>
-          </div>
+          <>
+            <Home />
+          </>
         );
     }
   };

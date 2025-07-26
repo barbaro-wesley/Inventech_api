@@ -231,3 +231,27 @@ model Sistema {
   chamados Chamado[]
 }
 
+model Sobreaviso {
+  id               Int      @id @default(autoincrement())
+  data            DateTime
+  horaInicio      DateTime
+  horaFim         DateTime
+  motivo          String
+  aSerFeito       String
+  colaborador     Int
+  observacoes     String?
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+}
+
+model Incidente {
+  id             Int      @id @default(autoincrement())
+  data           DateTime
+  motivo         String
+  quemRelatou    String
+  local          String
+  descricao      String
+  oQueFoiFeito   String?    // Campo opcional
+  criadoEm       DateTime   @default(now())
+  atualizadoEm   DateTime   @updatedAt
+}

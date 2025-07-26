@@ -64,6 +64,14 @@ async listarAbertos(req, res) {
       res.status(400).json({ erro: 'Erro ao deletar chamado', detalhes: error.message });
     }
   },
+   async finalizar(req, res) {
+    try {
+      const chamado = await chamadoService.finalizar(req.params.id);
+      res.json({ mensagem: 'Chamado finalizado com sucesso', chamado });
+    } catch (error) {
+      res.status(400).json({ erro: 'Erro ao finalizar chamado', detalhes: error.message });
+    }
+  },
 };
 
 module.exports = chamadoController;

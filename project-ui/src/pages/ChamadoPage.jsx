@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ChamadoForm from '../forms/ChamadoForm';
+import { toast } from 'react-toastify';
 import '../styles/ChamadoPage.css';
 
 function ChamadoPage() {
@@ -35,7 +36,21 @@ function ChamadoPage() {
     setChamados([...chamados, newChamado]);
     setShowForm(false);
   };
+  const finalizarChamado = async (id) => {
+  try {
+    await axios.put(`http://localhost:5000/api/chamados/${id}/finalizar`);
+    
+    // Atualiza os dados
+    const response = await axios.get(`http://localhost:5000/api/chamados/status/${filtro}`);
+    setChamados(response.data);
 
+    // Notificação de sucesso
+    toast.success('Chamado finalizado com sucesso!');
+  } catch (error) {
+    console.error('Erro ao finalizar chamado:', error);
+    toast.error('Erro ao finalizar chamado.');
+  }
+};
   // Pagination
   const totalPages = Math.ceil(chamados.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -77,18 +92,25 @@ function ChamadoPage() {
           </tr>
         </thead>
         <tbody>
-          {currentItems.map((item) => (
-            <tr key={item.id}>
-              <td>{item.numero}</td>
-              <td>{item.descricao}</td>
-              <td>{item.status}</td>
-              <td>{new Date(item.dataCriacao).toLocaleDateString()}</td>
-              <td>{item.dataFinalizacao ? new Date(item.dataFinalizacao).toLocaleDateString() : '-'}</td>
-              <td>{item.prioridade}</td>
-              <td>{item.Sistema?.nome || '-'}</td>
-            </tr>
-          ))}
-        </tbody>
+  {currentItems.map((item) => (
+    <tr key={item.id}>
+      <td>{item.numero}</td>
+      <td>{item.descricao}</td>
+      <td>{item.status}</td>
+      <td>{new Date(item.dataCriacao).toLocaleDateString()}</td>
+      <td>{item.dataFinalizacao ? new Date(item.dataFinalizacao).toLocaleDateString() : '-'}</td>
+      <td>{item.prioridade}</td>
+      <td>{item.Sistema?.nome || '-'}</td>
+      <td>
+        {item.status !== 'Finalizado' && (
+          <button onClick={() => finalizarChamado(item.id)} className="btn-finalizar">
+            Finalizar
+          </button>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
       </table>
 
       <div className="pagination-controls">

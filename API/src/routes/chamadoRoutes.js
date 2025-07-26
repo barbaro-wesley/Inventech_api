@@ -7,6 +7,7 @@ router.post('/', chamadoController.criar);
 router.get('/', chamadoController.listar);
 router.get('/:id', chamadoController.buscarPorId);
 router.put('/:id', chamadoController.atualizar);
+router.put('/:id/finalizar', chamadoController.finalizar);
 router.delete('/:id', chamadoController.deletar);
 
 module.exports = router;

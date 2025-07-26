@@ -1,17 +1,17 @@
-/* src/styles/ChamadoPage.css */
-.chamado-page {
+/* src/styles/SobreAvisoPage.css */
+.sobreaviso-page {
   padding: 2rem;
   font-family: Arial, sans-serif;
 }
 
-.chamado-title {
+.sobreaviso-title {
   font-size: 1.8rem;
   font-weight: bold;
   margin-bottom: 1.5rem;
   color: rgb(10, 21, 122);
 }
 
-.chamado-actions {
+.sobreaviso-actions {
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
@@ -47,7 +47,7 @@
   background-color: rgb(15, 30, 150);
 }
 
-.chamado-table {
+.sobreaviso-table {
   width: 100%;
   border-collapse: collapse;
   background-color: white;
@@ -56,8 +56,8 @@
   overflow: hidden;
 }
 
-.chamado-table th,
-.chamado-table td {
+.sobreaviso-table th,
+.sobreaviso-table td {
   padding: 0.8rem;
   text-align: left;
   border-bottom: 1px solid #ddd;
@@ -66,7 +66,7 @@
   max-width: 200px; /* Limit column width for readability */
 }
 
-.chamado-table th {
+.sobreaviso-table th {
   background-color: #f4f4f4;
 }
 
@@ -95,16 +95,4 @@
 
 .pagination-controls button:hover:not(:disabled) {
   background-color: #888;
-}
-.btn-finalizar {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-finalizar:hover {
-  background-color: #45a049;
 }
