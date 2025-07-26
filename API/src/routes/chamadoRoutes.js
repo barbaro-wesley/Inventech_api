@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const chamadoController = require('../controllers/chamadoController');
-
+router.get('/status/abertos', chamadoController.listarAbertos);
+router.get('/status/finalizados', chamadoController.listarFinalizados);
 router.post('/', chamadoController.criar);
 router.get('/', chamadoController.listar);
 router.get('/:id', chamadoController.buscarPorId);

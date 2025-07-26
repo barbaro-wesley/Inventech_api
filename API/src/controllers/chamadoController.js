@@ -18,6 +18,24 @@ const chamadoController = {
       res.status(500).json({ erro: 'Erro ao listar chamados', detalhes: error.message });
     }
   },
+  
+  async listarFinalizados(req, res) {
+  try {
+    const chamados = await chamadoService.listarFinalizados();
+    res.json(chamados);
+  } catch (error) {
+    res.status(500).json({ erro: 'Erro ao listar chamados finalizados', detalhes: error.message });
+  }
+},
+
+async listarAbertos(req, res) {
+  try {
+    const chamados = await chamadoService.listarAbertos();
+    res.json(chamados);
+  } catch (error) {
+    res.status(500).json({ erro: 'Erro ao listar chamados em aberto', detalhes: error.message });
+  }
+},
 
   async buscarPorId(req, res) {
     try {

@@ -56,40 +56,46 @@ function EquipamentosMedicosPage() {
 
       {showForm && <EquipamentosMedicosForm onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
 
-      <table className="equip-table">
-        <thead>
-          <tr>
-            <th>Nº Patrimônio</th>
-            <th>Identificação</th>
-            <th>Nº Série</th>
-            <th>Nome Equipamento</th>
-            <th>Modelo</th>
-            <th>Fabricante</th>
-            <th>Nota Fiscal</th>
-            <th>Obs</th>
-            <th>Setor</th>
-            <th>Localização</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentItems.map((item) => (
-            <tr key={item.id}>
-              <td>{item.numeroPatrimonio || '-'}</td>
-              <td>{item.Identificação || '-'}</td>
-              <td>{item.numeroSerie || '-'}</td>
-              <td>{item.nomeEquipamento}</td>
-              <td>{item.modelo || '-'}</td>
-              <td>{item.Fabricante || '-'}</td>
-              <td>{item.notaFiscal || '-'}</td>
-              <td>{item.obs || '-'}</td>
-              <td>{item.setor?.nome || '-'}</td>
-              <td>{item.localizacao?.nome || '-'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
+   <div className="table-container">
+  <table className="equip-table">
+    <thead>
+      <tr>
+        <th>Nº Patrimônio</th>
+        <th>Identificação</th>
+        <th>Nº Série</th>
+        <th>Nome Equipamento</th>
+        <th>Modelo</th>
+        <th>Fabricante</th>
+        <th>Nota Fiscal</th>
+        <th>Obs</th>
+        <th>Setor</th>
+        <th>Localização</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {currentItems.map((item) => (
+        <tr key={item.id}>
+          <td>{item.numeroPatrimonio || '-'}</td>
+          <td>{item.Identificação || '-'}</td>
+          <td>{item.numeroSerie || '-'}</td>
+          <td>{item.nomeEquipamento}</td>
+          <td>{item.modelo || '-'}</td>
+          <td>{item.Fabricante || '-'}</td>
+          <td>{item.notaFiscal || '-'}</td>
+          <td>{item.obs || '-'}</td>
+          <td>{item.setor?.nome || '-'}</td>
+          <td>{item.localizacao?.nome || '-'}</td>
+          <td>
+            <button style={{ padding: "4px 8px", fontSize: "0.9rem" }}>
+              Editar
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
       <div className="pagination-controls">
         <button onClick={goToPrevPage} disabled={currentPage === 1}>
           Anterior

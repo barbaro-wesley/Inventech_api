@@ -44,6 +44,27 @@ const chamadoService = {
       where: { id: Number(id) },
     });
   },
+
+
+  async listarFinalizados() {
+  return await prisma.chamado.findMany({
+    where: {
+      status: 'Finalizado',
+    },
+    include: { Sistema: true },
+    orderBy: { dataCriacao: 'desc' },
+  });
+},
+
+async listarAbertos() {
+  return await prisma.chamado.findMany({
+    where: {
+      status: 'Aberto',
+    },
+    include: { Sistema: true },
+    orderBy: { dataCriacao: 'desc' },
+  });
+}
 };
 
 module.exports = chamadoService;

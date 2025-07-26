@@ -7,21 +7,26 @@ import '../styles/ChamadoPage.css';
 function ChamadoPage() {
   const [showForm, setShowForm] = useState(false);
   const [chamados, setChamados] = useState([]);
+  const [filtro, setFiltro] = useState('abertos'); 
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await axios.get('http://192.168.0.185:5000/api/chamados');
-        setChamados(response.data);
-      } catch (error) {
-        console.error('Erro ao buscar chamados:', error);
-      }
+ useEffect(() => {
+  async function fetchData() {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/chamados/status/${filtro}`);
+      setChamados(response.data);
+      setCurrentPage(1); // Reinicia para a página 1 sempre que muda o filtro
+    } catch (error) {
+      console.error('Erro ao buscar chamados:', error);
     }
-    fetchData();
-  }, []);
-
+  }
+  fetchData();
+}, [filtro]); // Executa toda vez que o filtro muda
+  const alternarFiltro = () => {
+  setFiltro((prevFiltro) => (prevFiltro === 'abertos' ? 'finalizados' : 'abertos'));
+};
   const handleAddClick = () => {
     setShowForm(true);
   };
@@ -51,7 +56,9 @@ function ChamadoPage() {
 
       <div className="chamado-actions">
         <button className="btn-add" onClick={handleAddClick}>+ Adicionar</button>
-        <button className="btn-filter">Filtro</button>
+        <button className="btn-filter" onClick={alternarFiltro}>
+  {filtro === 'abertos' ? 'Ver Finalizados' : 'Ver Abertos'}
+</button>
       </div>
 
       {showForm && <ChamadoForm onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
@@ -79,7 +86,6 @@ function ChamadoPage() {
               <td>{item.dataFinalizacao ? new Date(item.dataFinalizacao).toLocaleDateString() : '-'}</td>
               <td>{item.prioridade}</td>
               <td>{item.Sistema?.nome || '-'}</td>
-              <td>{/* Placeholder for future actions */}</td>
             </tr>
           ))}
         </tbody>
