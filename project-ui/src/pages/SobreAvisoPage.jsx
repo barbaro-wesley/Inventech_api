@@ -13,7 +13,9 @@ function SobreAvisoPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/sobreaviso');
+        const response = await axios.get('http://localhost:5000/api/sobreaviso',{
+          withCredentials: true,
+        });
         setSobreAvisos(response.data);
       } catch (error) {
         console.error('Erro ao buscar sobre avisos:', error);

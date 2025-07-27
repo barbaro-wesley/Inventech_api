@@ -3,8 +3,14 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-
-app.use(cors());
+const cookieParser = require('cookie-parser');
+const corsOptions = {
+  origin: 'http://localhost:5173', // ou qualquer URL do seu front-end
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+};
+app.use(cors(corsOptions));
+app.use(cookieParser()); 
 app.use(express.json());
 const usuarioRoutes = require('./src/routes/usuarioRoutes');
 const tipoEquipamentoRoutes = require('./src/routes/tipoEquipamentoRoutes');
@@ -39,6 +45,9 @@ app.use("/api/chamados",chamado)
 app.use("/api/sobreaviso",sobreavisoRoutes)
 app.use('/api/incidentes', incidenteRoutes);
 const PORT = process.env.PORT ;
+
+
+
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

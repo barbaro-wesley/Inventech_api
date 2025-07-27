@@ -13,7 +13,9 @@ function ArCondicionadoPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/condicionadores');
+        const response = await axios.get('http://localhost:5000/api/condicionadores',{
+          withCredentials: true,
+        });
         setArCondicionados(response.data);
       } catch (error) {
         console.error('Erro ao buscar ar-condicionados:', error);

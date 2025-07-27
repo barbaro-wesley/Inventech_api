@@ -11,6 +11,10 @@ router.post(
   usuarioController.criarUsuario
 );
 router.post('/login', usuarioController.login);
+router.post('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ mensagem: 'Logout realizado com sucesso' });
+});
 
 // Apenas usuários logados
 router.get('/me', autenticarUsuario, usuarioController.perfil);

@@ -5,7 +5,7 @@ const autenticarUsuario = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 
 // Apenas usuários logados podem acessar
-// router.use(autenticarUsuario);
+router.use(autenticarUsuario);
 
 // Listar todos
 router.get('/', controller.listar);

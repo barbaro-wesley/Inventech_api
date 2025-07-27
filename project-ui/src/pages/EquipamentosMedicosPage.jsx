@@ -13,7 +13,9 @@ function EquipamentosMedicosPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/equipamentos-medicos');
+        const response = await axios.get('http://localhost:5000/api/equipamentos-medicos',{
+          withCredentials: true,
+        });
         setEquipamentos(response.data);
       } catch (error) {
         console.error('Erro ao buscar equipamentos médicos:', error);

@@ -1,24 +1,24 @@
-// src/pages/PcPage.jsx
+// src/pages/UsuarioPage.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import FormPc from '../forms/FormPc';
-import '../styles/PcPage.css';
+import UsuarioForm from '../forms/UsuarioForm';
+import '../styles/UsuarioPage.css';
 
-function PcPage() {
+function UsuarioPage() {
   const [showForm, setShowForm] = useState(false);
-  const [computadores, setComputadores] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/hcr-computers', {
+        const response = await axios.get('http://localhost:5000/api/usuarios',{
           withCredentials: true,
         });
-        setComputadores(response.data);
+        setUsuarios(response.data);
       } catch (error) {
-        console.error('Erro ao buscar computadores:', error);
+        console.error('Erro ao buscar usuários:', error);
       }
     }
     fetchData();
@@ -28,16 +28,16 @@ function PcPage() {
     setShowForm(true);
   };
 
-  const handleFormSubmit = (newComputador) => {
-    setComputadores([...computadores, newComputador]);
+  const handleFormSubmit = (newUsuario) => {
+    setUsuarios([...usuarios, newUsuario]);
     setShowForm(false);
   };
 
   // Pagination
-  const totalPages = Math.ceil(computadores.length / itemsPerPage);
+  const totalPages = Math.ceil(usuarios.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = computadores.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = usuarios.slice(indexOfFirstItem, indexOfLastItem);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -48,41 +48,36 @@ function PcPage() {
   };
 
   return (
-    <div className="pc-page">
-      <h1 className="pc-title">Gestão de Computadores</h1>
+    <div className="usuario-page">
+      <h1 className="usuario-title">Gestão de Usuários</h1>
 
-      <div className="pc-actions">
+      <div className="usuario-actions">
         <button className="btn-add" onClick={handleAddClick}>+ Adicionar</button>
         <button className="btn-filter">Filtro</button>
       </div>
-      {showForm && <FormPc onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
-      <table className="pc-table">
+
+      {showForm && <UsuarioForm onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
+
+      <table className="usuario-table">
         <thead>
           <tr>
-            <th>Nº Patrimônio</th>
-            <th>Nome do PC</th>
-            <th>IP</th>
-            <th>Sistema Operacional</th>
-            <th>Localização</th>
-            <th>Setor</th>
-            <th>Tipo de Equipamento</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Papel</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody>
           {currentItems.map((item) => (
             <tr key={item.id}>
-              <td>{item.nPatrimonio}</td>
-              <td>{item.nomePC}</td>
-              <td>{item.ip}</td>
-              <td>{item.sistemaOperacional}</td>
-              <td>{item.localizacao?.nome || '-'}</td>
-              <td>{item.localizacao?.setor?.nome || '-'}</td>
-              <td>{item.tipoEquipamento?.nome || '-'}</td>
+              <td>{item.nome}</td>
+              <td>{item.email}</td>
+              <td>{item.papel}</td>
             </tr>
           ))}
         </tbody>
       </table>
+
       <div className="pagination-controls">
         <button onClick={goToPrevPage} disabled={currentPage === 1}>
           Anterior
@@ -98,4 +93,4 @@ function PcPage() {
   );
 }
 
-export default PcPage;
+export default UsuarioPage;

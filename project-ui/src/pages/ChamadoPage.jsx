@@ -16,7 +16,9 @@ function ChamadoPage() {
  useEffect(() => {
   async function fetchData() {
     try {
-      const response = await axios.get(`http://localhost:5000/api/chamados/status/${filtro}`);
+      const response = await axios.get(`http://localhost:5000/api/chamados/status/${filtro}`,{
+          withCredentials: true,
+        });
       setChamados(response.data);
       setCurrentPage(1); // Reinicia para a página 1 sempre que muda o filtro
     } catch (error) {

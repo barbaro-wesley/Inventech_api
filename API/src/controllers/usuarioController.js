@@ -12,7 +12,15 @@ const criarUsuario = async (req, res) => {
 const login = async (req, res) => {
   try {
     const token = await usuarioService.login(req.body);
-    res.json({ token });
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // só HTTPS em produção
+      sameSite: 'Strict',
+      maxAge: 24 * 60 * 60 * 1000, // 1 dia
+    });
+
+    res.json({ mensagem: 'Login realizado com sucesso' });
   } catch (error) {
     res.status(401).json({ error: error.message });
   }

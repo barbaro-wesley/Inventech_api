@@ -9,6 +9,9 @@ import EquipamentosMedicosPage from '../pages/EquipamentosMedicosPage';
 import ChamadoPage from "../pages/ChamadoPage"
 import SobreAvisoPage from '../pages/SobreAvisoPage';
 import IncidentePage from '../pages/IncidentePage';
+import GrupoManutencaoPage from '../pages/GrupoManutencaoPage';
+import TecnicoPage from '../pages/TecnicoPage';
+import UsuarioPage from '../pages/UsuarioPage';
 function Layout() {
   const [content, setContent] = useState('home');
 
@@ -30,6 +33,12 @@ function Layout() {
         return <SobreAvisoPage/>;
       case 'Incidente':
         return <IncidentePage/>;
+      case 'grupo_manutencao':
+        return <GrupoManutencaoPage/>;
+      case 'tecnico':
+        return <TecnicoPage/>;
+      case 'usuarios':
+        return <UsuarioPage/>;
       case 'dashboard':
         return <div><h1>Dashboard</h1><p>Conteúdo em desenvolvimento.</p></div>;
       case 'home':

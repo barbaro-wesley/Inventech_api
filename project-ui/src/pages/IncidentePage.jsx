@@ -1,4 +1,3 @@
-// src/pages/IncidentePage.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import IncidenteForm from '../forms/IncidenteForm';
@@ -13,7 +12,9 @@ function IncidentePage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/incidentes');
+        const response = await axios.get('http://localhost:5000/api/incidentes',{
+          withCredentials: true,
+        });
         setIncidentes(response.data);
       } catch (error) {
         console.error('Erro ao buscar incidentes:', error);

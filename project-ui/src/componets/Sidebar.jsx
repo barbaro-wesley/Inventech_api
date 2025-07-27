@@ -65,6 +65,22 @@ function Sidebar({ setContent, isOpen, onClose }) {
             </ul>
           )}
         </div>
+        <div className="menu-group">
+          <button className="menu-btn" onClick={() => toggleMenu('cadastro')}>
+            <FaClipboardList />
+            Cadastros
+            {openMenu === 'cadastro' ? <FaChevronUp /> : <FaChevronDown />}
+          </button>
+          {openMenu === 'cadastro' && (
+            <ul className="submenu">
+              <li onClick={() => handleContentChange('tecnico')}>Tecnicos</li>
+              <li onClick={() => handleContentChange('registro_Sobreaviso')}>registro de Sobreaviso</li>
+              <li onClick={() => handleContentChange('grupo_manutencao')}>Grupo de Manutenção</li>
+              <li onClick={() => handleContentChange('usuarios')}>Usuarios</li>
+
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
