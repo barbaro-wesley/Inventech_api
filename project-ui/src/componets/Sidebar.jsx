@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import '../styles/Sidebar.css';
 import { FaTools, FaCalendarAlt, FaLaptop, FaChevronDown, FaChevronUp, FaTimes, FaClipboardList } from 'react-icons/fa';
-
+import logo from '../assets/logo.png'; // ✅ Caminho da logo
 function Sidebar({ setContent, isOpen, onClose }) {
   const [openMenu, setOpenMenu] = useState(null);
 
@@ -20,7 +20,12 @@ function Sidebar({ setContent, isOpen, onClose }) {
       <button className="close-btn" onClick={onClose}>
         <FaTimes />
       </button>
-
+       {/* ✅ LOGO */}
+     <div className="logo-container">
+  <a href="https://wbcodes.vercel.app/" target="_blank" rel="noopener noreferrer">
+    <img src={logo} alt="Logo HCR TI" className="sidebar-logo" />
+  </a>
+</div>
       <div className="menu">
         <div className="menu-group">
           <button className="menu-btn" onClick={() => toggleMenu('equipamentos')}>

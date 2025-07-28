@@ -27,7 +27,7 @@ function OS({ onClose, onSubmit }) {
   ];
 
   const endpointPorTipo = {
-    '1': '/hcr-computers',
+    '2': '/hcr-computers',
     '3': '/equipamentos-medicos',
     '4': '/condicionadores',
   };

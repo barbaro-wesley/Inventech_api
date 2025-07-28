@@ -1,6 +1,7 @@
 // src/pages/LoginPage.jsx
 import FormLogin from "../forms/FormLogin";
-import Logo from "../assets/logo.png";
+import Logo from "../assets/HCR_Marca.png";
+
 import "../styles/LoginPage.css";
 
 function LoginPage() {

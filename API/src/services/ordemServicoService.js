@@ -22,7 +22,7 @@ class OrdemServicoService {
   });
 
   if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
-  const msg = `📄 <b>Nova OS Atribuída</b>\n\n🔧 Técnico: ${novaOS.tecnico.nome}\n📌 Descrição: ${novaOS.descricao}`;
+  const msg = `📄 <b>Nova OS Atribuída</b>\n\n🔧 Técnico: ${novaOS.tecnico.nome}\n📌 Descrição: ${novaOS.descricao} Setor $` ;
   await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
 }
 

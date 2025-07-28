@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Logo from "../assets/logo.png"
+import icon from "../assets/favicon.png"
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

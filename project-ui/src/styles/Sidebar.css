@@ -4,13 +4,37 @@
   left: -300px;
   width: 300px;
   height: 100vh;
-  background: linear-gradient(145deg, #1e242e, #13171f);
+  background: rgb(rgb(211, 211, 211), rgb(232, 235, 232), rgb(224, 224, 224));
   color: white;
   padding: 2rem 1.5rem;
-  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.4);
-  transition: left 0.3s ease-in-out;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+  transition: left 0.4s ease-in-out;
   z-index: 1000;
   overflow-y: auto;
+  backdrop-filter: blur(10px);
+}
+sidebar::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 25% 25%, rgba(242, 140, 40, 0.05), transparent 60%),
+              radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.04), transparent 60%);
+  animation: moveBackground 12s linear infinite;
+  z-index: 0;
+}
+.sidebar.open {
+  left: 0;
+}
+@keyframes moveBackground {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(10%, 10%);
+  }
 }
 
 .sidebar.open {
@@ -20,50 +44,52 @@
 .close-btn {
   background: none;
   border: none;
-  font-size: 1.4rem;
-  color: #fff;
+  font-size: 1.6rem;
+  color: #000000;
   position: absolute;
   top: 1rem;
   right: 1rem;
   cursor: pointer;
   transition: transform 0.2s;
+  z-index: 10;
 }
-
 .close-btn:hover {
   transform: scale(1.2);
-  color: #ff7043;
+  color: #f28c28;
 }
 
 .menu {
-  margin-top: 3rem;
+  margin-top: 3.5rem;
+  position: relative;
+  z-index: 2;
 }
 
 .menu-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.7rem;
 }
 
 .menu-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.07);
   border: none;
-  color: white;
+  color: rgb(0, 0, 0);
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   padding: 0.75rem 1rem;
   width: 100%;
   text-align: left;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background 0.3s ease, transform 0.2s ease;
+  backdrop-filter: blur(6px);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
-
 .menu-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateX(5px);
+  background: rgba(242, 140, 40, 0.1);
+  transform: scale(1.02);
 }
-
 .menu-btn svg {
   margin-right: 0.8rem;
   flex-shrink: 0;
@@ -74,21 +100,22 @@
   padding-left: 1.2rem;
   margin-top: 0.5rem;
   animation: slideDown 0.3s ease forwards;
-  border-left: 2px solid #ffffff20;
+  border-left: 2px solid #ffffff30;
 }
+
 
 .submenu li {
-  padding: 0.4rem 0;
+  padding: 0.5rem 0;
   font-size: 0.95rem;
   cursor: pointer;
-  color: #ccc;
-  transition: color 0.2s ease, transform 0.2s ease;
+  color: #cfd8dc;
+  transition: all 0.2s ease;
 }
-
 .submenu li:hover {
-  color: #ff7043;
+  color: #f28c28;
   transform: translateX(5px);
 }
+
 
 @keyframes slideDown {
   from {
@@ -101,16 +128,39 @@
   }
 }
 
+
 /* Scrollbar elegante */
 .sidebar::-webkit-scrollbar {
   width: 6px;
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-  background-color: #444;
+  background-color: #3b4c56;
   border-radius: 6px;
 }
 
 .sidebar::-webkit-scrollbar-track {
   background: transparent;
+}
+
+logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-top: 1rem;
+  z-index: 2;
+  position: relative;
+}
+
+.sidebar-logo {
+  width: 120px;
+  height: auto;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.08));
+}
+
+.sidebar-logo:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 10px rgba(242, 140, 40, 0.5));
 }
