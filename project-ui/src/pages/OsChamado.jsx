@@ -104,7 +104,7 @@ function OsChamado() {
             <th>Status</th>
             <th>Preventiva</th>
             <th>Setor</th>
-            <th>Equipamento</th>
+            <th>Solicitante</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -116,8 +116,8 @@ function OsChamado() {
               <td>{item.tecnico?.nome || '-'}</td>
               <td>{item.status}</td>
               <td>{item.preventiva ? 'Sim' : 'Não'}</td>
-              <td>{item.setor?.nome || '-'}</td>
-              <td>{item.equipamento?.nome || '-'}</td>
+              <td>{item.Setor?.nome || '-'}</td>
+              <td>{item.solicitante?.nome || '-'}</td>
               <td>{/* Placeholder for future actions */}</td>
             </tr>
           ))}

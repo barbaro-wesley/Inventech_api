@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Paperclip } from "lucide-react"; // ícone moderno
 import axios from 'axios';
 import '../styles/OS.css';
 
@@ -18,7 +19,7 @@ function OS({ onClose, onSubmit }) {
   const [tecnicos, setTecnicos] = useState([]);
   const [equipamentos, setEquipamentos] = useState([]);
   const [grupo, setGrupo] = useState('');
-
+  const [fileNames, setFileNames] = useState([]);
   const statusOptions = [
     { value: 'ABERTA', label: 'Aberta' },
     { value: 'EM_ANDAMENTO', label: 'Em Andamento' },
@@ -49,6 +50,12 @@ function OS({ onClose, onSubmit }) {
 
   const handleChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
+    if (e.target.name === "arquivos") {
+  const files = Array.from(e.target.files);
+  setFormData({ ...formData, arquivos: files });
+  setFileNames(files.map((file) => file.name)); // <- aqui!
+  return;
+}
 
     if (type === 'file') {
       setFormData({ ...formData, arquivos: Array.from(files) });
@@ -149,154 +156,159 @@ function OS({ onClose, onSubmit }) {
   };
 
   return (
-    <div className="os-wrapper">
-      <div className="os-card">
-        <h2 className="os-title">Cadastro de OS</h2>
-        <form onSubmit={handleSubmit} className="os-form-grid">
-          {/* Descrição */}
-          <div className="os-field full">
-            <label>Descrição</label>
-            <textarea
-              name="descricao"
-              value={formData.descricao}
-              onChange={handleChange}
-              rows={4}
-              required
-            />
-          </div>
+  <div className="os-wrapper">
+    <div className="os-card">
+      <h2 className="os-title">Cadastro de OS</h2>
+      <form onSubmit={handleSubmit} className="os-form-grid">
+  {/* Tipo de Equipamento */}
+  <div className="os-field">
+    <label>Tipo de Equipamento</label>
+    <select
+      name="tipoEquipamentoId"
+      value={formData.tipoEquipamentoId}
+      onChange={handleChange}
+      required
+    >
+      <option value="">Selecione</option>
+      {tiposEquipamento.map((t) => (
+        <option key={t.id} value={t.id}>
+          {t.nome}
+        </option>
+      ))}
+    </select>
+  </div>
 
-          {/* Técnico */}
-          <div className="os-field">
-            <label>Técnico Responsável</label>
-            <select
-              name="tecnicoId"
-              value={formData.tecnicoId}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione</option>
-              {tecnicos.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome} {t.matricula ? `(${t.matricula})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+  {/* Equipamento */}
+  <div className="os-field">
+    <label>Equipamento</label>
+    <select
+      name="equipamentoId"
+      value={formData.equipamentoId}
+      onChange={handleChange}
+      required
+    >
+      <option value="">Selecione</option>
+      {equipamentos.map((e) => {
+        const nome = getEquipamentoNome(e, formData.tipoEquipamentoId);
+        return (
+          <option key={e.id} value={e.id}>
+            {nome}
+          </option>
+        );
+      })}
+    </select>
+  </div>
 
-          {/* Grupo (do técnico) */}
-          <div className="os-field">
-            <label>Grupo</label>
-            <input
-              type="text"
-              value={tecnicos.find((t) => t.id === parseInt(formData.tecnicoId))?.grupo?.nome || ''}
-              readOnly
-            />
-          </div>
+  {/* Técnico */}
+  <div className="os-field">
+    <label>Técnico Responsável</label>
+    <select
+      name="tecnicoId"
+      value={formData.tecnicoId}
+      onChange={handleChange}
+      required
+    >
+      <option value="">Selecione</option>
+      {tecnicos.map((t) => (
+        <option key={t.id} value={t.id}>
+          {t.nome} {t.matricula ? `(${t.matricula})` : ""}
+        </option>
+      ))}
+    </select>
+  </div>
 
-          {/* Status */}
-          <div className="os-field">
-            <label>Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione</option>
-              {statusOptions.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
+  {/* Grupo do Técnico */}
+  <div className="os-field">
+    <label>Grupo</label>
+    <input
+      type="text"
+      value={
+        tecnicos.find((t) => t.id === parseInt(formData.tecnicoId))?.grupo
+          ?.nome || ""
+      }
+      readOnly
+    />
+  </div>
 
-          {/* Preventiva */}
-          <div className="os-field">
-            <label>Preventiva</label>
-            <input
-              type="checkbox"
-              name="preventiva"
-              checked={formData.preventiva}
-              onChange={handleChange}
-            />
-          </div>
+  {/* Status */}
+  <div className="os-field">
+    <label>Status</label>
+    <select
+      name="status"
+      value={formData.status}
+      onChange={handleChange}
+      required
+    >
+      <option value="">Selecione</option>
+      {statusOptions.map((s) => (
+        <option key={s.value} value={s.value}>
+          {s.label}
+        </option>
+      ))}
+    </select>
+  </div>
 
-          {/* Tipo de Equipamento */}
-          <div className="os-field">
-            <label>Tipo de Equipamento</label>
-            <select
-              name="tipoEquipamentoId"
-              value={formData.tipoEquipamentoId}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione</option>
-              {tiposEquipamento.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome}
-                </option>
-              ))}
-            </select>
-          </div>
+  {/* Grupo do Equipamento */}
+  <div className="os-field">
+    <label>Grupo do Equipamento</label>
+    <input type="text" value={grupo} readOnly />
+  </div>
 
-          {/* Grupo (do equipamento) */}
-          <div className="os-field">
-            <label>Grupo</label>
-            <input
-              type="text"
-              value={grupo}
-              readOnly
-            />
-          </div>
+  {/* Upload de Arquivos */}
+  <div className="os-field full os-upload-area">
+  <label>
+    <Paperclip size={18} style={{ marginRight: 6 }} />
+    Arquivos (Imagens)
+  </label>
+  <div className="custom-file-upload">
+    <input
+      type="file"
+      name="arquivos"
+      multiple
+      accept="image/*"
+      onChange={handleChange}
+      id="fileInput"
+    />
+    <label htmlFor="fileInput">Clique ou arraste arquivos aqui</label>
+  </div>
+  {fileNames.length > 0 && (
+    <ul className="file-list">
+      {fileNames.map((name, idx) => (
+        <li key={idx}>{name}</li>
+      ))}
+    </ul>
+  )}
+</div>
 
-          {/* Equipamento */}
-          <div className="os-field">
-            <label>Equipamento</label>
-            <select
-              name="equipamentoId"
-              value={formData.equipamentoId}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione</option>
-              {equipamentos.map((e) => {
-                const nome = getEquipamentoNome(e, formData.tipoEquipamentoId);
-                console.log('Renderizando opção:', e.id, nome);
-                return (
-                  <option key={e.id} value={e.id}>
-                    {nome}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+  {/* Descrição */}
+  <div className="os-field full">
+    <label>Descrição</label>
+    <textarea
+      name="descricao"
+      value={formData.descricao}
+      onChange={handleChange}
+      rows={4}
+      required
+    />
+  </div>
 
-          {/* Arquivos */}
-          <div className="os-field full">
-            <label>Arquivos (Imagens)</label>
-            <input
-              type="file"
-              name="arquivos"
-              multiple
-              accept="image/*"
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Botões */}
-          <div className="os-buttons full">
-            <button type="submit" className="btn-primary btn-large">
-              Salvar
-            </button>
-            <button type="button" className="btn-secondary btn-large" onClick={onClose}>
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </div>
+  {/* Botões */}
+  <div className="os-buttons full">
+    <button type="submit" className="btn-primary btn-large">
+      Salvar
+    </button>
+    <button
+      type="button"
+      className="btn-secondary btn-large"
+      onClick={onClose}
+    >
+      Cancelar
+    </button>
+  </div>
+</form>
     </div>
-  );
+  </div>
+);
 }
 
 export default OS;
