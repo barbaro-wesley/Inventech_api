@@ -12,6 +12,8 @@ import IncidentePage from '../pages/IncidentePage';
 import GrupoManutencaoPage from '../pages/GrupoManutencaoPage';
 import TecnicoPage from '../pages/TecnicoPage';
 import UsuarioPage from '../pages/UsuarioPage';
+import OS from '../pages/OS';
+import OsChamado from '../pages/OsChamado';
 function Layout() {
   const [content, setContent] = useState('home');
 
@@ -25,10 +27,10 @@ function Layout() {
         return <ArCondicionadoPage/>;
       case 'impressoras':
         return <div><h1>Impressoras</h1><p>Conteúdo em desenvolvimento.</p></div>;
-      case 'calendario':
-        return <div><h1>Calendário</h1><p>Conteúdo em desenvolvimento.</p></div>;
-      case 'chamados':
-        return <ChamadoPage/>;
+      case 'Os':
+        return <OS/>;
+      case 'Oschamados':
+        return <OsChamado/>;
       case 'registro_Sobreaviso':
         return <SobreAvisoPage/>;
       case 'Incidente':
@@ -39,8 +41,8 @@ function Layout() {
         return <TecnicoPage/>;
       case 'usuarios':
         return <UsuarioPage/>;
-      case 'dashboard':
-        return <div><h1>Dashboard</h1><p>Conteúdo em desenvolvimento.</p></div>;
+      case 'chamados':
+        return <ChamadoPage/>;
       case 'home':
       default:
         return (

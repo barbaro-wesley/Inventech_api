@@ -41,12 +41,13 @@ function Sidebar({ setContent, isOpen, onClose }) {
         <div className="menu-group">
           <button className="menu-btn" onClick={() => toggleMenu('manutencao')}>
             <FaCalendarAlt />
-            Manutenção Programada
+            Manutenção 
             {openMenu === 'manutencao' ? <FaChevronUp /> : <FaChevronDown />}
           </button>
           {openMenu === 'manutencao' && (
             <ul className="submenu">
-              <li onClick={() => handleContentChange('calendario')}>Calendário</li>
+              <li onClick={() => handleContentChange('Oschamados')}>Chamados</li>
+              <li onClick={() => handleContentChange('Os')}>Ordem de Serviço</li>
             </ul>
           )}
         </div>
@@ -74,7 +75,6 @@ function Sidebar({ setContent, isOpen, onClose }) {
           {openMenu === 'cadastro' && (
             <ul className="submenu">
               <li onClick={() => handleContentChange('tecnico')}>Tecnicos</li>
-              <li onClick={() => handleContentChange('registro_Sobreaviso')}>registro de Sobreaviso</li>
               <li onClick={() => handleContentChange('grupo_manutencao')}>Grupo de Manutenção</li>
               <li onClick={() => handleContentChange('usuarios')}>Usuarios</li>
 

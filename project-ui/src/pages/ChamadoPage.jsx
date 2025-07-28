@@ -40,10 +40,14 @@ function ChamadoPage() {
   };
   const finalizarChamado = async (id) => {
   try {
-    await axios.put(`http://localhost:5000/api/chamados/${id}/finalizar`);
+    await axios.put(`http://localhost:5000/api/chamados/${id}/finalizar`,{
+          withCredentials: true,
+        });
     
     // Atualiza os dados
-    const response = await axios.get(`http://localhost:5000/api/chamados/status/${filtro}`);
+    const response = await axios.get(`http://localhost:5000/api/chamados/status/${filtro}`,{
+          withCredentials: true,
+        });
     setChamados(response.data);
 
     // Notificação de sucesso
