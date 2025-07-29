@@ -2,42 +2,49 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/FormPc.css';
-
-function FormPc({ onClose, onSubmit }) {
+import { toast } from 'react-toastify';
+function FormPc({ onClose, onSubmit,initialData }) {
   const [formData, setFormData] = useState({
-    nPatrimonio: '',
-    nomePC: '',
-    ip: '',
-    sistemaOperacional: '',
-    setorId: '',
-    localizacaoId: '',
-    tipoEquipamentoId: '',
-  });
+  nPatrimonio: initialData?.nPatrimonio || '',
+  nomePC: initialData?.nomePC || '',
+  ip: initialData?.ip || '',
+  sistemaOperacional: initialData?.sistemaOperacional || '',
+  setorId: initialData?.setorId || '',
+  localizacaoId: initialData?.localizacaoId || '',
+  tipoEquipamentoId: initialData?.tipoEquipamentoId || '',
+});
   const [localizacoes, setLocalizacoes] = useState([]);
   const [tiposEquipamento, setTiposEquipamento] = useState([]);
   const [setorNome, setSetorNome] = useState('');
 
   useEffect(() => {
-    async function fetchOptions() {
-      try {
-        // Fetch localizações (expects [{ id, nome, setorId, setor: { id, nome } }])
-        const localizacoesRes = await axios.get('http://localhost:5000/api/localizacao',{
-          withCredentials: true,
-        });
+  async function fetchOptions() {
+    try {
+      const localizacoesRes = await axios.get('http://localhost:5000/api/localizacao', {
+        withCredentials: true,
+      });
+      const tiposRes = await axios.get('http://localhost:5000/api/tipos-equipamento', {
+        withCredentials: true,
+      });
 
+      setLocalizacoes(localizacoesRes.data);
+      setTiposEquipamento(tiposRes.data);
 
-        // Fetch tipos de equipamento (expects [{ id, nome, grupoId? }])
-        const tiposRes = await axios.get('http://localhost:5000/api/tipos-equipamento',{
-          withCredentials: true,
-        });
-        setLocalizacoes(localizacoesRes.data);
-        setTiposEquipamento(tiposRes.data);
-      } catch (error) {
-        console.error('Erro ao buscar opções:', error);
+      // Atualiza nome do setor se estiver em edição
+      if (initialData) {
+        const selectedLoc = localizacoesRes.data.find(
+          (loc) => loc.id === Number(initialData.localizacaoId)
+        );
+        if (selectedLoc?.setor?.nome) {
+          setSetorNome(selectedLoc.setor.nome);
+        }
       }
+    } catch (error) {
+      console.error('Erro ao buscar opções:', error);
     }
-    fetchOptions();
-  }, []);
+  }
+  fetchOptions();
+}, [initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -60,26 +67,41 @@ function FormPc({ onClose, onSubmit }) {
     }
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
-  try {
-    const response = await axios.post(
-      'http://localhost:5000/api/hcr-computers',
-      {
-        nPatrimonio: formData.nPatrimonio,
-        nomePC: formData.nomePC,
-        ip: formData.ip,
-        sistemaOperacional: formData.sistemaOperacional,
-        setorId: Number(formData.setorId),
-        localizacaoId: Number(formData.localizacaoId),
-        tipoEquipamentoId: Number(formData.tipoEquipamentoId),
-      },
-      {
-        withCredentials: true, 
-      }
-    );
 
-    onSubmit(response.data);
+  const payload = {
+    nPatrimonio: formData.nPatrimonio,
+    nomePC: formData.nomePC,
+    ip: formData.ip,
+    sistemaOperacional: formData.sistemaOperacional,
+    setorId: Number(formData.setorId),
+    localizacaoId: Number(formData.localizacaoId),
+    tipoEquipamentoId: Number(formData.tipoEquipamentoId),
+  };
+
+  try {
+    let response;
+    if (initialData?.id) {
+      // Edição (PUT)
+      response = await axios.put(
+        `http://localhost:5000/api/hcr-computers/${initialData.id}`,
+        payload,
+        { withCredentials: true }
+      );
+       toast.success('Computador atualizado com sucesso!');
+      
+    } else {
+      // Novo cadastro (POST)
+      response = await axios.post(
+        'http://localhost:5000/api/hcr-computers',
+        payload,
+        { withCredentials: true }
+      );
+       toast.success('Computador cadastrado com sucesso!');
+    }
+
+    onSubmit(response.data); // Atualiza lista no PcPage
     setFormData({
       nPatrimonio: '',
       nomePC: '',
@@ -92,7 +114,6 @@ function FormPc({ onClose, onSubmit }) {
     setSetorNome('');
     onClose();
   } catch (error) {
-    console.error('Erro ao cadastrar computador:', error);
   }
 };
 

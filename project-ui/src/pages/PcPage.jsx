@@ -1,6 +1,7 @@
 // src/pages/PcPage.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FaEdit } from 'react-icons/fa';
 import FormPc from '../forms/FormPc';
 import '../styles/PcPage.css';
 
@@ -8,6 +9,7 @@ function PcPage() {
   const [showForm, setShowForm] = useState(false);
   const [computadores, setComputadores] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingPc, setEditingPc] = useState(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -28,10 +30,23 @@ function PcPage() {
     setShowForm(true);
   };
 
-  const handleFormSubmit = (newComputador) => {
-    setComputadores([...computadores, newComputador]);
-    setShowForm(false);
-  };
+  const handleFormSubmit = (savedPc) => {
+  if (editingPc) {
+    setComputadores((prev) =>
+      prev.map((pc) => (pc.id === savedPc.id ? savedPc : pc))
+    );
+  } else {
+    setComputadores((prev) => [...prev, savedPc]);
+  }
+
+  setEditingPc(null);
+  setShowForm(false);
+};
+
+  const handleEdit = (pc) => {
+  setEditingPc(pc);
+  setShowForm(true);
+};
 
   // Pagination
   const totalPages = Math.ceil(computadores.length / itemsPerPage);
@@ -55,7 +70,16 @@ function PcPage() {
         <button className="btn-add" onClick={handleAddClick}>+ Adicionar</button>
         <button className="btn-filter">Filtro</button>
       </div>
-      {showForm && <FormPc onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
+      {showForm && (
+  <FormPc
+    onClose={() => {
+      setShowForm(false);
+      setEditingPc(null);
+    }}
+    onSubmit={handleFormSubmit}
+    initialData={editingPc}
+  />
+)}
       <table className="pc-table">
         <thead>
           <tr>
@@ -70,18 +94,23 @@ function PcPage() {
           </tr>
         </thead>
         <tbody>
-          {currentItems.map((item) => (
-            <tr key={item.id}>
-              <td>{item.nPatrimonio}</td>
-              <td>{item.nomePC}</td>
-              <td>{item.ip}</td>
-              <td>{item.sistemaOperacional}</td>
-              <td>{item.localizacao?.nome || '-'}</td>
-              <td>{item.localizacao?.setor?.nome || '-'}</td>
-              <td>{item.tipoEquipamento?.nome || '-'}</td>
-            </tr>
-          ))}
-        </tbody>
+  {currentItems.map((item) => (
+    <tr key={item.id}>
+      <td>{item.nPatrimonio}</td>
+      <td>{item.nomePC}</td>
+      <td>{item.ip}</td>
+      <td>{item.sistemaOperacional}</td>
+      <td>{item.localizacao?.nome || '-'}</td>
+      <td>{item.localizacao?.setor?.nome || '-'}</td>
+      <td>{item.tipoEquipamento?.nome || '-'}</td>
+      <td>
+        <button className="btn-edit" onClick={() => handleEdit(item)}>
+          <FaEdit />
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
       </table>
       <div className="pagination-controls">
         <button onClick={goToPrevPage} disabled={currentPage === 1}>
