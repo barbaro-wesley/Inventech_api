@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/EquipamentosMedicosForm.css';
+import api from '../config/api';
 
 function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
   useEffect(() => {
     const fetchSetores = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/setores', {
+        const response = await api.get('/setor', {
           withCredentials: true,
         });
         setSetores(response.data);
@@ -41,7 +42,7 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
 
     const fetchTiposEquipamentos = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/tipos-equipamento', {
+        const response = await api.get('/tipos-equipamento', {
           withCredentials: true,
         });
         setTiposEquipamentos(response.data);
@@ -118,11 +119,11 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
     try {
       let response;
       if (initialData?.id) {
-        response = await axios.put(`http://localhost:5000/api/equipamentos-medicos/${initialData.id}`, payload, {
+        response = await api.put(`/equipamentos-medicos/${initialData.id}`, payload, {
           withCredentials: true,
         });
       } else {
-        response = await axios.post('http://localhost:5000/api/equipamentos-medicos', payload, {
+        response = await api.post('/equipamentos-medicos', payload, {
           withCredentials: true,
         });
       }

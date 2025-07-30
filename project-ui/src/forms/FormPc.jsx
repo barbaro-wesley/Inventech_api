@@ -1,6 +1,6 @@
 // src/components/FormPc.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../config/api';
 import '../styles/FormPc.css';
 import { toast } from 'react-toastify';
 function FormPc({ onClose, onSubmit,initialData }) {
@@ -20,10 +20,10 @@ function FormPc({ onClose, onSubmit,initialData }) {
   useEffect(() => {
   async function fetchOptions() {
     try {
-      const localizacoesRes = await axios.get('http://localhost:5000/api/localizacao', {
+      const localizacoesRes = await api.get('/localizacao', {
         withCredentials: true,
       });
-      const tiposRes = await axios.get('http://localhost:5000/api/tipos-equipamento', {
+      const tiposRes = await api.get('/tipos-equipamento', {
         withCredentials: true,
       });
 
@@ -84,8 +84,8 @@ const handleSubmit = async (e) => {
     let response;
     if (initialData?.id) {
       // Edição (PUT)
-      response = await axios.put(
-        `http://localhost:5000/api/hcr-computers/${initialData.id}`,
+      response = await api.put(
+        `/hcr-computers/${initialData.id}`,
         payload,
         { withCredentials: true }
       );
@@ -93,8 +93,8 @@ const handleSubmit = async (e) => {
       
     } else {
       // Novo cadastro (POST)
-      response = await axios.post(
-        'http://localhost:5000/api/hcr-computers',
+      response = await api.post(
+        '/hcr-computers',
         payload,
         { withCredentials: true }
       );

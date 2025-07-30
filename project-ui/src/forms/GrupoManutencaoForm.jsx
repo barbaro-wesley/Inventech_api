@@ -1,6 +1,6 @@
 // src/components/GrupoManutencaoForm.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../config/api';
 import '../styles/GrupoManutencaoForm.css';
 
 function GrupoManutencaoForm({ onClose, onSubmit }) {
@@ -14,8 +14,7 @@ function GrupoManutencaoForm({ onClose, onSubmit }) {
   useEffect(() => {
     async function fetchOptions() {
       try {
-        // Fetch equipment types (expects [{ id, nome, grupoId?, grupo? }])
-        const tiposRes = await axios.get('http://localhost:5000/api/tipos-equipamento',{
+        const tiposRes = await api.get('/tipos-equipamento',{
           withCredentials: true,
         });
         setTiposOptions(tiposRes.data);
@@ -39,8 +38,8 @@ function GrupoManutencaoForm({ onClose, onSubmit }) {
  const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    const response = await axios.post(
-      'http://localhost:5000/api/grupos-manutencao',
+    const response = await api.post(
+      '/grupos-manutencao',
       {
         nome: formData.nome,
         descricao: formData.descricao || null,

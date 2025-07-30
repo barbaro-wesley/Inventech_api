@@ -3,6 +3,7 @@ import { Paperclip } from "lucide-react";
 import axios from 'axios';
 import '../styles/OS.css';
 import { toast } from 'react-toastify';
+import api from '../config/api';
 
 function OS({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -39,12 +40,12 @@ function OS({ onClose, onSubmit }) {
     async function fetchOptions() {
       try {
         const [tiposRes, tecnicosRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/tipos-equipamento', { withCredentials: true }),
-          axios.get('http://localhost:5000/api/tecnicos', { withCredentials: true }),
+          api.get('/tipos-equipamento', { withCredentials: true }),
+          api.get('/tecnicos', { withCredentials: true }),
         ]);
         setTiposEquipamento(tiposRes.data);
         setTecnicos(tecnicosRes.data);
-        setFilteredTecnicos(tecnicosRes.data); // Initialize with all technicians
+        setFilteredTecnicos(tecnicosRes.data); 
       } catch (error) {
         console.error('Erro ao buscar opções:', error);
         toast.error('Erro ao carregar opções do formulário');
@@ -90,7 +91,7 @@ function OS({ onClose, onSubmit }) {
         if (endpoint) {
           try {
             setEquipamentos([]);
-            const res = await axios.get(`http://localhost:5000/api${endpoint}`, { withCredentials: true });
+            const res = await api.get(`${endpoint}`, { withCredentials: true });
             setEquipamentos(res.data);
             setFormData((prev) => ({ ...prev, equipamentoId: '', setorId: '' }));
           } catch (error) {
@@ -127,7 +128,7 @@ function OS({ onClose, onSubmit }) {
       if (formData.setorId) formDataToSend.append('setorId', Number(formData.setorId));
       formDataToSend.append('equipamentoId', Number(formData.equipamentoId));
 
-      const response = await axios.post('http://localhost:5000/api/os', formDataToSend, {
+      const response = await api.post('/os', formDataToSend, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -158,16 +159,18 @@ function OS({ onClose, onSubmit }) {
     }
   };
 
-  const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
-    switch (tipoEquipamentoId) {
-      case '1': 
-        return equipamento.nomePC, equipamento.ip;
-      case '3': 
-        return equipamento.numeroSerie, equipamento.modelo;
-      case '4': 
-        return `${equipamento.marca || 'Sem Marca'} ${equipamento.nPatrimonio || 'Sem Modelo'}`.trim();
-    }
-  };
+const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
+  switch (tipoEquipamentoId) {
+    case '1': // Computadores
+      return `${equipamento.nomePC || 'Sem Nome'} - ${equipamento.ip || 'Sem IP'}`;
+    case '3': // Equipamentos médicos
+      return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.modelo || 'Sem Modelo'}`;
+    case '4': // Impressoras, por exemplo
+      return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
+    default:
+      return 'Equipamento não identificado';
+  }
+};
 
   return (
     <div className="os-wrapper">

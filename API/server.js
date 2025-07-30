@@ -5,7 +5,7 @@ require('dotenv').config();
 const app = express();
 const cookieParser = require('cookie-parser');
 const corsOptions = {
-  origin: 'http://localhost:5173', // ou qualquer URL do seu front-end
+  origin: 'http://192.168.0.185:5173', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 };
@@ -45,9 +45,8 @@ app.use("/api/chamados",chamado)
 app.use("/api/sobreaviso",sobreavisoRoutes)
 app.use('/api/incidentes', incidenteRoutes);
 const PORT = process.env.PORT ;
+const HOST = process.env.HOST;
 
-
-
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+app.listen(PORT, HOST,() => {
+  console.log(`Servidor rodando ${HOST} ${PORT} `);
 });

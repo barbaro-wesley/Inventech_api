@@ -1,6 +1,6 @@
 // src/components/UsuarioForm.jsx
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../config/api';
 import '../styles/UsuarioForm.css';
 
 function UsuarioForm({ onClose, onSubmit }) {
@@ -27,8 +27,8 @@ function UsuarioForm({ onClose, onSubmit }) {
   const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    const response = await axios.post(
-      'http://localhost:5000/api/usuarios/cadastro',
+    const response = await api.post(
+      '/usuarios/cadastro',
       {
         nome: formData.nome,
         email: formData.email,

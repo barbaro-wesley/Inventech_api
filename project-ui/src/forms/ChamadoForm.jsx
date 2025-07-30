@@ -1,8 +1,7 @@
 // src/components/ChamadoForm.jsx
 import { useState } from 'react';
-import axios from 'axios';
 import '../styles/ChamadoForm.css';
-
+import api from '../config/api';
 function ChamadoForm({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     numero: '',
@@ -19,7 +18,7 @@ function ChamadoForm({ onClose, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/chamados', {
+      const response = await api.post('/chamados', {
         ...formData,
         numero: parseInt(formData.numero),
         SistemaId: formData.SistemaId ? parseInt(formData.SistemaId) : null,

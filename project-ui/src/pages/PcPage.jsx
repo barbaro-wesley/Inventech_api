@@ -4,6 +4,7 @@ import axios from 'axios';
 import { FaEdit } from 'react-icons/fa';
 import FormPc from '../forms/FormPc';
 import '../styles/PcPage.css';
+import api from '../config/api';
 
 function PcPage() {
   const [showForm, setShowForm] = useState(false);
@@ -12,20 +13,22 @@ function PcPage() {
   const [editingPc, setEditingPc] = useState(null);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await axios.get('http://localhost:5000/api/hcr-computers', {
-          withCredentials: true,
-        });
-        setComputadores(response.data);
-      } catch (error) {
-        console.error('Erro ao buscar computadores:', error);
-      }
-    }
-    fetchData();
-  }, []);
+useEffect(() => {
+  async function fetchData() {
+    try {
+      const response = await api.get('/hcr-computers', {
+        withCredentials: true,
+      });
 
+      console.log('Resposta da API:', response.data);
+      setComputadores(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar computadores:', error);
+    }
+  }
+
+  fetchData();
+}, []);
   const handleAddClick = () => {
     setShowForm(true);
   };

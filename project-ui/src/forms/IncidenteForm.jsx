@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import '../styles/IncidenteForm.css';
+import api from '../config/api';
 
 function IncidenteForm({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -18,25 +19,34 @@ function IncidenteForm({ onClose, onSubmit }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post('http://localhost:5000/api/incidentes', {
+  e.preventDefault();
+  try {
+    const response = await api.post(
+      '/incidentes',
+      {
         ...formData,
         data: formData.data ? new Date(formData.data).toISOString() : null,
-      });
-      onSubmit(response.data);
-      setFormData({
-        data: '',
-        motivo: '',
-        quemRelatou: '',
-        local: '',
-        descricao: '',
-        oQueFoiFeito: '',
-      });
-    } catch (error) {
-      console.error('Erro ao cadastrar incidente:', error);
-    }
-  };
+      },
+      {
+        withCredentials: true,
+      }
+    );
+
+    onSubmit(response.data);
+
+    setFormData({
+      data: '',
+      motivo: '',
+      quemRelatou: '',
+      local: '',
+      descricao: '',
+      oQueFoiFeito: '',
+    });
+  } catch (error) {
+    console.error('Erro ao cadastrar incidente:', error);
+  }
+};
+
 
   return (
     <div className="form-container">

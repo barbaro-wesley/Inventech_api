@@ -1,9 +1,11 @@
+
 // src/pages/HcrEquipamentosMedicosPage.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import EquipamentosMedicosForm from '../forms/EquipamentosMedicosForm';
 import { FaEdit } from 'react-icons/fa';
 import "../styles/EquipamentosMedicosPage.css"
+import api from '../config/api';
 
 function EquipamentosMedicosPage() {
   const [showForm, setShowForm] = useState(false);
@@ -16,7 +18,7 @@ function EquipamentosMedicosPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/equipamentos-medicos',{
+        const response = await api.get('/equipamentos-medicos',{
           withCredentials: true,
         });
         setEquipamentos(response.data);
@@ -39,8 +41,8 @@ function EquipamentosMedicosPage() {
  const handleFormSubmit = async (formData) => {
   try {
     if (editMode && equipamentoParaEditar) {
-      const response = await axios.put(
-        `http://localhost:5000/api/equipamentos-medicos/${equipamentoParaEditar.id}`,
+      const response = await api.put(
+        `/equipamentos-medicos/${equipamentoParaEditar.id}`,
         formData,
         { withCredentials: true }
       );

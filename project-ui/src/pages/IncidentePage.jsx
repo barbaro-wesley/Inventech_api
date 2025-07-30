@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import IncidenteForm from '../forms/IncidenteForm';
 import '../styles/IncidentePage.css';
+import api from '../config/api';
 
 function IncidentePage() {
   const [showForm, setShowForm] = useState(false);
@@ -12,7 +13,7 @@ function IncidentePage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/incidentes',{
+        const response = await api.get('/incidentes',{
           withCredentials: true,
         });
         setIncidentes(response.data);

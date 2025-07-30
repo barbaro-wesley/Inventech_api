@@ -1,0 +1,131 @@
+/* src/styles/FormArCondicionado.css */
+
+.form-container {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4); /* fundo escurecido estilo popup */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  padding: 1rem;
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.pc-form {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 95vh; /* evita ultrapassar a altura da tela */
+  overflow-y: auto;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+.pc-form h2 {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: rgb(10, 21, 122);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.pc-form label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.pc-form input,
+.pc-form select,
+.pc-form textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.pc-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Botões no mesmo estilo do PcPage */
+.btn-submit {
+  background-color: rgb(10, 21, 122);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  flex: 1;
+  transition: background 0.2s;
+}
+
+.btn-submit:hover {
+  background-color: rgb(15, 30, 150);
+}
+
+.btn-cancel {
+  background-color: rgb(255, 255, 140);
+  color: black;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  flex: 1;
+  transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+  background-color: rgb(255, 255, 100);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .form-container {
+    padding: 1rem;
+  }
+
+  .pc-form {
+    padding: 1.5rem;
+  }
+
+  .form-buttons {
+    flex-direction: column;
+  }
+
+  .btn-submit,
+  .btn-cancel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .pc-form h2 {
+    font-size: 1.3rem;
+  }
+
+  .pc-form input,
+  .pc-form select,
+  .pc-form textarea {
+    font-size: 0.95rem;
+    padding: 0.5rem;
+  }
+}

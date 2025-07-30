@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import UsuarioForm from '../forms/UsuarioForm';
 import '../styles/UsuarioPage.css';
+import api from '../config/api';
 
 function UsuarioPage() {
   const [showForm, setShowForm] = useState(false);
@@ -13,7 +14,7 @@ function UsuarioPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/usuarios',{
+        const response = await api.get('/usuarios',{
           withCredentials: true,
         });
         setUsuarios(response.data);

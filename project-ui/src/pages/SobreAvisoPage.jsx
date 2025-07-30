@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import SobreAvisoForm from '../forms/SobreAvisoForm';
 import '../styles/SobreAvisoPage.css';
+import api from '../config/api';
 
 function SobreAvisoPage() {
   const [showForm, setShowForm] = useState(false);
@@ -13,7 +14,7 @@ function SobreAvisoPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/sobreaviso',{
+        const response = await api.get('/sobreaviso',{
           withCredentials: true,
         });
         setSobreAvisos(response.data);

@@ -1,7 +1,8 @@
 // src/components/Sidebar.jsx
 import { useState } from 'react';
 import '../styles/Sidebar.css';
-import { FaTools, FaCalendarAlt, FaLaptop, FaChevronDown, FaChevronUp, FaTimes, FaClipboardList } from 'react-icons/fa';
+import { FaTools, FaCalendarAlt, FaLaptopCode, FaChevronDown, FaChevronUp, FaTimes, FaClipboardList,  } from 'react-icons/fa';
+import { FaGears } from "react-icons/fa6";
 import logo from '../assets/logo.png'; // ✅ Caminho da logo
 function Sidebar({ setContent, isOpen, onClose }) {
   const [openMenu, setOpenMenu] = useState(null);
@@ -22,14 +23,14 @@ function Sidebar({ setContent, isOpen, onClose }) {
       </button>
        {/* ✅ LOGO */}
      <div className="logo-container">
-  <a href="https://wbcodes.vercel.app/" target="_blank" rel="noopener noreferrer">
+      /<a href="https://wbcodes.vercel.app/" target="_blank" rel="noopener noreferrer">
     <img src={logo} alt="Logo HCR TI" className="sidebar-logo" />
   </a>
 </div>
       <div className="menu">
         <div className="menu-group">
           <button className="menu-btn" onClick={() => toggleMenu('equipamentos')}>
-            <FaLaptop />
+            <FaLaptopCode />
             Gestão de Equipamentos
             {openMenu === 'equipamentos' ? <FaChevronUp /> : <FaChevronDown />}
           </button>
@@ -45,7 +46,7 @@ function Sidebar({ setContent, isOpen, onClose }) {
 
         <div className="menu-group">
           <button className="menu-btn" onClick={() => toggleMenu('manutencao')}>
-            <FaCalendarAlt />
+           <FaGears />
             Manutenção 
             {openMenu === 'manutencao' ? <FaChevronUp /> : <FaChevronDown />}
           </button>
@@ -59,7 +60,7 @@ function Sidebar({ setContent, isOpen, onClose }) {
 
         <div className="menu-group">
           <button className="menu-btn" onClick={() => toggleMenu('registros')}>
-            <FaClipboardList />
+            <FaLaptopCode />
             Registros TI
             {openMenu === 'registros' ? <FaChevronUp /> : <FaChevronDown />}
           </button>

@@ -3,6 +3,7 @@ import axios from 'axios';
 import ArCondicionadoForm from '../forms/ArCondicionadoForm';
 import { FaEdit } from 'react-icons/fa';
 import '../styles/ArCondicionadoPage.css';
+import api from '../config/api';
 
 function ArCondicionadoPage() {
   const [showForm, setShowForm] = useState(false);
@@ -14,7 +15,7 @@ function ArCondicionadoPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/condicionadores', {
+        const response = await api.get('/condicionadores', {
           withCredentials: true,
         });
         const validData = Array.isArray(response.data)

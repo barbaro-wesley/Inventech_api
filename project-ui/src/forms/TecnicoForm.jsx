@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/TecnicoForm.css';
+import api from '../config/api';
 
 function TecnicoForm({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -19,7 +20,7 @@ function TecnicoForm({ onClose, onSubmit }) {
   useEffect(() => {
     async function fetchGrupos() {
       try {
-        const response = await axios.get('http://localhost:5000/api/grupos-manutencao',{
+        const response = await api.get('/grupos-manutencao',{
           withCredentials: true,
         });
         setGruposOptions(response.data);
@@ -38,8 +39,8 @@ function TecnicoForm({ onClose, onSubmit }) {
 const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    const response = await axios.post(
-      'http://localhost:5000/api/tecnicos',
+    const response = await api.post(
+      '/tecnicos',
       {
         nome: formData.nome,
         email: formData.email,

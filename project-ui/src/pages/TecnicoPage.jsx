@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import TecnicoForm from '../forms/TecnicoForm';
 import '../styles/TecnicoPage.css';
+import api from '../config/api';
 
 function TecnicoPage() {
   const [showForm, setShowForm] = useState(false);
@@ -13,7 +14,7 @@ function TecnicoPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/tecnicos',{
+        const response = await api.get('/tecnicos',{
           withCredentials: true,
         });
         setTecnicos(response.data);

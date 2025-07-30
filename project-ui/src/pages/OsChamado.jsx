@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/OsChamado.css';
+import api from '../config/api';
 
 function OsChamado() {
   const [ordens, setOrdens] = useState([]);
@@ -21,7 +22,7 @@ function OsChamado() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/os', {
+        const response = await api.get('/os', {
           withCredentials: true,
         });
         setOrdens(response.data);
@@ -34,7 +35,6 @@ function OsChamado() {
   }, []);
 
   useEffect(() => {
-    // Filter ordens based on searchTerm and filterStatus
     const filtered = ordens.filter((ordem) => {
       const matchesSearch = ordem.descricao
         .toLowerCase()
@@ -43,7 +43,7 @@ function OsChamado() {
       return matchesSearch && matchesStatus;
     });
     setFilteredOrdens(filtered);
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1); 
   }, [searchTerm, filterStatus, ordens]);
 
   const handleSearchChange = (e) => {
@@ -54,7 +54,6 @@ function OsChamado() {
     setFilterStatus(e.target.value);
   };
 
-  // Pagination
   const totalPages = Math.ceil(filteredOrdens.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;

@@ -5,6 +5,7 @@ import ChamadoForm from '../forms/ChamadoForm';
 
 import { toast } from 'react-toastify';
 import '../styles/ChamadoPage.css';
+import api from '../config/api';
 
 function ChamadoPage() {
   const [showForm, setShowForm] = useState(false);
@@ -17,7 +18,7 @@ function ChamadoPage() {
  useEffect(() => {
   async function fetchData() {
     try {
-      const response = await axios.get(`http://localhost:5000/api/chamados/status/${filtro}`,{
+      const response = await api.get(`/chamados/status/${filtro}`,{
           withCredentials: true,
         });
       setChamados(response.data);
@@ -41,12 +42,12 @@ function ChamadoPage() {
   };
   const finalizarChamado = async (id) => {
   try {
-   await axios.put(`http://localhost:5000/api/chamados/${id}/finalizar`, {}, {
+   await api.put(`/chamados/${id}/finalizar`, {}, {
   withCredentials: true,
 });
     
     // Atualiza os dados
-    const response = await axios.get(`http://localhost:5000/api/chamados/status/${filtro}`,{
+    const response = await axios.get(`/chamados/status/${filtro}`,{
           withCredentials: true,
         });
     setChamados(response.data);

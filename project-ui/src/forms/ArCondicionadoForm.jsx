@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import '../styles/FormPc.css';
-
+import api from '../config/api';
+import "../styles/FormArCondicionado.css"
 function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
   const modoEdicao = !!initialData;
   const [formData, setFormData] = useState({
@@ -41,7 +41,7 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
   useEffect(() => {
     async function fetchSetores() {
       try {
-        const response = await axios.get('http://localhost:5000/api/setor', {
+        const response = await api.get('/setor', {
           withCredentials: true,
         });
         setSetores(response.data);
@@ -53,7 +53,7 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
 
     async function fetchTiposEquipamentos() {
       try {
-        const response = await axios.get('http://localhost:5000/api/tipos-equipamento', {
+        const response = await api.get('/tipos-equipamento', {
           withCredentials: true,
         });
         setTiposEquipamentos(Array.isArray(response.data) ? response.data : []);
@@ -108,10 +108,10 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
       };
 
       const response = modoEdicao
-        ? await axios.put(`http://localhost:5000/api/condicionadores/${initialData.id}`, payload, {
+        ? await api.put(`/condicionadores/${initialData.id}`, payload, {
             withCredentials: true,
           })
-        : await axios.post('http://localhost:5000/api/condicionadores', payload, {
+        : await api.post('/condicionadores', payload, {
             withCredentials: true,
           });
 

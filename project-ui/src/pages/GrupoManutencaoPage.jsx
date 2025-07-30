@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import GrupoManutencaoForm from '../forms/GrupoManutencaoForm';
 import '../styles/GrupoManutencaoPage.css';
+import api from '../config/api';
 
 function GrupoManutencaoPage() {
   const [showForm, setShowForm] = useState(false);
@@ -13,7 +14,7 @@ function GrupoManutencaoPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/grupos-manutencao',{
+        const response = await api.get('/grupos-manutencao',{
           withCredentials: true,
         });
         setGrupos(response.data);

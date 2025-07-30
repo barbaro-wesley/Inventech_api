@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import '../styles/SobreAvisoForm.css';
+import api from '../config/api';
 
 function SobreAvisoForm({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -17,28 +18,36 @@ function SobreAvisoForm({ onClose, onSubmit }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post('http://localhost:5000/api/sobreaviso', {
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await api.post(
+      '/sobreaviso',
+      {
         ...formData,
         data: formData.data ? new Date(formData.data).toISOString() : null,
         horaInicio: formData.horaInicio ? new Date(formData.horaInicio).toISOString() : null,
         horaFim: formData.horaFim ? new Date(formData.horaFim).toISOString() : null,
-      });
-      onSubmit(response.data);
-      setFormData({
-        data: '',
-        horaInicio: '',
-        horaFim: '',
-        motivo: '',
-        aSerFeito: '',
-        observacoes: '',
-      });
-    } catch (error) {
-      console.error('Erro ao cadastrar sobre aviso:', error);
-    }
-  };
+      },
+      {
+        withCredentials: true, // <- aqui
+      }
+    );
+
+    onSubmit(response.data);
+
+    setFormData({
+      data: '',
+      horaInicio: '',
+      horaFim: '',
+      motivo: '',
+      aSerFeito: '',
+      observacoes: '',
+    });
+  } catch (error) {
+    console.error('Erro ao cadastrar sobre aviso:', error);
+  }
+};
 
   return (
     <div className="form-container">
