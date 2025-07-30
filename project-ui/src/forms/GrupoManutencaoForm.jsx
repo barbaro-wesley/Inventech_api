@@ -36,27 +36,30 @@ function GrupoManutencaoForm({ onClose, onSubmit }) {
     setFormData({ ...formData, tiposIds: selectedOptions });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // POST to /api/grupos-manutencao with tiposIds as array of numbers
-      const response = await axios.post('http://localhost:5000/api/grupos-manutencao',{
-          withCredentials: true,
-        }, {
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await axios.post(
+      'http://localhost:5000/api/grupos-manutencao',
+      {
         nome: formData.nome,
         descricao: formData.descricao || null,
-        tiposIds: formData.tiposIds.map(Number), // Convert to numbers
-      });
-      onSubmit(response.data);
-      setFormData({
-        nome: '',
-        descricao: '',
-        tiposIds: [],
-      });
-    } catch (error) {
-      console.error('Erro ao cadastrar grupo de manutenção:', error);
-    }
-  };
+        tiposIds: formData.tiposIds.map(Number),
+      },
+      {
+        withCredentials: true, 
+      }
+    );
+    onSubmit(response.data);
+    setFormData({
+      nome: '',
+      descricao: '',
+      tiposIds: [],
+    });
+  } catch (error) {
+    console.error('Erro ao cadastrar grupo de manutenção:', error);
+  }
+};
 
   return (
     <div className="form-container">

@@ -1,11 +1,12 @@
-// src/pages/ArCondicionadoPage.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ArCondicionadoForm from '../forms/ArCondicionadoForm';
+import { FaEdit } from 'react-icons/fa';
 import '../styles/ArCondicionadoPage.css';
 
 function ArCondicionadoPage() {
   const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [arCondicionados, setArCondicionados] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -13,27 +14,49 @@ function ArCondicionadoPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.get('http://localhost:5000/api/condicionadores',{
+        const response = await axios.get('http://localhost:5000/api/condicionadores', {
           withCredentials: true,
         });
-        setArCondicionados(response.data);
+        const validData = Array.isArray(response.data)
+          ? response.data.filter(item => item && typeof item === 'object' && item.id)
+          : [];
+        setArCondicionados(validData);
+        console.log('Dados recebidos da API:', validData);
       } catch (error) {
         console.error('Erro ao buscar ar-condicionados:', error);
+        alert('Erro ao carregar os dados. Tente novamente.');
       }
     }
     fetchData();
   }, []);
 
   const handleAddClick = () => {
+    setEditingItem(null);
     setShowForm(true);
   };
 
-  const handleFormSubmit = (newArCondicionado) => {
-    setArCondicionados([...arCondicionados, newArCondicionado]);
-    setShowForm(false);
+  const handleEditClick = (item) => {
+    setEditingItem(item);
+    setShowForm(true);
   };
 
-  // Pagination
+  const handleFormSubmit = (savedItem) => {
+    if (!savedItem || !savedItem.id) {
+      console.error('Item inválido recebido no submit:', savedItem);
+      alert('Erro ao salvar o item. Verifique os dados e tente novamente.');
+      return;
+    }
+    if (editingItem) {
+      setArCondicionados((prev) =>
+        prev.map((ar) => (ar.id === savedItem.id ? savedItem : ar))
+      );
+    } else {
+      setArCondicionados((prev) => [...prev, savedItem]);
+    }
+    setShowForm(false);
+    setEditingItem(null);
+  };
+
   const totalPages = Math.ceil(arCondicionados.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -56,7 +79,16 @@ function ArCondicionadoPage() {
         <button className="btn-filter">Filtro</button>
       </div>
 
-      {showForm && <ArCondicionadoForm onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
+      {showForm && (
+        <ArCondicionadoForm
+          onClose={() => {
+            setShowForm(false);
+            setEditingItem(null);
+          }}
+          onSubmit={handleFormSubmit}
+          initialData={editingItem}
+        />
+      )}
 
       <table className="pc-table">
         <thead>
@@ -68,22 +100,40 @@ function ArCondicionadoPage() {
             <th>BTUs</th>
             <th>Setor</th>
             <th>Localização</th>
+            <th>Obs</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody>
-          {currentItems.map((item) => (
-            <tr key={item.id}>
-              <td>{item.nPatrimonio}</td>
-              <td>{item.numeroSerie}</td>
-              <td>{item.marca}</td>
-              <td>{item.modelo}</td>
-              <td>{item.BTUs}</td>
-              <td>{item.setor?.nome || '-'}</td>
-              <td>{item.localizacao?.nome || '-'}</td>
-              <td>{/* Placeholder for future actions (e.g., Edit, Delete) */}</td>
+          {currentItems.length > 0 ? (
+            currentItems.map((item) =>
+              item && item.id ? (
+                <tr key={item.id}>
+                  <td>{item.nPatrimonio || '-'}</td>
+                  <td>{item.numeroSerie || '-'}</td>
+                  <td>{item.marca || '-'}</td>
+                  <td>{item.modelo || '-'}</td>
+                  <td>{item.BTUS || '-'}</td>
+                  <td>{item.setor?.nome || '-'}</td>
+                  <td>{item.localizacao?.nome || '-'}</td>
+                  <td>{item.obs || '-'}</td>
+                  <td>
+                    <button
+                      className="btn-edit"
+                      onClick={() => handleEditClick(item)}
+                      title="Editar equipamento"
+                    >
+                      <FaEdit />
+                    </button>
+                  </td>
+                </tr>
+              ) : null
+            )
+          ) : (
+            <tr>
+              <td colSpan="9">Nenhum ar-condicionado encontrado.</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
 
@@ -92,7 +142,7 @@ function ArCondicionadoPage() {
           Anterior
         </button>
         <span>
-          Página {currentPage} de {totalPages}
+          Página {currentPage} de {totalPages || 1}
         </span>
         <button onClick={goToNextPage} disabled={currentPage === totalPages}>
           Próxima

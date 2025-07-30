@@ -2,12 +2,15 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import EquipamentosMedicosForm from '../forms/EquipamentosMedicosForm';
+import { FaEdit } from 'react-icons/fa';
 import "../styles/EquipamentosMedicosPage.css"
 
 function EquipamentosMedicosPage() {
   const [showForm, setShowForm] = useState(false);
   const [equipamentos, setEquipamentos] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [editMode, setEditMode] = useState(false);
+  const [equipamentoParaEditar, setEquipamentoParaEditar] = useState(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -27,11 +30,33 @@ function EquipamentosMedicosPage() {
   const handleAddClick = () => {
     setShowForm(true);
   };
+  const handleEditClick = (equipamento) => {
+  setEquipamentoParaEditar(equipamento);
+  setEditMode(true);
+  setShowForm(true);
+};
 
-  const handleFormSubmit = (newEquipamento) => {
-    setEquipamentos([...equipamentos, newEquipamento]);
+ const handleFormSubmit = async (formData) => {
+  try {
+    if (editMode && equipamentoParaEditar) {
+      const response = await axios.put(
+        `http://localhost:5000/api/equipamentos-medicos/${equipamentoParaEditar.id}`,
+        formData,
+        { withCredentials: true }
+      );
+      setEquipamentos((prev) =>
+        prev.map((eq) => (eq.id === equipamentoParaEditar.id ? response.data : eq))
+      );
+    } else {
+      setEquipamentos([...equipamentos, formData]);
+    }
     setShowForm(false);
-  };
+    setEditMode(false);
+    setEquipamentoParaEditar(null);
+  } catch (error) {
+    console.error("Erro ao enviar o formulário:", error);
+  }
+};
 
   // Pagination
   const totalPages = Math.ceil(equipamentos.length / itemsPerPage);
@@ -56,7 +81,17 @@ function EquipamentosMedicosPage() {
         <button className="btn-filter">Filtro</button>
       </div>
 
-      {showForm && <EquipamentosMedicosForm onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
+     {showForm && (
+  <EquipamentosMedicosForm
+    onClose={() => {
+      setShowForm(false);
+      setEditMode(false);
+      setEquipamentoParaEditar(null);
+    }}
+    onSubmit={handleFormSubmit}
+    initialData={equipamentoParaEditar} // <-- novo prop para modo edição
+  />
+)}
 
    <div className="table-container">
   <table className="equip-table">
@@ -70,7 +105,6 @@ function EquipamentosMedicosPage() {
         <th>Fabricante</th>
         <th>Nota Fiscal</th>
         <th>Obs</th>
-        <th>Setor</th>
         <th>Localização</th>
         <th>Ações</th>
       </tr>
@@ -86,12 +120,15 @@ function EquipamentosMedicosPage() {
           <td>{item.Fabricante || '-'}</td>
           <td>{item.notaFiscal || '-'}</td>
           <td>{item.obs || '-'}</td>
-          <td>{item.setor?.nome || '-'}</td>
           <td>{item.localizacao?.nome || '-'}</td>
           <td>
-            <button style={{ padding: "4px 8px", fontSize: "0.9rem" }}>
-              Editar
-            </button>
+            <button
+  className="btn-edit"
+  onClick={() => handleEditClick(item)}
+  title="Editar equipamento"
+>
+  <FaEdit />
+</button>
           </td>
         </tr>
       ))}
