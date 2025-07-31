@@ -12,7 +12,7 @@ function Navbar({ setContent }) {
       <nav className="navbar">
         <div className="navbar-left" onClick={() => setSidebarOpen(true)} style={{ cursor: 'pointer' }}>
           <img src={logo} style={{ width: '80px' }} alt="logo" />
-          <span className="navbar-title">EM DEV</span>
+          <span className="navbar-title">InvenTech</span>
         </div>
         <div className="navbar-buttons">
           <button className="nav-btn btn-1" onClick={() => setContent('dashboard')}>EM DEV</button>

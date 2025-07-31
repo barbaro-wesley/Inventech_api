@@ -9,8 +9,8 @@ function LoginPage() {
     <div className="login-page">
       <div className="left-panel">
         <img src={Logo} alt="Logo" className="logo" />
-        <h1>Bem-vindo ao Sistema</h1>
-        <p>Acesse sua conta para continuar</p>
+        <h1>InvenTech</h1>
+        <p>Controle total sobre computadores, impressoras, equipamentos médicos e manutenções. Tudo em uma plataforma moderna e intuitiva.</p>
       </div>
       <div className="right-panel">
         <div className="form-wrapper">

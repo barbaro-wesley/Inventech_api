@@ -26,6 +26,11 @@
 .left-panel h1 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
+  background: linear-gradient(to right, hsl(215, 85%, 25%), hsl(215, 85%, 45%), hsl(25, 95%, 55%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
 }
 
 .left-panel p {
