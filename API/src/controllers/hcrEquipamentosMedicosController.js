@@ -31,14 +31,16 @@ class HcrEquipamentosMedicosController {
     }
   }
 
-  async atualizar(req, res) {
-    try {
-      const equipamento = await service.atualizar(req.params.id, req.body);
-      res.json(equipamento);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao atualizar equipamento.' });
-    }
+async atualizar(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const result = await service.atualizar(id, req.body);;
+    res.json(result);
+  } catch (error) {
+    console.error('❌ Erro no controller PUT /equipamentos-medicos/:id:', error); // <---
+    res.status(500).json({ error: 'Erro ao atualizar equipamento' });
   }
+}
 
   async deletar(req, res) {
     try {

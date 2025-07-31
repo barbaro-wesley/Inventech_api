@@ -46,12 +46,48 @@ class HcrEquipamentosMedicosService {
     });
   }
 
-  async atualizar(id, data) {
-    return await prisma.hcrEquipamentosMedicos.update({
-      where: { id: Number(id) },
-      data,
-    });
-  }
+async atualizar(id, data) {
+  const {
+    numeroPatrimonio,
+    numeroSerie,
+    numeroAnvisa,
+    nomeEquipamento,
+    modelo,
+    valorCompra,
+    dataCompra,
+    inicioGarantia,
+    terminoGarantia,
+    notaFiscal,
+    obs,
+    setorId,
+    localizacaoId,
+    tipoEquipamentoId,
+    fabricante,
+    identificacao
+  } = data;
+
+  return await prisma.hcrEquipamentosMedicos.update({
+    where: { id: Number(id) },
+    data: {
+      numeroPatrimonio,
+      numeroSerie,
+      numeroAnvisa,
+      nomeEquipamento,
+      modelo,
+      valorCompra,
+      dataCompra: dataCompra ? new Date(dataCompra) : null,
+      inicioGarantia: inicioGarantia ? new Date(inicioGarantia) : null,
+      terminoGarantia: terminoGarantia ? new Date(terminoGarantia) : null,
+      notaFiscal,
+      obs,
+      setorId,
+      localizacaoId,
+      tipoEquipamentoId,
+      fabricante,
+      identificacao
+    }
+  });
+}
 
   async deletar(id) {
     return await prisma.hcrEquipamentosMedicos.delete({
