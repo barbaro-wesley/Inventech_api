@@ -178,8 +178,8 @@ model HcrEquipamentosMedicos {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime?        @updatedAt
   tipoEquipamentoId Int?
-  Fabricante        String?
-  Identificação   String?
+  fabricante        String?
+  identificacao     String?
   localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
   setor             Setor?           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])

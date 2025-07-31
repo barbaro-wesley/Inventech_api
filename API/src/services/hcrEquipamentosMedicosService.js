@@ -19,6 +19,8 @@ class HcrEquipamentosMedicosService {
         setorId: data.setorId,
         localizacaoId: data.localizacaoId,
         tipoEquipamentoId: data.tipoEquipamentoId,
+        fabricante: data.Fabricante,
+        identificacao: data.Identificacao, 
       }
     });
   }

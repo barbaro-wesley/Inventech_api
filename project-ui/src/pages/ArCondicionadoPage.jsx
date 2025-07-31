@@ -41,22 +41,22 @@ function ArCondicionadoPage() {
     setShowForm(true);
   };
 
-  const handleFormSubmit = (savedItem) => {
-    if (!savedItem || !savedItem.id) {
-      console.error('Item inválido recebido no submit:', savedItem);
-      alert('Erro ao salvar o item. Verifique os dados e tente novamente.');
-      return;
-    }
-    if (editingItem) {
-      setArCondicionados((prev) =>
-        prev.map((ar) => (ar.id === savedItem.id ? savedItem : ar))
-      );
-    } else {
-      setArCondicionados((prev) => [...prev, savedItem]);
-    }
-    setShowForm(false);
-    setEditingItem(null);
-  };
+ const handleFormSubmit = (savedItem) => {
+  if (!savedItem || !savedItem.id) {
+    console.error('Item inválido recebido no submit:', savedItem);
+    alert('Erro ao salvar o item. Verifique os dados e tente novamente.');
+    return;
+  }
+  if (editingItem) {
+    setArCondicionados((prev) =>
+      prev.map((ar) => (ar.id === savedItem.id ? savedItem : ar))
+    );
+  } else {
+    setArCondicionados((prev) => [...prev, savedItem]);
+  }
+  setShowForm(false);
+  setEditingItem(null);
+};
 
   const totalPages = Math.ceil(arCondicionados.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;

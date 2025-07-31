@@ -29,7 +29,7 @@ const LoginForm = () => {
     e.preventDefault();
     // validador do formulário aqui
     try {
-      const response = await fetch("http://192.168.0.185:5000/api/usuarios/login", {
+      const response = await fetch("http://localhost:5000/api/usuarios/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
