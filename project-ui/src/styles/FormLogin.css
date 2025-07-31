@@ -61,7 +61,7 @@ h1 {
 
 .input-wrapper input {
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  padding: 0.75rem 0.75rem 0.75rem 2.75rem;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 1rem;
@@ -70,9 +70,12 @@ h1 {
 .input-wrapper .icon {
   position: absolute;
   top: 50%;
-  left: 0.75rem;
+  left: 0.9rem; 
   transform: translateY(-50%);
   color: #999;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
 }
 
 .toggle-icon {
@@ -174,10 +177,13 @@ h1 {
     font-size: 1.4rem;
   }
 
-  .input-wrapper input {
-    font-size: 0.95rem;
-    padding-left: 2.2rem;
-  }
+ .input-wrapper input {
+  padding: 0.75rem 0.75rem 0.75rem 3rem; /* <<< aqui o segredo: padding-left de 3rem */
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
 
   .submit-button {
     font-size: 0.9rem;

@@ -23,7 +23,7 @@ function Sidebar({ setContent, isOpen, onClose }) {
       </button>
        {/* ✅ LOGO */}
      <div className="logo-container">
-      /<a href="https://wbcodes.vercel.app/" target="_blank" rel="noopener noreferrer">
+      <a href="#" target="_blank" rel="noopener noreferrer">
     <img src={logo} alt="Logo HCR TI" className="sidebar-logo" />
   </a>
 </div>
@@ -38,7 +38,7 @@ function Sidebar({ setContent, isOpen, onClose }) {
             <ul className="submenu">
               <li onClick={() => handleContentChange('computadores')}>Computadores</li>
               <li onClick={() => handleContentChange('equipamentos_medicos')}>Equipamentos Médicos</li>
-              <li onClick={() => handleContentChange('ares_condicionados')}>Ares-Condicionados</li>
+              <li onClick={() => handleContentChange('ares_condicionados')}>Ar-Condicionado</li>
               <li onClick={() => handleContentChange('impressoras')}>Impressoras</li>
             </ul>
           )}

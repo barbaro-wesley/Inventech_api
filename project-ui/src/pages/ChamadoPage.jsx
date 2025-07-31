@@ -47,7 +47,7 @@ function ChamadoPage() {
 });
     
     // Atualiza os dados
-    const response = await axios.get(`/chamados/status/${filtro}`,{
+    const response = await api.get(`/chamados/status/${filtro}`,{
           withCredentials: true,
         });
     setChamados(response.data);

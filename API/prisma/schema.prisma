@@ -142,6 +142,11 @@ model HcrAirConditioning {
   localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
   setor             Setor?           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
+  dataCompra        DateTime?
+  inicioGarantia    DateTime?
+  terminoGarantia   DateTime?
+  notaFiscal        String?
+  valorCompra       Float?
 }
 
 model HcrMobilia {

@@ -6,17 +6,31 @@ import "../styles/FormArCondicionado.css"
 function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
   const modoEdicao = !!initialData;
   const [formData, setFormData] = useState({
-    nPatrimonio: '',
-    nControle: '',
-    numeroSerie: '',
-    marca: '',
-    modelo: '',
-    BTUS: '',
-    setorId: '',
-    localizacaoId: '',
-    tipoEquipamentoId: '',
-    obs: '',
+  nPatrimonio: '',
+  nControle: '',
+  numeroSerie: '',
+  marca: '',
+  modelo: '',
+  BTUS: '',
+  setorId: '',
+  localizacaoId: '',
+  tipoEquipamentoId: '',
+  obs: '',
+  dataCompra: '',
+  inicioGarantia: '',
+  terminoGarantia: '',
+  notaFiscal: '',
+  valorCompra: '',
+});
+
+const formatarMoeda = (valor) => {
+  const numero = valor.replace(/\D/g, ''); // remove tudo que não for número
+  const valorNumerico = (Number(numero) / 100).toFixed(2); // divide por 100 e mantém 2 casas decimais
+  return valorNumerico.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
   });
+};
 
   const [setores, setSetores] = useState([]);
   const [localizacoesFiltradas, setLocalizacoesFiltradas] = useState([]);
@@ -35,6 +49,11 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
         localizacaoId: initialData.localizacaoId || '',
         tipoEquipamentoId: initialData.tipoEquipamentoId || '',
         obs: initialData.obs || '',
+        dataCompra: initialData.dataCompra?.substring(0, 10) || '',
+        inicioGarantia: initialData.inicioGarantia?.substring(0, 10) || '',
+        terminoGarantia: initialData.terminoGarantia?.substring(0, 10) || '',
+        notaFiscal: initialData.notaFiscal || '',
+        valorCompra: initialData.valorCompra?.toString() || '',
       });
     }
   }, [modoEdicao, initialData]);
@@ -77,14 +96,30 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
     }
   }, [formData.setorId, setores]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+ const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  // Se o campo for valorCompra, formatar como moeda
+  if (name === 'valorCompra') {
+    const apenasNumeros = value.replace(/\D/g, ''); // remove não dígitos
+    const valorFormatado = (Number(apenasNumeros) / 100).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: value,
-      ...(name === 'setorId' ? { localizacaoId: '' } : {}),
+      valorCompra: valorFormatado,
     }));
-  };
+    return;
+  }
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+    ...(name === 'setorId' ? { localizacaoId: '' } : {}),
+  }));
+};
 
   const handleSubmit = async (e) => {
   e.preventDefault();
@@ -96,22 +131,29 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
 
   try {
     const payload = {
-      nPatrimonio: formData.nPatrimonio,
-      nControle: formData.nControle || '0',
-      numeroSerie: formData.numeroSerie,
-      marca: formData.marca,
-      modelo: formData.modelo,
-      BTUS: formData.BTUS.toString(),
-      setorId: formData.setorId ? Number(formData.setorId) : null,
-      localizacaoId: formData.localizacaoId ? Number(formData.localizacaoId) : null,
-      tipoEquipamentoId: formData.tipoEquipamentoId ? Number(formData.tipoEquipamentoId) : null,
-      obs: formData.obs || null,
-    };
-
+  nPatrimonio: formData.nPatrimonio,
+  nControle: formData.nControle || '0',
+  numeroSerie: formData.numeroSerie,
+  marca: formData.marca,
+  modelo: formData.modelo,
+  BTUS: formData.BTUS.toString(),
+  setorId: formData.setorId ? Number(formData.setorId) : null,
+  localizacaoId: formData.localizacaoId ? Number(formData.localizacaoId) : null,
+  tipoEquipamentoId: formData.tipoEquipamentoId ? Number(formData.tipoEquipamentoId) : null,
+  obs: formData.obs || null,
+  dataCompra: formData.dataCompra ? new Date(formData.dataCompra) : null,
+  inicioGarantia: formData.inicioGarantia ? new Date(formData.inicioGarantia) : null,
+  terminoGarantia: formData.terminoGarantia ? new Date(formData.terminoGarantia) : null,
+  notaFiscal: formData.notaFiscal || null,
+  valorCompra: formData.valorCompra
+  ? parseFloat(formData.valorCompra.replace(/\D/g, '')) / 100
+  : null,
+};
+console.log('Payload enviado:', payload);
     const response = modoEdicao
       ? await api.put(`/condicionadores/${initialData.id}`, payload, { withCredentials: true })
       : await api.post('/condicionadores', payload, { withCredentials: true });
-
+        
     if (!response.data || !response.data.id) {
       throw new Error('Resposta da API inválida: item sem ID');
     }
@@ -174,6 +216,36 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
         <div className="form-field">
           <label>BTUs</label>
           <input type="text" name="BTUS" value={formData.BTUS} onChange={handleChange} required />
+        </div>
+        <div className="form-field">
+  <label>Data de Compra</label>
+  <input type="date" name="dataCompra" value={formData.dataCompra} onChange={handleChange} />
+</div>
+
+<div className="form-field">
+  <label>Início da Garantia</label>
+  <input type="date" name="inicioGarantia" value={formData.inicioGarantia} onChange={handleChange} />
+</div>
+
+<div className="form-field">
+  <label>Término da Garantia</label>
+  <input type="date" name="terminoGarantia" value={formData.terminoGarantia} onChange={handleChange} />
+</div>
+
+<div className="form-field">
+  <label>Nota Fiscal</label>
+  <input type="text" name="notaFiscal" value={formData.notaFiscal} onChange={handleChange} />
+</div>
+
+  <div className="form-field">
+  <label>Valor da Compra</label>
+  <input
+    type="text"
+    name="valorCompra"
+    value={formData.valorCompra}
+    onChange={handleChange}
+    placeholder="R$ 0,00"
+  />
         </div>
         
         <div className="form-field">

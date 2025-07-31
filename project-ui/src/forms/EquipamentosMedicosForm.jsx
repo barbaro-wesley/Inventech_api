@@ -207,29 +207,8 @@ if (formData.tipoEquipamentoId && !isNaN(parseInt(formData.tipoEquipamentoId))) 
   <div className="equip-form">
     <h2>{initialData ? 'Editar Equipamento Médico' : 'Cadastrar Equipamento Médico'}</h2>
     <form onSubmit={handleSubmit}>
-      <div className="form-row">
-        <div className="form-group">
-          <label>Nº Patrimônio</label>
-          <input type="text" name="numeroPatrimonio" value={formData.numeroPatrimonio || ''} onChange={handleChange} />
-        </div>
-        <div className="form-group">
-    <label>Identificação</label>
-      <input
-    type="text"
-    name="identificacao" 
-    value={formData.identificacao || ''}
-    onChange={handleChange}
-  />
-</div>
-        <div className="form-group">
-          <label>Nº Série</label>
-          <input type="text" name="numeroSerie" value={formData.numeroSerie || ''} onChange={handleChange} />
-        </div>
-        <div className="form-group">
-          <label>Nº Anvisa</label>
-          <input type="text" name="numeroAnvisa" value={formData.numeroAnvisa || ''} onChange={handleChange} />
-        </div>
 
+      <div className="form-row">
         <div className="form-group">
           <label>Nome do Equipamento</label>
           <input type="text" name="nomeEquipamento" value={formData.nomeEquipamento || ''} onChange={handleChange} required />
@@ -241,6 +220,22 @@ if (formData.tipoEquipamentoId && !isNaN(parseInt(formData.tipoEquipamentoId))) 
         <div className="form-group">
           <label>Fabricante</label>
           <input type="text" name="fabricante" value={formData.fabricante || ''} onChange={handleChange} />
+        </div>
+        <div className="form-group">
+          <label>Nº Patrimônio</label>
+          <input type="text" name="numeroPatrimonio" value={formData.numeroPatrimonio || ''} onChange={handleChange} />
+        </div>
+        <div className="form-group">
+       <label>Identificação</label>
+      <input type="text" name="identificacao" value={formData.identificacao || ''} onChange={handleChange}/>
+        </div>
+        <div className="form-group">
+          <label>Nº Série</label>
+          <input type="text" name="numeroSerie" value={formData.numeroSerie || ''} onChange={handleChange} />
+        </div>
+        <div className="form-group">
+          <label>Nº Anvisa</label>
+          <input type="text" name="numeroAnvisa" value={formData.numeroAnvisa || ''} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>Valor de Compra</label>

@@ -5,7 +5,16 @@ require('dotenv').config();
 const app = express();
 const cookieParser = require('cookie-parser');
 const corsOptions = {
-  origin: 'http://localhost:5173', 
+  origin: function (origin, callback) {
+    if (
+      !origin || 
+      origin.startsWith('http://192.168.0.')
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 };

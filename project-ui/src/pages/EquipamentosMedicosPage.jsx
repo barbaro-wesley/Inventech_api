@@ -115,11 +115,11 @@ function EquipamentosMedicosPage() {
       {currentItems.map((item) => (
         <tr key={item.id}>
           <td>{item.numeroPatrimonio || '-'}</td>
-          <td>{item.Identificação || '-'}</td>
+          <td>{item.identificação || '-'}</td>
           <td>{item.numeroSerie || '-'}</td>
           <td>{item.nomeEquipamento}</td>
           <td>{item.modelo || '-'}</td>
-          <td>{item.Fabricante || '-'}</td>
+          <td>{item.fabricante || '-'}</td>
           <td>{item.notaFiscal || '-'}</td>
           <td>{item.obs || '-'}</td>
           <td>{item.localizacao?.nome || '-'}</td>
