@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/EquipamentosMedicosForm.css';
 import api from '../config/api';
-
+import { Paperclip } from "lucide-react";
 function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
   const [formData, setFormData] = useState({
     numeroPatrimonio: '',
@@ -39,6 +39,7 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
         console.error('Erro ao buscar setores:', error);
       }
     };
+     
 
     const fetchTiposEquipamentos = async () => {
       try {
@@ -202,6 +203,7 @@ if (formData.tipoEquipamentoId && !isNaN(parseInt(formData.tipoEquipamentoId))) 
     return <div>Loading...</div>;
   }
 
+
   return (
     <div className="form-container">
   <div className="equip-form">
@@ -305,7 +307,32 @@ if (formData.tipoEquipamentoId && !isNaN(parseInt(formData.tipoEquipamentoId))) 
             ))}
           </select>
         </div>
+        <div className="os-field full os-upload-area">
+  <label>
+    <Paperclip size={18} style={{ marginRight: 6 }} />
+    Arquivos (PDF)
+  </label>
+  <div className="custom-file-upload">
+    <input
+      type="file"
+      name="arquivos"
+      multiple
+      accept="application/pdf"
+      onChange={handleChange}
+      id="fileInput"
+    />
+    <label htmlFor="fileInput">Clique ou arraste arquivos PDF aqui</label>
+  </div>
+  {fileNames.length > 0 && (
+    <ul className="file-list">
+      {fileNames.map((name, idx) => (
+        <li key={idx}>{name}</li>
+      ))}
+    </ul>
+  )}
+</div>
       </div>
+      
 
       <div className="form-buttons">
         <button type="submit" className="btn-submit">Salvar</button>
