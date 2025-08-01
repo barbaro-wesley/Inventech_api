@@ -6,14 +6,7 @@ const app = express();
 const cookieParser = require('cookie-parser');
 const corsOptions = {
   origin: function (origin, callback) {
-    if (
-      !origin || 
-      origin.startsWith('http://192.168.0.')
-    ) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, origin || '*'); // permite qualquer origem
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
@@ -36,12 +29,14 @@ const sistemaRoutes = require('./src/routes/sistemaRoutes.js');
 const chamado = require('./src/routes/chamadoRoutes.js');
 const sobreavisoRoutes = require('./src/routes/sobreavisoRoutes.js');
 const incidenteRoutes = require('./src/routes/incidente.routes');
+const hcrPrinterRoutes = require('./src/routes/hcrPrinterRoutes');
 
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
 app.use('/api/tecnicos', tecnicoRoutes);
 app.use('/api/hcr-computers', hcrComputerRoutes);
+app.use('/api/printers', hcrPrinterRoutes);
 app.use('/api/setor',setor);
 app.use('/api/localizacao',localizacao);
 app.use('/api/equipamentos-medicos', hcrEquipamentosMedicosRouter);

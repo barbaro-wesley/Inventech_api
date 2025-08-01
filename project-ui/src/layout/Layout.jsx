@@ -14,6 +14,7 @@ import TecnicoPage from '../pages/TecnicoPage';
 import UsuarioPage from '../pages/UsuarioPage';
 import OS from '../pages/OS';
 import OsChamado from '../pages/OsChamado';
+import PrinterPage from '../pages/PrinterPage';
 function Layout() {
   const [content, setContent] = useState('home');
 
@@ -26,7 +27,7 @@ function Layout() {
       case 'ares_condicionados':
         return <ArCondicionadoPage/>;
       case 'impressoras':
-        return <div><h1>Impressoras</h1><p>Conteúdo em desenvolvimento.</p></div>;
+        return <PrinterPage/>;
       case 'Os':
         return <OS/>;
       case 'Oschamados':

@@ -32,6 +32,7 @@ function OS({ onClose, onSubmit }) {
 
   const endpointPorTipo = {
     '1': '/hcr-computers',
+    '2': '/printers',
     '3': '/equipamentos-medicos',
     '4': '/condicionadores',
   };
@@ -163,6 +164,8 @@ const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
   switch (tipoEquipamentoId) {
     case '1': // Computadores
       return `${equipamento.nomePC || 'Sem Nome'} - ${equipamento.ip || 'Sem IP'}`;
+      case '2':
+        return `${equipamento.ip || 'Sem Nome'} - ${equipamento.marca || 'Sem IP'}`;
     case '3': // Equipamentos médicos
       return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.modelo || 'Sem Modelo'}`;
     case '4': // Impressoras, por exemplo

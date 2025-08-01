@@ -12,11 +12,23 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgb(15, 50, 70);
   font-weight: bold;
-  font-size: 1.2rem;
-}
+  font-size: 2rem;
 
+  /* Gradiente no texto */
+  background: linear-gradient(
+    to right,
+    hsl(215, 85%, 20%) 0%,     /* Azul bem escuro no início */
+    hsl(215, 85%, 30%) 40%,    /* Azul escuro */
+    hsl(215, 85%, 45%) 70%,    /* Azul mais claro */
+    hsl(40, 95%, 60%) 100%     /* Toque de dourado no final */
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  background-clip: text;
+  color: transparent;
+}
 .navbar-icon {
   color: rgb(15, 50, 70);
 }
