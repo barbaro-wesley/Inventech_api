@@ -188,6 +188,7 @@ model HcrEquipamentosMedicos {
   localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
   setor             Setor?           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
+  arquivos         String[]  @default([])
 }
 
 enum PapelUsuario {

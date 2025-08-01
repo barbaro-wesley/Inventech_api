@@ -1,14 +1,34 @@
 const service = require('../services/hcrEquipamentosMedicosService');
 
 class HcrEquipamentosMedicosController {
-  async criar(req, res) {
-    try {
-      const equipamento = await service.criar(req.body);
-      res.status(201).json(equipamento);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao criar equipamento médico.' });
+async criar(req, res) {
+  try {
+    // Remove o campo id se estiver presente no req.body
+    if (req.body.id) {
+      console.log('🧹 Removendo ID manual:', req.body.id);
+      delete req.body.id;
     }
+
+    const arquivos = req.files ? req.files.map(file => file.path) : [];
+
+    const data = {
+      ...req.body,
+      arquivos
+    };
+
+    console.log('📦 Dados enviados para o service:', data);
+
+    const equipamento = await service.criar(data);
+    res.status(201).json(equipamento);
+
+  } catch (error) {
+    console.error('❌ Erro ao criar equipamento:', error);
+    res.status(500).json({ 
+      error: 'Erro ao criar equipamento médico.', 
+      detalhes: error.message 
+    });
   }
+}
 
   async listar(req, res) {
     try {

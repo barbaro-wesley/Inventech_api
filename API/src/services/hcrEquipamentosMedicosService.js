@@ -21,6 +21,7 @@ class HcrEquipamentosMedicosService {
         tipoEquipamentoId: data.tipoEquipamentoId,
         fabricante: data.Fabricante,
         identificacao: data.Identificacao, 
+        arquivos: data.arquivos || [], // ← Correto para String[]
       }
     });
   }
