@@ -32,6 +32,8 @@ function App() {
           draggable
           pauseOnHover
           theme="colored"
+          
+          
         />
       </Router>
     </AuthProvider>

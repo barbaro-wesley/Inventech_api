@@ -2,27 +2,30 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class HcrEquipamentosMedicosService {
-  async criar(data) {
+ async criar(data) {
+
+    const dadosParaCriar = { ...data };
+    if (dadosParaCriar.valorCompra) {
+      dadosParaCriar.valorCompra = parseFloat(dadosParaCriar.valorCompra);
+    }
+    if (dadosParaCriar.setorId) {
+      dadosParaCriar.setorId = parseInt(dadosParaCriar.setorId, 10);
+    }
+    if (dadosParaCriar.localizacaoId) {
+      dadosParaCriar.localizacaoId = parseInt(dadosParaCriar.localizacaoId, 10);
+    }
+    if (dadosParaCriar.tipoEquipamentoId) {
+      dadosParaCriar.tipoEquipamentoId = parseInt(dadosParaCriar.tipoEquipamentoId, 10);
+    }
+    dadosParaCriar.fabricante = data.fabricante;
+    dadosParaCriar.identificacao = data.identificacao;
+    dadosParaCriar.dataCompra = data.dataCompra ? new Date(data.dataCompra) : null;
+    dadosParaCriar.inicioGarantia = data.inicioGarantia ? new Date(data.inicioGarantia) : null;
+    dadosParaCriar.terminoGarantia = data.terminoGarantia ? new Date(data.terminoGarantia) : null;
+    dadosParaCriar.arquivos = data.arquivos || [];
+
     return await prisma.hcrEquipamentosMedicos.create({
-      data: {
-        numeroPatrimonio: data.numeroPatrimonio,
-        numeroSerie: data.numeroSerie,
-        numeroAnvisa: data.numeroAnvisa,
-        nomeEquipamento: data.nomeEquipamento,
-        modelo: data.modelo,
-        valorCompra: data.valorCompra,
-        dataCompra: data.dataCompra ? new Date(data.dataCompra) : null,
-        inicioGarantia: data.inicioGarantia ? new Date(data.inicioGarantia) : null,
-        terminoGarantia: data.terminoGarantia ? new Date(data.terminoGarantia) : null,
-        notaFiscal: data.notaFiscal,
-        obs: data.obs,
-        setorId: data.setorId,
-        localizacaoId: data.localizacaoId,
-        tipoEquipamentoId: data.tipoEquipamentoId,
-        fabricante: data.Fabricante,
-        identificacao: data.Identificacao, 
-        arquivos: data.arquivos || [], // ← Correto para String[]
-      }
+      data: dadosParaCriar,
     });
   }
 

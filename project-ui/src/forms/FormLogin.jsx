@@ -28,7 +28,7 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://192.168.0.185c:5000/api/usuarios/login", {
+      const response = await fetch("http://localhost:5000/api/usuarios/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,7 +64,7 @@ const LoginForm = () => {
           <div className="form-group">
             <label>Email</label>
             <div className="input-wrapper">
-              <Mail className="icon" />
+              
               <input
                 type="email"
                 placeholder="seu@email.com"
@@ -78,7 +78,7 @@ const LoginForm = () => {
           <div className="form-group">
             <label>Senha</label>
             <div className="input-wrapper">
-              <Lock className="icon" />
+              
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Digite sua senha"
