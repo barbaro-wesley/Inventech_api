@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import EquipamentosMedicosForm from '../forms/EquipamentosMedicosForm';
-import { FaEdit } from 'react-icons/fa';
+import { FaEdit,FaEye } from 'react-icons/fa';
 import "../styles/EquipamentosMedicosPage.css"
 import api from '../config/api';
 
@@ -13,6 +13,7 @@ function EquipamentosMedicosPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [editMode, setEditMode] = useState(false);
   const [equipamentoParaEditar, setEquipamentoParaEditar] = useState(null);
+  
   const itemsPerPage = 10;
 
   useEffect(() => {
