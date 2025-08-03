@@ -43,8 +43,8 @@ app.use('/api/equipamentos-medicos', hcrEquipamentosMedicosRouter);
 app.use('/api/os', ordemServicoRoutes);
 app.use('/api/condicionadores', hcrAirConditioningRoutes);
 app.use('/api/sistemas', sistemaRoutes);
-app.use('/api/upload', uploadRouter);
 app.use('/uploads', express.static('uploads'));
+app.use('/api/upload', uploadRouter);
 app.use("/api/chamados",chamado)
 app.use("/api/sobreaviso",sobreavisoRoutes)
 app.use('/api/incidentes', incidenteRoutes);

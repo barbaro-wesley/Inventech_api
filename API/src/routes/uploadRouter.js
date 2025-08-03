@@ -1,3 +1,5 @@
+// src/routes/uploadRouter.js
+
 const express = require('express');
 const router = express.Router();
 const upload = require('../middlewares/upload');
@@ -9,7 +11,7 @@ router.post('/', upload.single('arquivo'), (req, res) => {
 
   res.status(201).json({
     mensagem: 'Upload realizado com sucesso!',
-    caminho: `/uploads/${req.file.filename}`,
+    caminho: `/uploads/pdfs/${req.file.filename}`,
   });
 });
 

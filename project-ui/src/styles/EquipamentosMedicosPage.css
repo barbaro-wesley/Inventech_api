@@ -122,34 +122,67 @@
 .btn-edit:hover {
   color: #0056b3;
 }
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+/* Estilos para a célula de ações */
+.actions-cell {
   display: flex;
-  justify-content: center;
+  gap: 10px; /* Adiciona um espaço entre os botões */
+  justify-content: center; /* Centraliza os botões */
   align-items: center;
 }
-
-.popup-content {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+.btn-view {
+  background-color: #4CAF50; /* Verde */
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 
-.popup-content ul {
-  list-style: none;
-  padding: 0;
+.btn-view:hover {
+  background-color: #45a049;
 }
 
-.popup-content li {
-  margin-bottom: 0.5rem;
+@media print {
+  /* Oculta tudo que estiver dentro do componente pai por padrão */
+  .equip-page > * {
+    display: none !important;
+  }
+  
+  /* Mas mostre o modal de visualização se ele estiver sendo exibido */
+  .equip-page .modal-overlay,
+  .equip-page .modal {
+    display: block !important;
+  }
+  
+  /* Ajusta o estilo do modal para a impressão */
+  .modal-overlay {
+    background-color: transparent !important; /* Remove o fundo escuro */
+    position: static !important; /* Muda o posicionamento para ser impresso */
+  }
+  
+  .modal {
+    position: static !important;
+    transform: none !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  
+  /* Oculta o cabeçalho do modal e o botão de fechar */
+  .modal-header,
+  .modal-header .header-actions {
+    display: none !important;
+  }
+  
+  /* Garante que o conteúdo do modal seja exibido */
+  .modal-content {
+    display: block !important;
+  }
 }

@@ -1,28 +1,36 @@
+// src/middlewares/upload.js
+
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
-// Configuração de destino e nome do arquivo
+// Caminho para salvar os PDFs
+const uploadPath = path.join(__dirname, '..', 'uploads', 'pdfs');
+
+// Cria a pasta se não existir
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+// Configuração do storage
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.resolve(__dirname, '../../uploads'));
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  destination: (req, file, cb) => cb(null, uploadPath),
+  filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
+    const nomeUnico = `arquivo-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, nomeUnico);
+  },
 });
 
-// Filtro opcional de tipos de arquivos
+// Filtra para aceitar apenas PDF
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'application/pdf' || file.mimetype.startsWith('image/')) {
+  if (file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
-    cb(new Error('Tipo de arquivo inválido'), false);
+    cb(new Error('Apenas arquivos PDF são permitidos'), false);
   }
 };
 
-// Exporta a instância já configurada
 const upload = multer({ storage, fileFilter });
 
 module.exports = upload;

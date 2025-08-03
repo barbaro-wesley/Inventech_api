@@ -1,14 +1,48 @@
+// routes/equipamentosRouter.js
+
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/hcrEquipamentosMedicosController');
-const auth = require('../middlewares/auth'); 
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const autenticarUsuario = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
-const uploadPdf = require('../middlewares/uploadPdf');
-// Apenas usuários logados podem acessar
-router.post('/', auth, uploadPdf.array('arquivo'), controller.criar);
-router.get('/', controller.listar);
-router.get('/:id', auth, controller.buscarPorId);
-router.put('/:id', auth, controller.atualizar);
-router.delete('/:id', auth, controller.deletar);
+const equipamentoController = require('../controllers/hcrEquipamentosMedicosController');
+
+// Criar diretório se não existir
+const uploadPath = 'uploads/pdfs';
+if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+
+// Configurar armazenamento
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadPath),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const unique = `arquivo-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, unique);
+  },
+});
+
+// Aceita só PDF
+const fileFilter = (req, file, cb) => {
+  cb(null, file.mimetype === 'application/pdf');
+};
+
+const upload = multer({ storage, fileFilter });
+
+router.use(autenticarUsuario);
+
+// Rota POST com upload de PDF
+router.post(
+  '/',
+  permitirSomente('admin'),
+  upload.array('arquivo', 5),
+  equipamentoController.criar
+);
+
+router.get('/', equipamentoController.listar);
+router.get('/:id', equipamentoController.buscarPorId);
+router.put('/:id', permitirSomente('admin'), equipamentoController.atualizar);
+router.delete('/:id', permitirSomente('admin'), equipamentoController.deletar);
 
 module.exports = router;

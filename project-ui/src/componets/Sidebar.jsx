@@ -37,7 +37,7 @@ function Sidebar({ setContent, isOpen, onClose }) {
           {openMenu === 'equipamentos' && (
             <ul className="submenu">
               <li onClick={() => handleContentChange('computadores')}>Computadores</li>
-              <li onClick={() => handleContentChange('equipamentos_medicos')}>Equipamentos Médicos</li>
+              <li onClick={() => handleContentChange('equipamentos_medicos')}>Equipamentos </li>
               <li onClick={() => handleContentChange('ares_condicionados')}>Ar-Condicionado</li>
               <li onClick={() => handleContentChange('impressoras')}>Impressoras</li>
             </ul>
