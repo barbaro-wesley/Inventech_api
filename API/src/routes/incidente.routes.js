@@ -6,10 +6,10 @@ const permitirSomente = require('../middlewares/permissoes');
 
 // Apenas usuários logados podem acessar
 router.use(autenticarUsuario);
-router.post('/', incidenteController.criar);
-router.get('/', incidenteController.listar);
-router.get('/:id', incidenteController.buscarPorId);
-router.put('/:id', incidenteController.atualizar);
-router.delete('/:id', incidenteController.deletar);
+router.post('/', permitirSomente('admin'),incidenteController.criar);
+router.get('/', permitirSomente('admin'),incidenteController.listar);
+router.get('/:id',permitirSomente('admin'), incidenteController.buscarPorId);
+router.put('/:id',permitirSomente('admin'), incidenteController.atualizar);
+router.delete('/:id',permitirSomente('admin'), incidenteController.deletar);
 
 module.exports = router;

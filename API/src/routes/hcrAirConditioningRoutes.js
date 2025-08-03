@@ -6,10 +6,10 @@ const autenticarUsuario = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 router.use(autenticarUsuario);
 
-router.post('/', hcrAirConditioningController.criar);
-router.get('/', hcrAirConditioningController.listar);
-router.get('/:id', hcrAirConditioningController.buscarPorId);
-router.put('/:id', hcrAirConditioningController.atualizar);
-router.delete('/:id', hcrAirConditioningController.deletar);
+router.post('/', permitirSomente('admin','cadastro'),hcrAirConditioningController.criar);
+router.get('/', permitirSomente('admin','cadastro'),hcrAirConditioningController.listar);
+router.get('/:id', permitirSomente('admin','cadastro'),hcrAirConditioningController.buscarPorId);
+router.put('/:id', permitirSomente('admin','cadastro'),hcrAirConditioningController.atualizar);
+router.delete('/:id', permitirSomente('admin','cadastro'),hcrAirConditioningController.deletar);
 
 module.exports = router;

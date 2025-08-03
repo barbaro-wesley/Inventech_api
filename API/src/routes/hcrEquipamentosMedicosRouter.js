@@ -35,14 +35,14 @@ router.use(autenticarUsuario);
 // Rota POST com upload de PDF
 router.post(
   '/',
-  permitirSomente('admin'),
+  permitirSomente('admin','cadastro'),
   upload.array('arquivo', 5),
   equipamentoController.criar
 );
 
-router.get('/', equipamentoController.listar);
-router.get('/:id', equipamentoController.buscarPorId);
-router.put('/:id', permitirSomente('admin'), equipamentoController.atualizar);
-router.delete('/:id', permitirSomente('admin'), equipamentoController.deletar);
+router.get('/', permitirSomente('admin','cadastro'),equipamentoController.listar);
+router.get('/:id',permitirSomente('admin','cadastro') ,equipamentoController.buscarPorId);
+router.put('/:id', permitirSomente('admin','cadastro'), equipamentoController.atualizar);
+router.delete('/:id', permitirSomente('admin','cadastro'), equipamentoController.deletar);
 
 module.exports = router;

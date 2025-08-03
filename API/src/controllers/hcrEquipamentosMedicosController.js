@@ -3,7 +3,6 @@ const service = require('../services/hcrEquipamentosMedicosService');
 class HcrEquipamentosMedicosController {
 async criar(req, res) {
   try {
-    // Monta os caminhos públicos dos arquivos
        const arquivos = req.files ? req.files.map(file => file.path) : [];
 
     const data = {
@@ -15,7 +14,6 @@ async criar(req, res) {
     res.status(201).json(equipamento);
 
   } catch (error) {
-    console.error('Erro ao criar equipamento:', error);
     res.status(500).json({
       error: 'Erro ao criar equipamento médico',
       detalhes: error.message,
@@ -50,7 +48,6 @@ async atualizar(req, res) {
     const result = await service.atualizar(id, req.body);;
     res.json(result);
   } catch (error) {
-    console.error('❌ Erro no controller PUT /equipamentos-medicos/:id:', error); // <---
     res.status(500).json({ error: 'Erro ao atualizar equipamento' });
   }
 }

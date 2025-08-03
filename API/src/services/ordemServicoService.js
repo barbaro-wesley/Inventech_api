@@ -29,16 +29,20 @@ class OrdemServicoService {
   return novaOS;
 }
 
-  async listar() {
-    return await prisma.ordemServico.findMany({
-      include: {
-        tipoEquipamento: true,
-        tecnico: true,
-        solicitante: true,
-        Setor: true
-      },
-    });
-  }
+ async listar() {
+  return await prisma.ordemServico.findMany({
+    include: {
+      tipoEquipamento: true,
+      tecnico: true,
+      Setor: true,
+      solicitante: {
+        select: {
+          nome: true
+        }
+      }
+    },
+  });
+}
 
   async buscarPorId(id) {
     return await prisma.ordemServico.findUnique({
@@ -46,7 +50,11 @@ class OrdemServicoService {
       include: {
         tipoEquipamento: true,
         tecnico: true,
-        solicitante: true,
+        solicitante: {
+        select: {
+          nome: true
+        }
+      },
         Setor: true
       },
     });
@@ -72,7 +80,11 @@ class OrdemServicoService {
     include: {
       tipoEquipamento: true,
       tecnico: true,
-      solicitante: true,
+      solicitante: {
+        select: {
+          nome: true
+        }
+      },
       Setor: true
     },
   });
@@ -81,11 +93,16 @@ async listarPorTecnico(tecnicoId) {
   return await prisma.ordemServico.findMany({
     where: {
       tecnicoId: tecnicoId,
+      status: "ABERTA"
     },
     include: {
       tipoEquipamento: true,
       tecnico: true,
-      solicitante: true,
+      solicitante: {
+        select: {
+          nome: true
+        }
+      },
       Setor: true,
     },
     orderBy: {

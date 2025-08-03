@@ -2,10 +2,7 @@ const ordemServicoService = require('../services/ordemServicoService');
 
 const ordemServicoController = {
 async criar(req, res) {
-    // Mapeia os arquivos enviados (se houver)
     const arquivos = req.files ? req.files.map(file => file.path) : [];
-
-    // Monta o objeto data formatado
     const data = {
       descricao: req.body.descricao,
       tipoEquipamentoId: Number(req.body.tipoEquipamentoId),

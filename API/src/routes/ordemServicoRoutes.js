@@ -27,17 +27,17 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage, fileFilter });
 
 router.use(autenticarUsuario);
-router.get('/tecnico', autenticarUsuario, permitirSomente('admin', 'tecnico'), ordemServicoController.listarPorTecnico);
+router.get('/tecnico', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnico);
 
-router.post('/',autenticarUsuario, permitirSomente('admin'),upload.array('arquivos', 5),ordemServicoController.criar);
+router.post('/',autenticarUsuario, permitirSomente('admin','cadastro'),upload.array('arquivos', 5),ordemServicoController.criar);
 router.get('/', ordemServicoController.listar);
-router.get('/:id', ordemServicoController.buscarPorId);
-router.put('/:id', autenticarUsuario, permitirSomente('admin'),ordemServicoController.atualizar);
+router.get('/:id', permitirSomente('admin','cadastro','tecnico'),ordemServicoController.buscarPorId);
+router.put('/:id', autenticarUsuario, permitirSomente('admin','cadastro'),ordemServicoController.atualizar);
 router.delete('/:id',autenticarUsuario, permitirSomente('admin'), ordemServicoController.deletar);
 router.put(
   '/:id/concluir',
   autenticarUsuario,
-  permitirSomente('admin', 'tecnico'),
+  permitirSomente('admin', 'tecnico','cadastro'),
   upload.array('arquivos'), // isso aqui permite receber arquivos + campos textuais no body
   ordemServicoController.concluir
 );

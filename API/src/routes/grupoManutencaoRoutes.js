@@ -7,9 +7,9 @@ const permitirSomente = require('../middlewares/permissoes');
 // Protegido: apenas admins
 router.use(autenticarUsuario, permitirSomente('admin'));
 
-router.post('/', controller.criar);
-router.get('/', controller.listar);
-router.put('/:id', controller.atualizar);
-router.delete('/:id', controller.deletar);
+router.post('/', permitirSomente('admin'),controller.criar);
+router.get('/', permitirSomente('admin'),controller.listar);
+router.put('/:id',permitirSomente('admin') ,controller.atualizar);
+router.delete('/:id', permitirSomente('admin'),controller.deletar);
 
 module.exports = router;
