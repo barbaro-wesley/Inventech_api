@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import api from '../config/api'; // seu axios com baseURL
-import { FaFileUpload } from 'react-icons/fa';
+import api from '../config/api';
+import { FaCheckCircle, FaChevronDown, FaChevronUp, FaFileUpload } from 'react-icons/fa';
+import "../styles/ChamadosTecnico.css"
 
 const ChamadosTecnico = () => {
   const [chamados, setChamados] = useState([]);
-  const [selecionado, setSelecionado] = useState(null);
+  const [aberto, setAberto] = useState(null);
   const [resolucao, setResolucao] = useState('');
   const [arquivos, setArquivos] = useState([]);
 
@@ -21,32 +22,33 @@ const ChamadosTecnico = () => {
     fetchChamados();
   }, []);
 
-  const handleSelecionar = (os) => {
-    setSelecionado(os);
+  const handleAbrir = (id) => {
+    setAberto(aberto === id ? null : id);
     setResolucao('');
     setArquivos([]);
   };
 
-  const handleFinalizar = async () => {
-    if (!resolucao || !selecionado) return;
+  const handleFinalizar = async (os) => {
+    if (!resolucao) return alert('Descreva a resolução.');
 
     const formData = new FormData();
     formData.append('resolucao', resolucao);
-    formData.append('tecnicoId', selecionado.tecnicoId);
+    formData.append('tecnicoId', os.tecnico.id);
     formData.append('finalizadoEm', new Date().toISOString());
     arquivos.forEach((file) => formData.append('arquivos', file));
 
     try {
-      await api.put(`/ordemservico/${selecionado.id}/concluir`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+     await api.put(`/os/${os.id}/concluir`, formData, {
+  headers: { 'Content-Type': 'multipart/form-data' },
+  withCredentials: true, // necessário para enviar o token via cookie
+});
 
       alert('Chamado finalizado com sucesso!');
-      setSelecionado(null);
+      setAberto(null);
       setResolucao('');
       setArquivos([]);
-      // Atualizar a lista após finalização
-      const { data } = await api.get('/ordemservico/tecnico');
+
+      const { data } = await api.get('/os/tecnico');
       setChamados(data);
     } catch (error) {
       console.error('Erro ao finalizar chamado:', error);
@@ -55,55 +57,58 @@ const ChamadosTecnico = () => {
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Meus Chamados</h2>
+    <div className="chamados-container">
+      <h2 className="chamados-title">Chamados Atribuídos</h2>
 
       {chamados.length === 0 ? (
-        <p>Nenhum chamado atribuído.</p>
+        <p className="chamados-vazio">Nenhum chamado atribuído.</p>
       ) : (
-        <ul className="space-y-2">
-          {chamados.map((os) => (
-            <li
-              key={os.id}
-              className={`border p-3 rounded shadow cursor-pointer hover:bg-blue-100 ${
-                selecionado?.id === os.id ? 'bg-blue-200' : ''
-              }`}
-              onClick={() => handleSelecionar(os)}
-            >
-              <strong>#{os.id}</strong> - {os.descricao} ({os.status})
-            </li>
-          ))}
-        </ul>
-      )}
+        chamados.map((os) => (
+          <div key={os.id} className="chamado-card">
+            <div className="chamado-header">
+              <div>
+                <p className="chamado-descricao">#{os.id} - {os.descricao}</p>
+                <p className="chamado-status">Status: <strong>{os.status}</strong></p>
+              </div>
 
-      {selecionado && (
-        <div className="mt-6 border-t pt-4">
-          <h3 className="text-lg font-semibold">Finalizar Chamado #{selecionado.id}</h3>
+              <button onClick={() => handleAbrir(os.id)} className="btn-finalizar">
+                <FaCheckCircle className="icon" />
+                {aberto === os.id ? 'Cancelar' : 'Finalizar'}
+                {aberto === os.id ? <FaChevronUp /> : <FaChevronDown />}
+              </button>
+            </div>
 
-          <textarea
-            className="w-full border p-2 mt-2"
-            rows="4"
-            placeholder="Descreva a resolução..."
-            value={resolucao}
-            onChange={(e) => setResolucao(e.target.value)}
-          />
+            {aberto === os.id && (
+              <div className="finalizar-area">
+                <textarea
+                  className="textarea-resolucao"
+                  rows="4"
+                  placeholder="Descreva a resolução..."
+                  value={resolucao}
+                  onChange={(e) => setResolucao(e.target.value)}
+                />
 
-          <label className="block mt-3">
-            <span className="mr-2">Anexar arquivos:</span>
-            <input
-              type="file"
-              multiple
-              onChange={(e) => setArquivos([...e.target.files])}
-            />
-          </label>
+                <div className="input-arquivos">
+                  <label>
+                    <FaFileUpload className="icon" /> Anexar arquivos:
+                    <input
+                      type="file"
+                      multiple
+                      onChange={(e) => setArquivos([...e.target.files])}
+                    />
+                  </label>
+                </div>
 
-          <button
-            onClick={handleFinalizar}
-            className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Finalizar Chamado
-          </button>
-        </div>
+                <button
+                  onClick={() => handleFinalizar(os)}
+                  className="btn-confirmar"
+                >
+                  Confirmar Finalização
+                </button>
+              </div>
+            )}
+          </div>
+        ))
       )}
     </div>
   );
