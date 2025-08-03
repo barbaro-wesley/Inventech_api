@@ -27,6 +27,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage, fileFilter });
 
 router.use(autenticarUsuario);
+router.get('/tecnico', autenticarUsuario, permitirSomente('admin', 'tecnico'), ordemServicoController.listarPorTecnico);
 
 router.post('/',autenticarUsuario, permitirSomente('admin'),upload.array('arquivos', 5),ordemServicoController.criar);
 router.get('/', ordemServicoController.listar);
@@ -36,7 +37,7 @@ router.delete('/:id',autenticarUsuario, permitirSomente('admin'), ordemServicoCo
 router.put(
   '/:id/concluir',
   autenticarUsuario,
-  permitirSomente('admin', 'TECNICO'),
+  permitirSomente('admin', 'tecnico'),
   upload.array('arquivos'), // isso aqui permite receber arquivos + campos textuais no body
   ordemServicoController.concluir
 );

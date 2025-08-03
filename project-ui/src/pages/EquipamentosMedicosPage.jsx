@@ -9,21 +9,25 @@ import api from '../config/api';
 function EquipamentosMedicosPage() {
   const [showForm, setShowForm] = useState(false);
   const [equipamentos, setEquipamentos] = useState([]);
+  const [filteredEquipamentos, setFilteredEquipamentos] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [editMode, setEditMode] = useState(false);
   const [equipamentoParaEditar, setEquipamentoParaEditar] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [equipamentoParaVisualizar, setEquipamentoParaVisualizar] = useState(null);
-  
+  const [showFilter, setShowFilter] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await api.get('/equipamentos-medicos',{
+        const response = await api.get('/equipamentos-medicos', {
           withCredentials: true,
         });
         setEquipamentos(response.data);
+        setFilteredEquipamentos(response.data);
       } catch (error) {
         console.error('Erro ao buscar equipamentos médicos:', error);
       }
@@ -34,7 +38,7 @@ function EquipamentosMedicosPage() {
   const handleAddClick = () => {
     setShowForm(true);
   };
-  
+
   const handleEditClick = (equipamento) => {
     setEquipamentoParaEditar(equipamento);
     setEditMode(true);
@@ -54,11 +58,15 @@ function EquipamentosMedicosPage() {
           formData,
           { withCredentials: true }
         );
-        setEquipamentos((prev) =>
-          prev.map((eq) => (eq.id === equipamentoParaEditar.id ? response.data : eq))
+        const updatedList = equipamentos.map((eq) =>
+          eq.id === equipamentoParaEditar.id ? response.data : eq
         );
+        setEquipamentos(updatedList);
+        setFilteredEquipamentos(updatedList);
       } else {
-        setEquipamentos([...equipamentos, formData]);
+        const updatedList = [...equipamentos, formData];
+        setEquipamentos(updatedList);
+        setFilteredEquipamentos(updatedList);
       }
       setShowForm(false);
       setEditMode(false);
@@ -68,11 +76,28 @@ function EquipamentosMedicosPage() {
     }
   };
 
+  const handleFilterClick = () => {
+    setShowFilter(!showFilter);
+    setSearchTerm('');
+    setFilteredEquipamentos(equipamentos);
+  };
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    const lower = term.toLowerCase();
+    const filtered = equipamentos.filter((item) =>
+      (item.numeroPatrimonio && item.numeroPatrimonio.toLowerCase().includes(lower)) ||
+      (item.numeroSerie && item.numeroSerie.toLowerCase().includes(lower))
+    );
+    setFilteredEquipamentos(filtered);
+    setCurrentPage(1);
+  };
+
   // Pagination
-  const totalPages = Math.ceil(equipamentos.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredEquipamentos.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = equipamentos.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredEquipamentos.slice(indexOfFirstItem, indexOfLastItem);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -84,12 +109,26 @@ function EquipamentosMedicosPage() {
 
   return (
     <div className="equip-page">
-      <h1 className="equip-title">Gestão de Equipamentos </h1>
+      <h1 className="equip-title">Gestão de Equipamentos</h1>
 
       <div className="equip-actions">
         <button className="btn-add" onClick={handleAddClick}>+ Adicionar</button>
-        <button className="btn-filter">Filtro</button>
+        <button className="btn-filter" onClick={handleFilterClick}>
+          {showFilter ? 'Fechar Filtro' : 'Filtro'}
+        </button>
       </div>
+
+      {showFilter && (
+        <div className="filter-bar">
+          <input
+            type="text"
+            placeholder="Buscar por Nº Patrimônio ou Nº Série"
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="filter-input"
+          />
+        </div>
+      )}
 
       {showForm && (
         <EquipamentosMedicosForm
@@ -139,18 +178,10 @@ function EquipamentosMedicosPage() {
                 <td>{item.obs || '-'}</td>
                 <td>{item.localizacao?.nome || '-'}</td>
                 <td className="actions-cell">
-                  <button
-                    className="btn-edit"
-                    onClick={() => handleEditClick(item)}
-                    title="Editar equipamento"
-                  >
+                  <button className="btn-edit" onClick={() => handleEditClick(item)} title="Editar equipamento">
                     <FaEdit />
                   </button>
-                  <button
-                    className="btn-view"
-                    onClick={() => handleViewClick(item)}
-                    title="Visualizar detalhes"
-                  >
+                  <button className="btn-view" onClick={() => handleViewClick(item)} title="Visualizar detalhes">
                     <FaEye />
                   </button>
                 </td>
@@ -159,6 +190,7 @@ function EquipamentosMedicosPage() {
           </tbody>
         </table>
       </div>
+
       <div className="pagination-controls">
         <button onClick={goToPrevPage} disabled={currentPage === 1}>
           Anterior

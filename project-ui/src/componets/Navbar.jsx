@@ -15,8 +15,8 @@ function Navbar({ setContent }) {
           <span className="navbar-title">InvenTech</span>
         </div>
         <div className="navbar-buttons">
-          <button className="nav-btn btn-1" onClick={() => setContent('dashboard')}>EM DEV</button>
-          <button className="nav-btn btn-2" onClick={() => setContent('calendario')}>EM DEV</button>
+          <button className="nav-btn btn-1" onClick={() => setContent('meuschamados')}>Meus Chamados</button>
+          <button className="nav-btn btn-2" onClick={() => setContent('calendario')}>Chamados Do grupo</button>
           <button className="nav-btn btn-3" onClick={() => setContent('chamados')}>EM DEV</button>
         </div>
       </nav>

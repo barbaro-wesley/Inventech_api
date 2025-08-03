@@ -22,7 +22,7 @@ class OrdemServicoService {
   });
 
   if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
-  const msg = `📄 <b>Nova OS Atribuída</b>\n\n🔧 Técnico: ${novaOS.tecnico.nome}\n📌 Descrição: ${novaOS.descricao} Setor $` ;
+  const msg = `📄 <b>Nova OS Atribuída</b>\n\n🔧 Técnico: ${novaOS.tecnico.nome}\n📌 Descrição: ${novaOS.descricao}` ;
   await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
 }
 
@@ -75,6 +75,22 @@ class OrdemServicoService {
       solicitante: true,
       Setor: true
     },
+  });
+}
+async listarPorTecnico(tecnicoId) {
+  return await prisma.ordemServico.findMany({
+    where: {
+      tecnicoId: tecnicoId,
+    },
+    include: {
+      tipoEquipamento: true,
+      tecnico: true,
+      solicitante: true,
+      Setor: true,
+    },
+    orderBy: {
+      criadoEm: 'desc', // opcional
+    }
   });
 }
 }

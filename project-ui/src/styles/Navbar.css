@@ -49,19 +49,19 @@
 
 /* Botão 1 - DASBOARD */
 .btn-1 {
-  background-color: #FF8C00;
-  color: #0A157A;
+  background-color: rgb(41, 103, 163); /* azul claro - primary-glow */
+  color: white; /* texto branco para melhor contraste */
 }
 
 /* Botão 2 - CALENDARIO */
 .btn-2 {
-  background-color: #FFFFFF;
-  color: #0A157A;
-  border: 1px solid #ccc;
+  background-color: #FFFFFF; /* branco */
+  color: rgb(41, 103, 163);  /* azul claro - primary-glow */
+  border: 1px solid rgb(200, 200, 200); /* cinza claro para suavizar */
 }
 
 /* Botão 3 - CHAMADOS */
 .btn-3 {
-  background-color: #0A157A;
-  color: #FF8C00;
+  background-color: rgb(244, 133, 54); /* laranja - secondary */
+  color: #fffbe6; /* amarelo claro quase branco para alto contraste */
 }

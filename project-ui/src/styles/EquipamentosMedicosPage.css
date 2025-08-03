@@ -18,7 +18,7 @@
 }
 
 .btn-add, .btn-filter {
-  padding: 0.6rem 1.2rem;
+  padding: 0.rem 1.2rem;
   font-weight: bold;
   border: none;
   border-radius: 6px;
@@ -85,13 +85,13 @@
   border: none;
   border-radius: 4px;
   background-color: #007bff;
-  color: white;
+  color: rgb(255, 255, 255);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .pagination-controls button:disabled {
-  background-color: #ccc;
+  background-color: #000000;
   cursor: not-allowed;
 }
 
@@ -185,4 +185,20 @@
   .modal-content {
     display: block !important;
   }
+}
+
+
+.filter-bar {
+  margin: 1rem 0;
+  display: flex;
+  justify-content: flex-start;
+  left: 10px;
+  position: relative;
+}
+
+.filter-input {
+  padding: 0.5rem;
+  width: 300px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
 }

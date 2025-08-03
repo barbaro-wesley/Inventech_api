@@ -88,23 +88,7 @@ const handlePrint = () => {
                 </div>
             </div>
             
-            <div class="anexos-placeholder">
-                ${
-                  equipamento.arquivos && equipamento.arquivos.length > 0
-                    ? `
-                      <h3 class="print-title">Anexos</h3>
-                      <div class="arquivos-container">
-                        ${equipamento.arquivos
-                          .map(
-                            (arquivo, index) =>
-                              `<div class="anexo-item"><span>${arquivo.split('\\').pop()}</span></div>`
-                          )
-                          .join('')}
-                      </div>
-                    `
-                    : ''
-                }
-            </div>
+            
         </div>
     </body>
     </html>

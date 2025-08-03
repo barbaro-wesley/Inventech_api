@@ -15,6 +15,7 @@ import UsuarioPage from '../pages/UsuarioPage';
 import OS from '../pages/OS';
 import OsChamado from '../pages/OsChamado';
 import PrinterPage from '../pages/PrinterPage';
+import ChamadosTecnico from '../pages/ChamadosTecnico';
 function Layout() {
   const [content, setContent] = useState('home');
 
@@ -45,6 +46,8 @@ function Layout() {
       case 'chamados':
         return <ChamadoPage/>;
       case 'home':
+        case 'meuschamados':
+        return <ChamadosTecnico/>;
       default:
         return (
           <>

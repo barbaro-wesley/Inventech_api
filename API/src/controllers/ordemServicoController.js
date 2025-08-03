@@ -35,6 +35,21 @@ async criar(req, res) {
     }
   },
 
+  async listarPorTecnico(req, res) {
+  try {
+    const tecnicoId = req.usuario.tecnicoId;
+    
+    if (!tecnicoId) {
+      return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
+    }
+
+    const osList = await ordemServicoService.listarPorTecnico(tecnicoId);
+    res.status(200).json(osList);
+  } catch (error) {
+    res.status(400).json({ error: 'Erro ao listar OS do técnico', detalhes: error.message });
+  }
+},
+
   async buscarPorId(req, res) {
     try {
       const { id } = req.params;
@@ -88,6 +103,8 @@ async criar(req, res) {
       detalhes: error.message,
     });
   }
+
+  
 }
 };
 
