@@ -27,7 +27,7 @@ function UsuarioForm({ onClose, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/usuarios/cadastro', {
+      const response = await axios.post('http://192.168.0.70:5000/api/usuarios/cadastro', {
         nome: formData.nome,
         email: formData.email,
         senha: formData.senha,

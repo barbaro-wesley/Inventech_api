@@ -14,17 +14,13 @@ const PopupEquip = ({ equipamento, onClose }) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
   };
-
   const handleOpenPdf = (filePath) => {
     const filename = filePath.split('\\').pop();
     const fileUrl = `${import.meta.env.VITE_API_URL2}/uploads/pdfs/${filename}`;
     window.open(fileUrl, '_blank');
   };
 const handlePrint = () => {
-  // Get current date and time for "Hora da impressão"
   const currentDate = new Date().toLocaleString('pt-BR');
-
-  // Replace placeholders in the HTML template with equipamento data
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="pt-BR">
