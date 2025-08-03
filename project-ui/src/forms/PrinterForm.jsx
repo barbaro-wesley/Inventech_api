@@ -30,7 +30,6 @@ function PrinterForm({ onClose, onSubmit, initialData }) {
         setLocalizacoes(localizacoesRes.data);
         setTiposImpressora(tiposRes.data);
 
-        // Atualiza nome do setor se estiver em edição
         if (initialData) {
           const selectedLoc = localizacoesRes.data.find(
             (loc) => loc.id === Number(initialData.localizacaoId)
@@ -40,7 +39,6 @@ function PrinterForm({ onClose, onSubmit, initialData }) {
           }
         }
       } catch (error) {
-        console.error('Erro ao buscar opções:', error);
       }
     }
     fetchOptions();
@@ -49,7 +47,6 @@ function PrinterForm({ onClose, onSubmit, initialData }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'localizacaoId') {
-      // Find the selected localização and set setorId and setorNome
       const selectedLoc = localizacoes.find((loc) => loc.id === Number(value));
       if (selectedLoc) {
         setFormData({
@@ -83,7 +80,6 @@ function PrinterForm({ onClose, onSubmit, initialData }) {
     try {
       let response;
       if (initialData?.id) {
-        // Edição (PUT)
         response = await api.put(
           `/printers/${initialData.id}`,
           payload,
@@ -91,7 +87,6 @@ function PrinterForm({ onClose, onSubmit, initialData }) {
         );
         toast.success('Impressora atualizada com sucesso!');
       } else {
-        // Novo cadastro (POST)
         response = await api.post(
           '/printers',
           payload,
@@ -113,7 +108,6 @@ function PrinterForm({ onClose, onSubmit, initialData }) {
       setSetorNome('');
       onClose();
     } catch (error) {
-      console.error('Erro ao cadastrar/atualizar impressora:', error);
       toast.error('Erro ao cadastrar/atualizar impressora.');
     }
   };

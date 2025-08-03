@@ -45,7 +45,6 @@ const handleSubmit = async (e) => {
       observacoes: '',
     });
   } catch (error) {
-    console.error('Erro ao cadastrar sobre aviso:', error);
   }
 };
 

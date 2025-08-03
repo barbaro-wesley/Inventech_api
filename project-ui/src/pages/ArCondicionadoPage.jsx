@@ -22,10 +22,7 @@ function ArCondicionadoPage() {
           ? response.data.filter(item => item && typeof item === 'object' && item.id)
           : [];
         setArCondicionados(validData);
-        console.log('Dados recebidos da API:', validData);
       } catch (error) {
-        console.error('Erro ao buscar ar-condicionados:', error);
-        alert('Erro ao carregar os dados. Tente novamente.');
       }
     }
     fetchData();
@@ -43,8 +40,6 @@ function ArCondicionadoPage() {
 
  const handleFormSubmit = (savedItem) => {
   if (!savedItem || !savedItem.id) {
-    console.error('Item inválido recebido no submit:', savedItem);
-    alert('Erro ao salvar o item. Verifique os dados e tente novamente.');
     return;
   }
   if (editingItem) {

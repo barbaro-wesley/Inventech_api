@@ -20,10 +20,8 @@ useEffect(() => {
         withCredentials: true,
       });
 
-      console.log('Resposta da API:', response.data);
       setComputadores(response.data);
     } catch (error) {
-      console.error('Erro ao buscar computadores:', error);
     }
   }
 
@@ -51,7 +49,6 @@ useEffect(() => {
   setShowForm(true);
 };
 
-  // Pagination
   const totalPages = Math.ceil(computadores.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;

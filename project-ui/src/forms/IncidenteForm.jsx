@@ -43,7 +43,6 @@ function IncidenteForm({ onClose, onSubmit }) {
       oQueFoiFeito: '',
     });
   } catch (error) {
-    console.error('Erro ao cadastrar incidente:', error);
   }
 };
 

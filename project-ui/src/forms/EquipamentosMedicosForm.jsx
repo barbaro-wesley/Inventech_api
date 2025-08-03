@@ -24,14 +24,12 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
     arquivos: []
   });
 
-  // Add state for file names
   const [fileNames, setFileNames] = useState([]);
 
   const [setores, setSetores] = useState([]);
   const [filteredLocalizacoes, setFilteredLocalizacoes] = useState([]);
   const [tiposEquipamentos, setTiposEquipamentos] = useState([]);
 
-  // Fetch sectors and equipment types on component mount
   useEffect(() => {
     const fetchSetores = async () => {
       try {
@@ -47,7 +45,6 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
         const response = await api.get('/tipos-equipamento', { withCredentials: true });
         setTiposEquipamentos(response.data);
       } catch (error) {
-        console.error('Erro ao buscar tipos de equipamentos:', error);
       }
     };
 
@@ -55,10 +52,8 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
     fetchTiposEquipamentos();
   }, []);
 
-  // Initialize formData with initialData
   useEffect(() => {
     if (initialData) {
-      console.log('initialData:', initialData);
       setFormData({
         numeroPatrimonio: initialData.numeroPatrimonio ?? '',
         identificacao: initialData.identificacao ?? '',
@@ -81,7 +76,6 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
     }
   }, [initialData]);
 
-  // Filter locations when setorId changes
   useEffect(() => {
     if (formData.setorId) {
       const selectedSetor = setores.find((setor) => setor.id === parseInt(formData.setorId));
@@ -98,13 +92,12 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
     }
   }, [formData.setorId, setores]);
 
-  // Handle input changes
  const handleChange = (e) => {
   const { name, value, files } = e.target;
   if (name === 'arquivos' && files) {
     const names = Array.from(files).map((file) => file.name);
     setFileNames(names);
-    setFormData((prev) => ({ ...prev, arquivos: files })); // <<-- Salve os arquivos aqui
+    setFormData((prev) => ({ ...prev, arquivos: files })); 
   } else {
     setFormData({ ...formData, [name]: value });
   }
@@ -118,11 +111,8 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
     return;
   }
 
-  // Crie um novo objeto FormData
   const formToSend = new FormData();
 
-  // Adicione cada campo de texto ao FormData
-  // Use a verificação de valor para evitar enviar a string "null"
   formToSend.append('numeroPatrimonio', formData.numeroPatrimonio || '');
   formToSend.append('identificacao', formData.identificacao || '');
   formToSend.append('numeroSerie', formData.numeroSerie || '');
@@ -136,13 +126,11 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
   formToSend.append('terminoGarantia', formData.terminoGarantia ? new Date(formData.terminoGarantia).toISOString() : '');
   formToSend.append('notaFiscal', formData.notaFiscal || '');
   formToSend.append('obs', formData.obs || '');
-  
-  // Adicione os IDs como strings, pois o backend fará a conversão
+
   formToSend.append('setorId', formData.setorId || '');
   formToSend.append('localizacaoId', formData.localizacaoId || '');
   formToSend.append('tipoEquipamentoId', formData.tipoEquipamentoId || '');
 
-  // Adicione os arquivos ao FormData
   if (formData.arquivos && formData.arquivos.length > 0) {
     for (const arquivo of formData.arquivos) {
       formToSend.append('arquivo', arquivo);
@@ -174,7 +162,6 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
       throw new Error('Resposta da API inválida: dados não retornados');
     }
 
-    // Acessa os IDs do objeto formData original para buscar os dados completos
     const setorCompleto = setores.find((s) => s.id === parseInt(formData.setorId)) || { nome: '--' };
     const localizacaoCompleta = filteredLocalizacoes.find((l) => l.id === parseInt(formData.localizacaoId)) || { nome: '--' };
     const tipoEquipamentoCompleto = tiposEquipamentos.find((te) => te.id === parseInt(formData.tipoEquipamentoId)) || { nome: '--' };
@@ -209,7 +196,6 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
     });
     setFileNames([]); 
   } catch (error) {
-    console.error('Erro ao salvar equipamento médico:', error);
     const errorMessage = error.response?.data?.error || error.message || 'Tente novamente.';
     toast.error(`Erro ao salvar equipamento médico: ${errorMessage}`);
   }

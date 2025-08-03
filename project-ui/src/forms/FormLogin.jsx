@@ -46,8 +46,6 @@ const LoginForm = () => {
         navigate('/app');
       }
     } catch (error) {
-      console.error("Erro na requisição:", error);
-      alert("Erro na requisição. Verifique o servidor.");
     }
   };
 

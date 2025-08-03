@@ -6,7 +6,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Você pode implementar aqui uma checagem inicial no backend para validar sessão:
+
   useEffect(() => {
     // fetch("/api/usuarios/me") para validar o cookie
     // setIsLoggedIn(true) se válido

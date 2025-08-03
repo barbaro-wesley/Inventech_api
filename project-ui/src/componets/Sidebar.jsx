@@ -21,7 +21,6 @@ function Sidebar({ setContent, isOpen, onClose }) {
       <button className="close-btn" onClick={onClose}>
         <FaTimes />
       </button>
-       {/* ✅ LOGO */}
      <div className="logo-container">
       <a href="#" target="_blank" rel="noopener noreferrer">
     <img src={logo} alt="Logo HCR TI" className="sidebar-logo" />

@@ -1,4 +1,3 @@
-// src/components/GrupoManutencaoForm.jsx
 import { useState, useEffect } from 'react';
 import api from '../config/api';
 import '../styles/GrupoManutencaoForm.css';
@@ -56,7 +55,6 @@ function GrupoManutencaoForm({ onClose, onSubmit }) {
       tiposIds: [],
     });
   } catch (error) {
-    console.error('Erro ao cadastrar grupo de manutenção:', error);
   }
 };
 

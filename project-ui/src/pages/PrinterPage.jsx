@@ -17,10 +17,9 @@ function PrinterPage() {
         const response = await api.get('/printers', {
           withCredentials: true,
         });
-        console.log('Resposta da API:', response.data);
         setPrinters(response.data);
       } catch (error) {
-        console.error('Erro ao buscar impressoras:', error);
+
       }
     }
 
@@ -49,7 +48,6 @@ function PrinterPage() {
     setShowForm(true);
   };
 
-  // Pagination
   const totalPages = Math.ceil(printers.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;

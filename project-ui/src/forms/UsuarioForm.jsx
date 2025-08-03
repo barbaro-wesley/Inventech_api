@@ -48,7 +48,6 @@ function UsuarioForm({ onClose, onSubmit }) {
       papel: '',
     });
   } catch (error) {
-    console.error('Erro ao cadastrar usuário:', error.response?.data || error.message);
   }
 };
 

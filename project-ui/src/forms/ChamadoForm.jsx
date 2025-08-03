@@ -32,7 +32,6 @@ function ChamadoForm({ onClose, onSubmit }) {
         SistemaId: '',
       });
     } catch (error) {
-      console.error('Erro ao cadastrar chamado:', error);
     }
   };
 

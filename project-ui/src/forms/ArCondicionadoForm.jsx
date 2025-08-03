@@ -24,8 +24,8 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
 });
 
 const formatarMoeda = (valor) => {
-  const numero = valor.replace(/\D/g, ''); // remove tudo que não for número
-  const valorNumerico = (Number(numero) / 100).toFixed(2); // divide por 100 e mantém 2 casas decimais
+  const numero = valor.replace(/\D/g, ''); 
+  const valorNumerico = (Number(numero) / 100).toFixed(2); 
   return valorNumerico.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -66,8 +66,6 @@ const formatarMoeda = (valor) => {
         });
         setSetores(response.data);
       } catch (error) {
-        console.error('Erro ao buscar setores:', error);
-        alert('Erro ao carregar setores. Tente novamente.');
       }
     }
 
@@ -78,8 +76,6 @@ const formatarMoeda = (valor) => {
         });
         setTiposEquipamentos(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
-        console.error('Erro ao buscar tipos de equipamentos:', error);
-        alert('Erro ao carregar tipos de equipamentos. Tente novamente.');
       }
     }
 
@@ -99,9 +95,8 @@ const formatarMoeda = (valor) => {
  const handleChange = (e) => {
   const { name, value } = e.target;
 
-  // Se o campo for valorCompra, formatar como moeda
   if (name === 'valorCompra') {
-    const apenasNumeros = value.replace(/\D/g, ''); // remove não dígitos
+    const apenasNumeros = value.replace(/\D/g, ''); 
     const valorFormatado = (Number(apenasNumeros) / 100).toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -157,21 +152,16 @@ console.log('Payload enviado:', payload);
     if (!response.data || !response.data.id) {
       throw new Error('Resposta da API inválida: item sem ID');
     }
-
-    // --- NOVA LÓGICA AQUI ---
-    // Encontra o setor e a localização completos a partir das listas que já existem no estado do formulário
     const setorCompleto = setores.find(s => s.id === payload.setorId);
     const localizacaoCompleta = localizacoesFiltradas.find(l => l.id === payload.localizacaoId);
 
-    // Cria um objeto completo para enviar para o componente pai
     const itemCompleto = {
-      ...response.data, // Objeto retornado da API (com os IDs)
+      ...response.data, 
       setor: setorCompleto || { nome: '--' },
       localizacao: localizacaoCompleta || { nome: '--' },
     };
 
     console.log('Equipamento salvo com sucesso!', itemCompleto);
-    // Envia o objeto completo para o componente pai
     onSubmit(itemCompleto);
 
     toast.success('Equipamento salvo com sucesso!');
@@ -185,8 +175,6 @@ console.log('Payload enviado:', payload);
   <div className="form-container">
     <form className="equip-form" onSubmit={handleSubmit}>
       <h2>{modoEdicao ? 'Editar Ar-Condicionado' : 'Cadastrar Ar-Condicionado'}</h2>
-
-      {/* Grid para os campos lado a lado */}
       <div className="form-grid">
         <div className="form-field">
           <label>Nº Patrimônio</label>

@@ -29,7 +29,6 @@ function EquipamentosMedicosPage() {
         setEquipamentos(response.data);
         setFilteredEquipamentos(response.data);
       } catch (error) {
-        console.error('Erro ao buscar equipamentos médicos:', error);
       }
     }
     fetchData();
@@ -72,7 +71,6 @@ function EquipamentosMedicosPage() {
       setEditMode(false);
       setEquipamentoParaEditar(null);
     } catch (error) {
-      console.error("Erro ao enviar o formulário:", error);
     }
   };
 

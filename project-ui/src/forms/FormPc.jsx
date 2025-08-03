@@ -30,7 +30,6 @@ function FormPc({ onClose, onSubmit,initialData }) {
       setLocalizacoes(localizacoesRes.data);
       setTiposEquipamento(tiposRes.data);
 
-      // Atualiza nome do setor se estiver em edição
       if (initialData) {
         const selectedLoc = localizacoesRes.data.find(
           (loc) => loc.id === Number(initialData.localizacaoId)
@@ -40,7 +39,6 @@ function FormPc({ onClose, onSubmit,initialData }) {
         }
       }
     } catch (error) {
-      console.error('Erro ao buscar opções:', error);
     }
   }
   fetchOptions();
@@ -49,7 +47,6 @@ function FormPc({ onClose, onSubmit,initialData }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'localizacaoId') {
-      // Find the selected localização and set setorId and setorNome
       const selectedLoc = localizacoes.find((loc) => loc.id === Number(value));
       if (selectedLoc) {
         setFormData({
@@ -83,7 +80,6 @@ const handleSubmit = async (e) => {
   try {
     let response;
     if (initialData?.id) {
-      // Edição (PUT)
       response = await api.put(
         `/hcr-computers/${initialData.id}`,
         payload,
@@ -92,7 +88,7 @@ const handleSubmit = async (e) => {
        toast.success('Computador atualizado com sucesso!');
       
     } else {
-      // Novo cadastro (POST)
+
       response = await api.post(
         '/hcr-computers',
         payload,
@@ -101,7 +97,7 @@ const handleSubmit = async (e) => {
        toast.success('Computador cadastrado com sucesso!');
     }
 
-    onSubmit(response.data); // Atualiza lista no PcPage
+    onSubmit(response.data); 
     setFormData({
       nPatrimonio: '',
       nomePC: '',
