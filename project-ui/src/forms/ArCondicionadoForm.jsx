@@ -260,7 +260,6 @@ console.log('Payload enviado:', payload);
           </select>
         </div>
 
-        {/* Localização pode ficar em um campo separado */}
         <div className="form-field">
           <label>Localização</label>
           <select name="localizacaoId" value={formData.localizacaoId} onChange={handleChange}>

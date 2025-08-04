@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Paperclip } from "lucide-react";
-import axios from 'axios';
 import '../styles/OS.css';
 import { toast } from 'react-toastify';
 import api from '../config/api';
@@ -23,6 +22,7 @@ function OS({ onClose, onSubmit }) {
   const [equipamentos, setEquipamentos] = useState([]);
   const [grupo, setGrupo] = useState('');
   const [fileNames, setFileNames] = useState([]);
+  const [loadingEquipamentos, setLoadingEquipamentos] = useState(false);
 
   const statusOptions = [
     { value: 'ABERTA', label: 'Aberta' },
@@ -35,6 +35,7 @@ function OS({ onClose, onSubmit }) {
     '2': '/printers',
     '3': '/equipamentos-medicos',
     '4': '/condicionadores',
+    '5': '/equipamentos-medicos', // Equipamentos Gerais
   };
 
   useEffect(() => {
@@ -46,7 +47,7 @@ function OS({ onClose, onSubmit }) {
         ]);
         setTiposEquipamento(tiposRes.data);
         setTecnicos(tecnicosRes.data);
-        setFilteredTecnicos(tecnicosRes.data); 
+        setFilteredTecnicos(tecnicosRes.data);
       } catch (error) {
         console.error('Erro ao buscar opções:', error);
         toast.error('Erro ao carregar opções do formulário');
@@ -57,11 +58,11 @@ function OS({ onClose, onSubmit }) {
 
   const handleChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
-    
+
     if (name === "arquivos") {
-      const files = Array.from(e.target.files);
-      setFormData({ ...formData, arquivos: files });
-      setFileNames(files.map((file) => file.name));
+      const filesArray = Array.from(files);
+      setFormData({ ...formData, arquivos: filesArray });
+      setFileNames(filesArray.map((file) => file.name));
       return;
     }
 
@@ -76,32 +77,44 @@ function OS({ onClose, onSubmit }) {
         const tipoId = String(value);
         const selectedTipo = tiposEquipamento.find((t) => t.id === parseInt(value));
         setGrupo(selectedTipo?.grupo?.nome || '');
+
+        // Filtrar técnicos
         if (selectedTipo?.grupo?.id) {
           const filtered = tecnicos.filter(t => t.grupo?.id === selectedTipo.grupo.id);
           setFilteredTecnicos(filtered);
-          // Reset tecnicoId if the current technician is not in the filtered list
           if (!filtered.some(t => t.id === parseInt(formData.tecnicoId))) {
             setFormData(prev => ({ ...prev, tecnicoId: '' }));
           }
         } else {
-          setFilteredTecnicos(tecnicos); // Show all technicians if no group
+          setFilteredTecnicos(tecnicos);
           setFormData(prev => ({ ...prev, tecnicoId: '' }));
         }
 
+        // Buscar equipamentos
         const endpoint = endpointPorTipo[tipoId];
         if (endpoint) {
           try {
+            setLoadingEquipamentos(true);
             setEquipamentos([]);
-            const res = await api.get(`${endpoint}`, { withCredentials: true });
-            setEquipamentos(res.data);
+            const res = await api.get(endpoint, { 
+              withCredentials: true,
+              params: { tipoEquipamentoId: tipoId } // Enviar tipoEquipamentoId como parâmetro
+            });
+            // Filtrar equipamentos no frontend, caso a API não faça isso
+            const filteredEquipamentos = res.data.filter(e => String(e.tipoEquipamentoId) === tipoId);
+            setEquipamentos(filteredEquipamentos);
             setFormData((prev) => ({ ...prev, equipamentoId: '', setorId: '' }));
           } catch (error) {
             console.error('Erro ao buscar equipamentos:', error);
             setEquipamentos([]);
             toast.error('Erro ao carregar equipamentos');
+          } finally {
+            setLoadingEquipamentos(false);
           }
         } else {
           setEquipamentos([]);
+          setFormData((prev) => ({ ...prev, equipamentoId: '', setorId: '' }));
+          toast.warn('Nenhum endpoint configurado para este tipo de equipamento');
         }
       } else if (name === 'equipamentoId') {
         const selectedEquipamento = equipamentos.find((e) => e.id === parseInt(value));
@@ -119,13 +132,11 @@ function OS({ onClose, onSubmit }) {
     try {
       const formDataToSend = new FormData();
       formData.arquivos.forEach((file) => formDataToSend.append('arquivos', file));
-
       formDataToSend.append('descricao', formData.descricao);
       formDataToSend.append('tipoEquipamentoId', Number(formData.tipoEquipamentoId));
       formDataToSend.append('tecnicoId', Number(formData.tecnicoId));
       formDataToSend.append('status', formData.status);
       formDataToSend.append('preventiva', formData.preventiva ? 'true' : 'false');
-
       if (formData.setorId) formDataToSend.append('setorId', Number(formData.setorId));
       formDataToSend.append('equipamentoId', Number(formData.equipamentoId));
 
@@ -151,6 +162,7 @@ function OS({ onClose, onSubmit }) {
       });
       setGrupo('');
       setFilteredTecnicos(tecnicos);
+      setEquipamentos([]);
       if (typeof onClose === 'function') {
         onClose();
       }
@@ -160,20 +172,21 @@ function OS({ onClose, onSubmit }) {
     }
   };
 
-const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
-  switch (tipoEquipamentoId) {
-    case '1': // Computadores
-      return `${equipamento.nomePC || 'Sem Nome'} - ${equipamento.ip || 'Sem IP'}`;
-      case '2':
-        return `${equipamento.ip || 'Sem Nome'} - ${equipamento.marca || 'Sem IP'}`;
-    case '3': // Equipamentos médicos
-      return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.modelo || 'Sem Modelo'}`;
-    case '4': // Impressoras, por exemplo
-      return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
-    default:
-      return 'Equipamento não identificado';
-  }
-};
+  const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
+    switch (tipoEquipamentoId) {
+      case '1': // Computadores
+        return `${equipamento.nomePC || 'Sem Nome'} - ${equipamento.ip || 'Sem IP'}`;
+      case '2': // Impressoras
+        return `${equipamento.ip || 'Sem Nome'} - ${equipamento.marca || 'Sem Marca'}`;
+      case '3': // Equipamentos médicos
+      case '5': // Equipamentos Gerais
+        return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.modelo || 'Sem Modelo'}`;
+      case '4': // Condicionadores
+        return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
+      default:
+        return 'Equipamento não identificado';
+    }
+  };
 
   return (
     <div className="os-wrapper">
@@ -206,16 +219,14 @@ const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
               value={formData.equipamentoId}
               onChange={handleChange}
               required
+              disabled={loadingEquipamentos || !formData.tipoEquipamentoId}
             >
-              <option value="">Selecione</option>
-              {equipamentos.map((e) => {
-                const nome = getEquipamentoNome(e, formData.tipoEquipamentoId);
-                return (
-                  <option key={e.id} value={e.id}>
-                    {nome}
-                  </option>
-                );
-              })}
+              <option value="">{loadingEquipamentos ? 'Carregando...' : 'Selecione'}</option>
+              {equipamentos.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {getEquipamentoNome(e, formData.tipoEquipamentoId)}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -243,8 +254,7 @@ const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
             <input
               type="text"
               value={
-                filteredTecnicos.find((t) => t.id === parseInt(formData.tecnicoId))?.grupo
-                  ?.nome || ""
+                filteredTecnicos.find((t) => t.id === parseInt(formData.tecnicoId))?.grupo?.nome || ""
               }
               readOnly
             />

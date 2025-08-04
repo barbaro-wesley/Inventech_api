@@ -4,42 +4,19 @@ const prisma = new PrismaClient();
 
 async function create(req, res) {
   try {
-    const { nPatrimonio, ip, marca, modelo, tipoEquipamentoId, nomeSetor, nomeLocalizacao } = req.body;
+    const { nPatrimonio, ip, marca, modelo, tipoEquipamentoId, setorId, localizacaoId } = req.body;
 
-    // Busca o setor pelo nome
-    const setor = await prisma.setor.findUnique({
-      where: { nome: nomeSetor },
-    });
-
-    if (!setor) {
-      return res.status(400).json({ error: `Setor '${nomeSetor}' não encontrado.` });
-    }
-
-    // Busca a localização com base no nome E setorId correspondente
-    const localizacao = await prisma.localizacao.findFirst({
-      where: {
-        nome: nomeLocalizacao,
-        setorId: setor.id,
-      },
-    });
-
-    if (!localizacao) {
-      return res.status(400).json({ error: `Localização '${nomeLocalizacao}' não encontrada para o setor '${nomeSetor}'.` });
-    }
-
-    // Cria a impressora com os IDs reais
     const nova = await printerService.createPrinter({
       nPatrimonio,
       ip,
       marca,
       modelo,
       tipoEquipamentoId,
-      setorId: setor.id,
-      localizacaoId: localizacao.id,
+      setorId,
+      localizacaoId,
     });
 
     res.status(201).json(nova);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erro ao criar impressora', details: error.message });

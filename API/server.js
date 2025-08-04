@@ -1,9 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-
+const helmet = require('helmet');
 const app = express();
 const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100 // max 100 requisições por 15 minutos
+});
 const corsOptions = {
   origin: function (origin, callback) {
     callback(null, origin || '*'); // permite qualquer origem
@@ -13,7 +18,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(cookieParser()); 
+app.use(helmet());
 app.use(express.json());
+app.use(limiter);
 const usuarioRoutes = require('./src/routes/usuarioRoutes');
 const tipoEquipamentoRoutes = require('./src/routes/tipoEquipamentoRoutes');
 const grupoRoutes = require('./src/routes/grupoManutencaoRoutes');

@@ -1,7 +1,6 @@
-// src/components/UsuarioForm.jsx
-import { useState } from 'react';
-import api from '../config/api';
+import { useState, useEffect } from 'react';
 import '../styles/UsuarioForm.css';
+import api from '../config/api';
 
 function UsuarioForm({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -9,7 +8,10 @@ function UsuarioForm({ onClose, onSubmit }) {
     email: '',
     senha: '',
     papel: '',
+    tecnicoId: '', // novo campo
   });
+
+  const [tecnicos, setTecnicos] = useState([]);
 
   const papelOptions = [
     { value: 'admin', label: 'Administrador' },
@@ -19,37 +21,43 @@ function UsuarioForm({ onClose, onSubmit }) {
     { value: 'usuario_comum', label: 'Usuário Comum' },
   ];
 
+  useEffect(() => {
+    const fetchTecnicos = async () => {
+      try {
+        const response = await api.get('/tecnicos');
+        setTecnicos(response.data);
+      } catch (error) {;
+      }
+    };
+    fetchTecnicos();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const response = await api.post(
-      '/usuarios/cadastro',
-      {
+    e.preventDefault();
+    try {
+      const response = await api.post('usuarios/cadastro', {
         nome: formData.nome,
         email: formData.email,
         senha: formData.senha,
         papel: formData.papel,
-      },
-      {
-        withCredentials: true,
-      }
-    );
-
-    onSubmit(response.data);
-    setFormData({
-      nome: '',
-      email: '',
-      senha: '',
-      papel: '',
-    });
-  } catch (error) {
-  }
-};
+        tecnicoId: formData.tecnicoId || null,
+      });
+      onSubmit(response.data);
+      setFormData({
+        nome: '',
+        email: '',
+        senha: '',
+        papel: '',
+        tecnicoId: '',
+      });
+    } catch (error) {
+    }
+  };
 
   return (
     <div className="form-container">
@@ -78,6 +86,19 @@ function UsuarioForm({ onClose, onSubmit }) {
                     {papelOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td><label>Técnico</label></td>
+                <td>
+                  <select name="tecnicoId" value={formData.tecnicoId} onChange={handleChange}>
+                    <option value="">Nenhum</option>
+                    {tecnicos.map((tecnico) => (
+                      <option key={tecnico.id} value={tecnico.id}>
+                        {tecnico.nome}
                       </option>
                     ))}
                   </select>
