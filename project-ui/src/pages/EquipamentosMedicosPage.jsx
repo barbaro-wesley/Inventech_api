@@ -158,7 +158,6 @@ function EquipamentosMedicosPage() {
               <th>Modelo</th>
               <th>Fabricante</th>
               <th>Nota Fiscal</th>
-              <th>Obs</th>
               <th>Localização</th>
               <th>Ações</th>
             </tr>
@@ -173,7 +172,6 @@ function EquipamentosMedicosPage() {
                 <td>{item.modelo || '-'}</td>
                 <td>{item.fabricante || '-'}</td>
                 <td>{item.notaFiscal || '-'}</td>
-                <td>{item.obs || '-'}</td>
                 <td>{item.localizacao?.nome || '-'}</td>
                 <td className="actions-cell">
                   <button className="btn-edit" onClick={() => handleEditClick(item)} title="Editar equipamento">

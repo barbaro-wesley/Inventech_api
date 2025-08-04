@@ -3,7 +3,7 @@ const service = require('../services/hcrEquipamentosMedicosService');
 class HcrEquipamentosMedicosController {
 async criar(req, res) {
   try {
-       const arquivos = req.files ? req.files.map(file => file.path) : [];
+       const arquivos = req.files ? req.files.map(file => `uploads/pdfs/${file.filename}`) : [];
 
     const data = {
       ...req.body,

@@ -1,8 +1,10 @@
 // src/components/ChamadoForm.jsx
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import '../styles/ChamadoForm.css';
 import api from '../config/api';
+import { toast } from 'react-toastify';
 function ChamadoForm({ onClose, onSubmit }) {
+  const [sistemas, setSistemas] = useState([]);
   const [formData, setFormData] = useState({
     numero: '',
     descricao: '',
@@ -14,26 +16,47 @@ function ChamadoForm({ onClose, onSubmit }) {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+  const fetchSistemas = async () => {
     try {
-      const response = await api.post('/chamados', {
-        ...formData,
-        numero: parseInt(formData.numero),
-        SistemaId: formData.SistemaId ? parseInt(formData.SistemaId) : null,
-      });
-      onSubmit(response.data);
-      setFormData({
-        numero: '',
-        descricao: '',
-        status: 'Aberto',
-        prioridade: 'MEDIO',
-        SistemaId: '',
-      });
+      const response = await api.get('/sistemas');
+      setSistemas(response.data);
     } catch (error) {
+      console.error('Erro ao buscar sistemas:', error);
     }
   };
+
+  fetchSistemas();
+}, []);
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const sistemaSelecionado = sistemas.find(s => s.nome === formData.SistemaId);
+
+  try {
+    const response = await api.post('/chamados', {
+      ...formData,
+      numero: parseInt(formData.numero),
+      SistemaId: sistemaSelecionado ? sistemaSelecionado.id : null,
+    });
+
+    onSubmit(response.data);
+
+    setFormData({
+      numero: '',
+      descricao: '',
+      status: 'Aberto',
+      prioridade: 'MEDIO',
+      SistemaId: '',
+    });
+
+    toast.success('Chamado criado com sucesso!');
+  } catch (error) {
+    console.error(error);
+    toast.error('Erro ao criar chamado.');
+  }
+};
 
   return (
     <div className="form-container">
@@ -71,9 +94,18 @@ function ChamadoForm({ onClose, onSubmit }) {
                 </td>
               </tr>
               <tr>
-                <td><label>Sistema (ID)</label></td>
-                <td><input type="number" name="SistemaId" value={formData.SistemaId} onChange={handleChange} /></td>
-              </tr>
+  <td><label>Sistema</label></td>
+  <td>
+    <select name="SistemaId" value={formData.SistemaId} onChange={handleChange}>
+      <option value="">Selecione um sistema</option>
+      {sistemas.map((sistema) => (
+        <option key={sistema.id} value={sistema.nome}>
+          {sistema.nome}
+        </option>
+      ))}
+    </select>
+  </td>
+</tr>
             </tbody>
           </table>
           <div className="form-buttons">
