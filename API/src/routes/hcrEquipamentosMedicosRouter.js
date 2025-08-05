@@ -36,7 +36,7 @@ router.use(autenticarUsuario);
 router.post(
   '/',
   permitirSomente('admin','cadastro'),
-  upload.array('arquivo', 5),
+  upload.array('arquivos', 5),
   equipamentoController.criar
 );
 

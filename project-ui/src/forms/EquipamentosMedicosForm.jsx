@@ -94,11 +94,11 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
 
  const handleChange = (e) => {
   const { name, value, files } = e.target;
-  if (name === 'arquivos' && files) {
-    const names = Array.from(files).map((file) => file.name);
-    setFileNames(names);
-    setFormData((prev) => ({ ...prev, arquivos: files })); 
-  } else {
+    if (name === 'arquivos' && files) {
+  const names = Array.from(files).map((file) => file.name);
+  setFileNames(names);
+  setFormData((prev) => ({ ...prev, arquivos: files })); // você pode manter `arquivos` no state
+} else {
     setFormData({ ...formData, [name]: value });
   }
 };
@@ -132,8 +132,8 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
   formToSend.append('tipoEquipamentoId', formData.tipoEquipamentoId || '');
 
   if (formData.arquivos && formData.arquivos.length > 0) {
-    for (const arquivo of formData.arquivos) {
-      formToSend.append('arquivo', arquivo);
+   for (const arquivo of formData.arquivos) {
+  formToSend.append('arquivos', arquivo); 
     }
   }
 
@@ -309,13 +309,13 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
               </label>
               <div className="custom-file-upload">
                 <input
-                  type="file"
-                  name="arquivos"
-                  multiple
-                  accept="application/pdf"
-                  onChange={handleChange}
-                  id="fileInput"
-                />
+                   type="file"
+                    name="arquivos"
+                    multiple
+                    accept="application/pdf"
+                    onChange={handleChange}
+                    id="fileInput"
+/>
                 <label htmlFor="fileInput">Clique ou arraste arquivos PDF aqui</label>
               </div>
               {fileNames.length > 0 && (

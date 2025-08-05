@@ -5,11 +5,11 @@ const autenticarUsuario = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 
 // Protege todas as rotas - só admin pode alterar
-router.use(autenticarUsuario, permitirSomente('admin'));
+router.use(autenticarUsuario);
 
-router.post('/', permitirSomente('admin'),controller.criar);
-router.get('/',permitirSomente('admin'), controller.listar);
-router.put('/:id',permitirSomente('admin'), controller.atualizar);
-router.delete('/:id', permitirSomente('admin'),controller.remover);
+router.post('/', permitirSomente('admin','cadastro'),controller.criar);
+router.get('/',permitirSomente('admin','cadastro'), controller.listar);
+router.put('/:id',permitirSomente('admin','cadastro'), controller.atualizar);
+router.delete('/:id', permitirSomente('admin','cadastro'),controller.remover);
 
 module.exports = router;
