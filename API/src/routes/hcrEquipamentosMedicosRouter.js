@@ -31,18 +31,15 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage, fileFilter });
 
 router.use(autenticarUsuario);
-
-// Rota POST com upload de PDF
 router.post(
   '/',
   permitirSomente('admin','cadastro'),
   upload.array('arquivos', 5),
   equipamentoController.criar
 );
-
 router.get('/', permitirSomente('admin','cadastro'),equipamentoController.listar);
 router.get('/:id',permitirSomente('admin','cadastro') ,equipamentoController.buscarPorId);
-router.put('/:id', permitirSomente('admin','cadastro'), equipamentoController.atualizar);
+router.put('/:id',upload.array('arquivos'),permitirSomente('admin', 'cadastro'),equipamentoController.atualizar);
 router.delete('/:id', permitirSomente('admin','cadastro'), equipamentoController.deletar);
 
 module.exports = router;

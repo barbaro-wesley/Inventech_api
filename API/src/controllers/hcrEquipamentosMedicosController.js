@@ -45,10 +45,18 @@ async criar(req, res) {
 async atualizar(req, res) {
   try {
     const id = parseInt(req.params.id, 10);
-    const result = await service.atualizar(id, req.body);;
+    const arquivos = req.files ? req.files.map(file => `uploads/pdfs/${file.filename}`) : [];
+    const data = {
+      ...req.body,
+      arquivos,
+    };
+    const result = await service.atualizar(id, data);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao atualizar equipamento' });
+    res.status(500).json({
+      error: 'Erro ao atualizar equipamento',
+      detalhes: error.message,
+    });
   }
 }
 

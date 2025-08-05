@@ -199,11 +199,11 @@ const handlePrint = () => {
               <div className="section">
                 <h3>Anexos</h3>
                 <div className="arquivos-container">
-                  {equipamento.arquivos.map((arquivo, index) => (
+                  {equipamento.arquivos.map((arquivos, index) => (
                     <div key={index} className="anexo-item">
                       <FaFilePdf className="pdf-icon" />
-                      <span onClick={() => handleOpenPdf(arquivo)} className="anexo-link">
-                        {arquivo.split('\\').pop()}
+                      <span onClick={() => handleOpenPdf(arquivos)} className="anexo-link">
+                        {arquivos.split('\\').pop()}
                       </span>
                     </div>
                   ))}

@@ -3,6 +3,7 @@ import '../styles/EquipamentosMedicosForm.css';
 import api from '../config/api';
 import { Paperclip } from "lucide-react";
 import { toast } from 'react-toastify';
+
 function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
   const [formData, setFormData] = useState({
     numeroPatrimonio: '',
@@ -45,6 +46,7 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
         const response = await api.get('/tipos-equipamento', { withCredentials: true });
         setTiposEquipamentos(response.data);
       } catch (error) {
+        console.error('Erro ao buscar tipos de equipamento:', error);
       }
     };
 
@@ -71,135 +73,142 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
         setorId: initialData.setorId ? String(initialData.setorId) : '',
         localizacaoId: initialData.localizacaoId ?? initialData.localizacao?.id ?? '',
         tipoEquipamentoId: initialData.tipoEquipamentoId ? String(initialData.tipoEquipamentoId) : '',
-        arquivo: initialData.arquivo ?? [],
+        arquivos: initialData.arquivos ?? [],
       });
+      if (Array.isArray(initialData.arquivos)) {
+        const nomes = initialData.arquivos.map(a => a.split('/').pop());
+        setFileNames(nomes);
+      }
     }
   }, [initialData]);
 
   useEffect(() => {
-    if (formData.setorId) {
-      const selectedSetor = setores.find((setor) => setor.id === parseInt(formData.setorId));
-      setFilteredLocalizacoes(selectedSetor ? selectedSetor.localizacoes : []);
-      if (
-        formData.localizacaoId &&
-        !selectedSetor?.localizacoes.some((loc) => loc.id === parseInt(formData.localizacaoId))
-      ) {
-        setFormData((prev) => ({ ...prev, localizacaoId: '' }));
-      }
-    } else {
-      setFilteredLocalizacoes([]);
+  if (formData.setorId && setores.length > 0) {
+    const selectedSetor = setores.find((setor) => setor.id === parseInt(formData.setorId));
+    setFilteredLocalizacoes(selectedSetor ? selectedSetor.localizacoes : []);
+    if (
+      formData.localizacaoId &&
+      selectedSetor &&
+      !selectedSetor.localizacoes.some((loc) => loc.id === parseInt(formData.localizacaoId))
+    ) {
       setFormData((prev) => ({ ...prev, localizacaoId: '' }));
     }
-  }, [formData.setorId, setores]);
-
- const handleChange = (e) => {
-  const { name, value, files } = e.target;
-    if (name === 'arquivos' && files) {
-  const names = Array.from(files).map((file) => file.name);
-  setFileNames(names);
-  setFormData((prev) => ({ ...prev, arquivos: files })); // você pode manter `arquivos` no state
-} else {
-    setFormData({ ...formData, [name]: value });
+  } else {
+    setFilteredLocalizacoes([]);
+    // Evitar redefinir localizacaoId se setores ainda não foram carregados
+    if (setores.length === 0) return;
+    setFormData((prev) => ({ ...prev, localizacaoId: '' }));
   }
-};
+}, [formData.setorId, setores]);
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'arquivos' && files) {
+      const names = Array.from(files).map((file) => file.name);
+      setFileNames(names);
+      setFormData((prev) => ({ ...prev, arquivos: files }));
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.nomeEquipamento) {
-    toast.error('Por favor, preencha o campo obrigatório: Nome do Equipamento.');
-    return;
-  }
-
-  const formToSend = new FormData();
-
-  formToSend.append('numeroPatrimonio', formData.numeroPatrimonio || '');
-  formToSend.append('identificacao', formData.identificacao || '');
-  formToSend.append('numeroSerie', formData.numeroSerie || '');
-  formToSend.append('numeroAnvisa', formData.numeroAnvisa || '');
-  formToSend.append('nomeEquipamento', formData.nomeEquipamento);
-  formToSend.append('modelo', formData.modelo || '');
-  formToSend.append('fabricante', formData.fabricante || '');
-  formToSend.append('valorCompra', formData.valorCompra || '');
-  formToSend.append('dataCompra', formData.dataCompra ? new Date(formData.dataCompra).toISOString() : '');
-  formToSend.append('inicioGarantia', formData.inicioGarantia ? new Date(formData.inicioGarantia).toISOString() : '');
-  formToSend.append('terminoGarantia', formData.terminoGarantia ? new Date(formData.terminoGarantia).toISOString() : '');
-  formToSend.append('notaFiscal', formData.notaFiscal || '');
-  formToSend.append('obs', formData.obs || '');
-
-  formToSend.append('setorId', formData.setorId || '');
-  formToSend.append('localizacaoId', formData.localizacaoId || '');
-  formToSend.append('tipoEquipamentoId', formData.tipoEquipamentoId || '');
-
-  if (formData.arquivos && formData.arquivos.length > 0) {
-   for (const arquivo of formData.arquivos) {
-  formToSend.append('arquivos', arquivo); 
+    if (!formData.nomeEquipamento) {
+      toast.error('Por favor, preencha o campo obrigatório: Nome do Equipamento.');
+      return;
     }
-  }
 
-  try {
-    let response;
-    
-    if (initialData?.id) {
-      response = await api.put(`/equipamentos-medicos/${initialData.id}`, formToSend, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+    const formToSend = new FormData();
+
+    formToSend.append('numeroPatrimonio', formData.numeroPatrimonio || '');
+    formToSend.append('identificacao', formData.identificacao || '');
+    formToSend.append('numeroSerie', formData.numeroSerie || '');
+    formToSend.append('numeroAnvisa', formData.numeroAnvisa || '');
+    formToSend.append('nomeEquipamento', formData.nomeEquipamento);
+    formToSend.append('modelo', formData.modelo || '');
+    formToSend.append('fabricante', formData.fabricante || '');
+    formToSend.append('valorCompra', formData.valorCompra || '');
+    formToSend.append('dataCompra', formData.dataCompra ? new Date(formData.dataCompra).toISOString() : '');
+    formToSend.append('inicioGarantia', formData.inicioGarantia ? new Date(formData.inicioGarantia).toISOString() : '');
+    formToSend.append('terminoGarantia', formData.terminoGarantia ? new Date(formData.terminoGarantia).toISOString() : '');
+    formToSend.append('notaFiscal', formData.notaFiscal || '');
+    formToSend.append('obs', formData.obs || '');
+    formToSend.append('setorId', formData.setorId || '');
+    formToSend.append('localizacaoId', formData.localizacaoId || '');
+    formToSend.append('tipoEquipamentoId', formData.tipoEquipamentoId || '');
+
+    if (formData.arquivos && formData.arquivos.length > 0) {
+      for (const arquivo of formData.arquivos) {
+        formToSend.append('arquivos', arquivo);
+      }
+    }
+
+    try {
+      let response;
+      let equipamentoAtualizado;
+
+      if (initialData?.id) {
+        await api.put(`/equipamentos-medicos/${initialData.id}`, formToSend, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        const { data } = await api.get(`/equipamentos-medicos/${initialData.id}`);
+        equipamentoAtualizado = data;
+        toast.success('Equipamento atualizado com sucesso!');
+      } else {
+        response = await api.post('/equipamentos-medicos', formToSend, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        equipamentoAtualizado = response.data;
+        toast.success('Equipamento cadastrado com sucesso!');
+      }
+
+      const setorCompleto = setores.find((s) => s.id === parseInt(formData.setorId)) || { nome: '--' };
+      const localizacaoCompleta = filteredLocalizacoes.find((l) => l.id === parseInt(formData.localizacaoId)) || { nome: '--' };
+      const tipoEquipamentoCompleto = tiposEquipamentos.find((te) => te.id === parseInt(formData.tipoEquipamentoId)) || { nome: '--' };
+
+      const itemCompleto = {
+        ...equipamentoAtualizado,
+        setor: setorCompleto,
+        localizacao: localizacaoCompleta,
+        tipoEquipamento: tipoEquipamentoCompleto,
+      };
+
+      onSubmit(itemCompleto);
+      onClose();
+      setFormData({
+        numeroPatrimonio: '',
+        identificacao: '',
+        numeroSerie: '',
+        numeroAnvisa: '',
+        nomeEquipamento: '',
+        modelo: '',
+        fabricante: '',
+        valorCompra: '',
+        dataCompra: '',
+        inicioGarantia: '',
+        terminoGarantia: '',
+        notaFiscal: '',
+        obs: '',
+        setorId: '',
+        localizacaoId: '',
+        tipoEquipamentoId: '',
+        arquivos: [],
       });
-      toast.success('Equipamento atualizado com sucesso!');
-    } else {
-      response = await api.post('/equipamentos-medicos', formToSend, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      toast.success('Equipamento cadastrado com sucesso!');
+      setFileNames([]);
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || error.message || 'Tente novamente.';
+      toast.error(`Erro ao salvar equipamento médico: ${errorMessage}`);
     }
-
-    if (!response.data) {
-      throw new Error('Resposta da API inválida: dados não retornados');
-    }
-
-    const setorCompleto = setores.find((s) => s.id === parseInt(formData.setorId)) || { nome: '--' };
-    const localizacaoCompleta = filteredLocalizacoes.find((l) => l.id === parseInt(formData.localizacaoId)) || { nome: '--' };
-    const tipoEquipamentoCompleto = tiposEquipamentos.find((te) => te.id === parseInt(formData.tipoEquipamentoId)) || { nome: '--' };
-
-    const itemCompleto = {
-      ...response.data,
-      setor: setorCompleto,
-      localizacao: localizacaoCompleta,
-      tipoEquipamento: tipoEquipamentoCompleto,
-    };
-
-    onSubmit(itemCompleto);
-    onClose();
-    setFormData({
-      numeroPatrimonio: '',
-      identificacao: '',
-      numeroSerie: '',
-      numeroAnvisa: '',
-      nomeEquipamento: '',
-      modelo: '',
-      fabricante: '',
-      valorCompra: '',
-      dataCompra: '',
-      inicioGarantia: '',
-      terminoGarantia: '',
-      notaFiscal: '',
-      obs: '',
-      setorId: '',
-      localizacaoId: '',
-      tipoEquipamentoId: '',
-      arquivos: [], // <-- Corrigido para "arquivos"
-    });
-    setFileNames([]); 
-  } catch (error) {
-    const errorMessage = error.response?.data?.error || error.message || 'Tente novamente.';
-    toast.error(`Erro ao salvar equipamento médico: ${errorMessage}`);
-  }
-};
+  };
 
   if (!initialData && initialData !== null) {
     return <div>Loading...</div>;
@@ -309,13 +318,13 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
               </label>
               <div className="custom-file-upload">
                 <input
-                   type="file"
-                    name="arquivos"
-                    multiple
-                    accept="application/pdf"
-                    onChange={handleChange}
-                    id="fileInput"
-/>
+                  type="file"
+                  name="arquivos"
+                  multiple
+                  accept="application/pdf"
+                  onChange={handleChange}
+                  id="fileInput"
+                />
                 <label htmlFor="fileInput">Clique ou arraste arquivos PDF aqui</label>
               </div>
               {fileNames.length > 0 && (

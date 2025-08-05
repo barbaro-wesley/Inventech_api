@@ -67,9 +67,14 @@ async atualizar(id, data) {
     localizacaoId,
     tipoEquipamentoId,
     fabricante,
-    identificacao
+    identificacao,
+    arquivos = []
   } = data;
-
+  const equipamentoAtual = await prisma.hcrEquipamentosMedicos.findUnique({
+    where: { id: Number(id) },
+  });
+  const arquivosAtuais = equipamentoAtual?.arquivos || [];
+  const arquivosCombinados = [...arquivosAtuais, ...arquivos];
   return await prisma.hcrEquipamentosMedicos.update({
     where: { id: Number(id) },
     data: {
@@ -78,17 +83,18 @@ async atualizar(id, data) {
       numeroAnvisa,
       nomeEquipamento,
       modelo,
-      valorCompra,
+      valorCompra: valorCompra ? parseFloat(valorCompra) : null,
       dataCompra: dataCompra ? new Date(dataCompra) : null,
       inicioGarantia: inicioGarantia ? new Date(inicioGarantia) : null,
       terminoGarantia: terminoGarantia ? new Date(terminoGarantia) : null,
       notaFiscal,
       obs,
-      setorId,
-      localizacaoId,
-      tipoEquipamentoId,
+      setorId: setorId ? parseInt(setorId, 10) : null,
+      localizacaoId: localizacaoId ? parseInt(localizacaoId, 10) : null,
+      tipoEquipamentoId: tipoEquipamentoId ? parseInt(tipoEquipamentoId, 10) : null,
       fabricante,
-      identificacao
+      identificacao,
+      arquivos: arquivosCombinados, // salva todos arquivos
     }
   });
 }

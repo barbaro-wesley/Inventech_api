@@ -29,6 +29,7 @@ function EquipamentosMedicosPage() {
         setEquipamentos(response.data);
         setFilteredEquipamentos(response.data);
       } catch (error) {
+        console.error('Erro ao buscar equipamentos:', error);
       }
     }
     fetchData();
@@ -52,16 +53,14 @@ function EquipamentosMedicosPage() {
   const handleFormSubmit = async (formData) => {
     try {
       if (editMode && equipamentoParaEditar) {
-        const response = await api.put(
-          `/equipamentos-medicos/${equipamentoParaEditar.id}`,
-          formData,
-          { withCredentials: true }
-        );
         const updatedList = equipamentos.map((eq) =>
-          eq.id === equipamentoParaEditar.id ? response.data : eq
+          eq.id === equipamentoParaEditar.id ? { ...eq, ...formData } : eq
         );
         setEquipamentos(updatedList);
         setFilteredEquipamentos(updatedList);
+        if (equipamentoParaVisualizar?.id === equipamentoParaEditar.id) {
+          setEquipamentoParaVisualizar({ ...equipamentoParaVisualizar, ...formData });
+        }
       } else {
         const updatedList = [...equipamentos, formData];
         setEquipamentos(updatedList);
@@ -71,6 +70,7 @@ function EquipamentosMedicosPage() {
       setEditMode(false);
       setEquipamentoParaEditar(null);
     } catch (error) {
+      console.error('Erro ao salvar equipamento:', error);
     }
   };
 
@@ -91,7 +91,6 @@ function EquipamentosMedicosPage() {
     setCurrentPage(1);
   };
 
-  // Pagination
   const totalPages = Math.ceil(filteredEquipamentos.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
