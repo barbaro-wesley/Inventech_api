@@ -89,6 +89,7 @@ model OrdemServico {
   status            StatusOS        @default(ABERTA)
   criadoEm          DateTime        @default(now())
   finalizadoEm      DateTime?
+  valorManutencao   Decimal?
   resolucao         String?
   arquivos          String[]
   preventiva        Boolean         @default(false)
@@ -97,6 +98,7 @@ model OrdemServico {
   solicitante       Usuario         @relation(fields: [solicitanteId], references: [id])
   tecnico           Tecnico?        @relation(fields: [tecnicoId], references: [id])
   tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+  equipamento HcrEquipamentosMedicos @relation("EquipamentoOrdens", fields: [equipamentoId], references: [id])
 }
 
 model HcrComputer {
@@ -189,6 +191,7 @@ model HcrEquipamentosMedicos {
   setor             Setor?           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
   arquivos         String[]  @default([])
+  ordensServico OrdemServico[] @relation("EquipamentoOrdens")
 }
 
 enum PapelUsuario {

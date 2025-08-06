@@ -34,7 +34,8 @@ class HcrEquipamentosMedicosService {
       include: { 
         setor: true, 
         localizacao: true,
-        tipoEquipamento: true
+        tipoEquipamento: true,
+        ordensServico: true
       },
     });
   }

@@ -8,6 +8,7 @@ const ChamadosTecnico = () => {
   const [aberto, setAberto] = useState(null);
   const [resolucao, setResolucao] = useState('');
   const [arquivos, setArquivos] = useState([]);
+  const [valorManutencao, setValorManutencao] = useState('');
 
   useEffect(() => {
     const fetchChamados = async () => {
@@ -35,6 +36,7 @@ const ChamadosTecnico = () => {
     formData.append('resolucao', resolucao);
     formData.append('tecnicoId', os.tecnico.id);
     formData.append('finalizadoEm', new Date().toISOString());
+    formData.append('valorManutencao', valorManutencao);
     arquivos.forEach((file) => formData.append('arquivos', file));
 
     try {
@@ -47,7 +49,7 @@ const ChamadosTecnico = () => {
       setAberto(null);
       setResolucao('');
       setArquivos([]);
-
+      setValorManutencao('');
       const { data } = await api.get('/os/tecnico');
       setChamados(data);
     } catch (error) {
@@ -87,7 +89,18 @@ const ChamadosTecnico = () => {
                   value={resolucao}
                   onChange={(e) => setResolucao(e.target.value)}
                 />
-
+                <div className="input-valor">
+                  <label>
+                     Valor da manutenção (R$):
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Ex: 150.50"
+                      value={valorManutencao}
+                      onChange={(e) => setValorManutencao(e.target.value)}
+                      />
+                    </label>
+                </div>
                 <div className="input-arquivos">
                   <label>
                     <FaFileUpload className="icon" /> Anexar arquivos:

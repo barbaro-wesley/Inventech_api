@@ -29,19 +29,25 @@ class OrdemServicoService {
   return novaOS;
 }
 
- async listar() {
-  return await prisma.ordemServico.findMany({
+async listar() {
+  const osList = await prisma.ordemServico.findMany({
     include: {
       tipoEquipamento: true,
       tecnico: true,
       Setor: true,
       solicitante: {
         select: {
-          nome: true
-        }
-      }
+          nome: true,
+        },
+      },
     },
   });
+  const totalManutencao = osList.reduce((acc, os) => {
+    const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
+    return acc + valor;
+  }, 0);
+
+  return { osList, totalManutencao };
 }
 
   async buscarPorId(id) {

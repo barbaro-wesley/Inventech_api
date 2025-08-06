@@ -11,7 +11,18 @@ const uploadPath = 'uploads/';
 if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadPath),
+  destination: (req, file, cb) => {
+    let dest = 'uploads';
+
+    if (file.mimetype === 'application/pdf') {
+      dest = 'uploads/pdfs';
+    }
+
+    // cria o diretório, se não existir
+    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+
+    cb(null, dest);
+  },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
@@ -20,7 +31,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
   cb(null, allowed.includes(file.mimetype));
 };
 
@@ -38,7 +49,7 @@ router.put(
   '/:id/concluir',
   autenticarUsuario,
   permitirSomente('admin', 'tecnico','cadastro'),
-  upload.array('arquivos'), // isso aqui permite receber arquivos + campos textuais no body
+  upload.array('arquivos',5), // isso aqui permite receber arquivos + campos textuais no body
   ordemServicoController.concluir
 );
 

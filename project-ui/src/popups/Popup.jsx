@@ -99,6 +99,10 @@ const handlePrint = () => {
   newWindow.close();
 };
 
+const totalManutencao = equipamento.ordensServico
+  ? equipamento.ordensServico.reduce((acc, os) => acc + Number(os.valorManutencao || 0), 0)
+  : 0;
+
   return (
     <>
       <div className="modal-overlay">
@@ -210,6 +214,45 @@ const handlePrint = () => {
                 </div>
               </div>
             )}
+          {equipamento.ordensServico && equipamento.ordensServico.length > 0 && (
+  <div className="section">
+    <h3>Ordens de Serviço</h3>
+    <div className="os-table-wrapper">
+      <table className="os-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Descrição</th>
+            <th>Status</th>
+            <th>valor da Manutencao</th>
+          </tr>
+        </thead>
+        <tbody>
+          {equipamento.ordensServico.map((os) => (
+            <tr key={os.id}>
+              <td>{os.id}</td>
+              <td>{os.descricao}</td>
+              <td>{os.status}</td>
+              <td>
+  {os.valorManutencao
+    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(os.valorManutencao))
+    : '-'}
+</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+<div className="section total-manutencao">
+  <strong>Total Valor da Manutenção:</strong>{' '}
+  <span>
+    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalManutencao)}
+  </span>
+</div>
+
+
           </div>
         </div>
       </div>

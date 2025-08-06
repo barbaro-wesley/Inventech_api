@@ -115,3 +115,33 @@
 .btn-confirmar:hover {
   background-color: #15803d;
 }
+.input-valor {
+  margin: 12px 0 20px;
+  display: flex;
+  flex-direction: column;
+  max-width: 250px;       /* largura controlada */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.input-valor label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #222;
+  margin-bottom: 6px;
+  user-select: none;
+}
+
+.input-valor input {
+  padding: 10px 12px;
+  font-size: 1rem;
+  border: 1.8px solid #ccc;
+  border-radius: 6px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.input-valor input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
+}
