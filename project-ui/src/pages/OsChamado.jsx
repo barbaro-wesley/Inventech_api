@@ -1,4 +1,3 @@
-// src/pages/OsChamado.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/OsChamado.css';
@@ -19,20 +18,20 @@ function OsChamado() {
     { value: 'CONCLUIDA', label: 'Concluída' },
   ];
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await api.get('/os', {
-          withCredentials: true,
-        });
-        setOrdens(response.data);
-        setFilteredOrdens(response.data);
-      } catch (error) {
-        console.error('Erro ao buscar ordens de serviço:', error);
-      }
+useEffect(() => {
+  async function fetchData() {
+    try {
+      const response = await api.get('/os', {
+        withCredentials: true,
+      });
+      setOrdens(response.data.osList || []); // garante ser array
+      setFilteredOrdens(response.data.osList || []);
+    } catch (error) {
+      console.error('Erro ao buscar ordens de serviço:', error);
     }
-    fetchData();
-  }, []);
+  }
+  fetchData();
+}, []);
 
   useEffect(() => {
     const filtered = ordens.filter((ordem) => {

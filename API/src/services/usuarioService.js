@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const criarUsuario = async (dados) => {
-  const { nome, email, senha, papel } = dados;
+  const { nome, email, senha, papel, tecnicoId } = dados;
 
   const usuarioExistente = await prisma.usuario.findUnique({ where: { email } });
   if (usuarioExistente) throw new Error('E-mail já cadastrado');
@@ -16,6 +16,7 @@ const criarUsuario = async (dados) => {
       email,
       senha: senhaCriptografada,
       papel,
+      tecnicoId: tecnicoId ? parseInt(tecnicoId) : null, // 🔥 Aqui é o fix
     },
   });
 

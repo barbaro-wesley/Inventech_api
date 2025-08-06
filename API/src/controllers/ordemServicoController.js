@@ -1,5 +1,5 @@
 const ordemServicoService = require('../services/ordemServicoService');
-
+const { Prisma } = require('@prisma/client');
 const ordemServicoController = {
 async criar(req, res) {
     const arquivos = req.files ? req.files.map(file => file.path) : [];
@@ -23,14 +23,14 @@ async criar(req, res) {
     }
   },
 
-  async listar(req, res) {
-    try {
-      const osList = await ordemServicoService.listar();
-      res.status(200).json(osList);
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao listar ordens de serviço' });
-    }
-  },
+ async listar(req, res) {
+  try {
+    const { osList, totalManutencao } = await ordemServicoService.listar();
+    res.status(200).json({ osList, totalManutencao });
+  } catch (error) {
+    res.status(400).json({ error: 'Erro ao listar ordens de serviço' });
+  }
+},
 
   async listarPorTecnico(req, res) {
   try {
@@ -80,7 +80,7 @@ async criar(req, res) {
   async concluir(req, res) {
   try {
     const { id } = req.params;
-    const { resolucao, tecnicoId, finalizadoEm } = req.body;
+    const { resolucao, tecnicoId, finalizadoEm, valorManutencao } = req.body;
 
     const caminhosArquivos = req.files?.map((file) => file.path) || [];
 
@@ -90,9 +90,9 @@ async criar(req, res) {
       finalizadoEm: new Date(finalizadoEm),
       status: 'CONCLUIDA',
       arquivos: caminhosArquivos,
+      valorManutencao: valorManutencao ? new Prisma.Decimal(valorManutencao) : null,
     };
-
-  const osAtualizada = await ordemServicoService.concluir(Number(id), dadosAtualizacao);
+    const osAtualizada = await ordemServicoService.concluir(Number(id), dadosAtualizacao);
     res.status(200).json(osAtualizada);
   } catch (error) {
     res.status(400).json({
@@ -100,8 +100,6 @@ async criar(req, res) {
       detalhes: error.message,
     });
   }
-
-  
 }
 };
 

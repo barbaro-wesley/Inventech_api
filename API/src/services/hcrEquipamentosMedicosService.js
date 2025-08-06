@@ -34,7 +34,8 @@ class HcrEquipamentosMedicosService {
       include: { 
         setor: true, 
         localizacao: true,
-        tipoEquipamento: true
+        tipoEquipamento: true,
+        ordensServico: true
       },
     });
   }
@@ -94,7 +95,7 @@ async atualizar(id, data) {
       tipoEquipamentoId: tipoEquipamentoId ? parseInt(tipoEquipamentoId, 10) : null,
       fabricante,
       identificacao,
-      arquivos: arquivosCombinados, // salva todos arquivos
+      arquivos: arquivosCombinados, 
     }
   });
 }
