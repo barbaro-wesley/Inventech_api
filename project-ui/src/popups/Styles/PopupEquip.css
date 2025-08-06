@@ -197,3 +197,7 @@
 .os-table tr:hover {
   background-color: #f9f9f9;
 }
+.pdf-icon {
+  color: #e74c3c;
+  font-size: 20px;
+}

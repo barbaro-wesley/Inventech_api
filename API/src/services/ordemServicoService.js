@@ -7,7 +7,11 @@ class OrdemServicoService {
   const novaOS = await prisma.ordemServico.create({
     data: {
       ...data,
-      arquivos: ['uploads/169999_img1.jpg', 'uploads/170000_img2.png'], // ou data.arquivos se quiser receber dinamicamente
+      preventiva: data.preventiva,
+      dataAgendada: data.dataAgendada ?? null,
+      recorrencia: data.recorrencia ?? 'NENHUMA',
+      intervaloDias: data.intervaloDias ?? null,
+      arquivos: data.arquivos || [],
     },
     include: {
       tipoEquipamento: true,
@@ -22,32 +26,49 @@ class OrdemServicoService {
   });
 
   if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
-  const msg = `📄 <b>Nova OS Atribuída</b>\n\n🔧 Técnico: ${novaOS.tecnico.nome}\n📌 Descrição: ${novaOS.descricao}` ;
-  await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
-}
+    const msg = `📄 <b>Nova OS Atribuída</b>\n\n🔧 Técnico: ${novaOS.tecnico.nome}\n📌 Descrição: ${novaOS.descricao}`;
+    await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
+  }
 
   return novaOS;
 }
 
 async listar() {
-  const osList = await prisma.ordemServico.findMany({
-    include: {
-      tipoEquipamento: true,
-      tecnico: true,
-      Setor: true,
-      solicitante: {
-        select: {
-          nome: true,
+  const [preventivas, corretivas] = await Promise.all([
+    prisma.ordemServico.findMany({
+      where: { preventiva: true },
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        Setor: true,
+        solicitante: {
+          select: { nome: true },
         },
       },
-    },
-  });
-  const totalManutencao = osList.reduce((acc, os) => {
+    }),
+    prisma.ordemServico.findMany({
+      where: { preventiva: false },
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        Setor: true,
+        solicitante: {
+          select: { nome: true },
+        },
+      },
+    }),
+  ]);
+
+  const totalManutencao = [...preventivas, ...corretivas].reduce((acc, os) => {
     const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
     return acc + valor;
   }, 0);
 
-  return { osList, totalManutencao };
+  return {
+    preventivas,
+    corretivas,
+    totalManutencao,
+  };
 }
 
   async buscarPorId(id) {

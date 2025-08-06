@@ -16,6 +16,8 @@ import OS from '../pages/OS';
 import OsChamado from '../pages/OsChamado';
 import PrinterPage from '../pages/PrinterPage';
 import ChamadosTecnico from '../pages/ChamadosTecnico';
+import OSPreventiva from '../pages/OSPreventiva';
+import Oscalendar from '../componets/Oscalendar';
 function Layout() {
   const [content, setContent] = useState('home');
 
@@ -27,6 +29,8 @@ function Layout() {
         return <EquipamentosMedicosPage/>;
       case 'ares_condicionados':
         return <ArCondicionadoPage/>;
+      case 'calendario':
+        return <Oscalendar/>;
       case 'impressoras':
         return <PrinterPage/>;
       case 'Os':
@@ -45,6 +49,8 @@ function Layout() {
         return <UsuarioPage/>;
       case 'chamados':
         return <ChamadoPage/>;
+        case 'preventiva':
+        return <OSPreventiva/>;
       case 'home':
         case 'meuschamados':
         return <ChamadosTecnico/>;

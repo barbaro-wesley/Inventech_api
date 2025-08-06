@@ -92,13 +92,16 @@ model OrdemServico {
   valorManutencao   Decimal?
   resolucao         String?
   arquivos          String[]
-  preventiva        Boolean         @default(false)
+  preventiva        Boolean         
+  dataAgendada      DateTime?       // Data para manutenção preventiva
+  recorrencia       Recorrencia?    @default(NENHUMA)
+  intervaloDias     Int?            // Se recorrencia = PERSONALIZADA
   setorId           Int?
   Setor             Setor?          @relation(fields: [setorId], references: [id])
   solicitante       Usuario         @relation(fields: [solicitanteId], references: [id])
   tecnico           Tecnico?        @relation(fields: [tecnicoId], references: [id])
   tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
-  equipamento HcrEquipamentosMedicos @relation("EquipamentoOrdens", fields: [equipamentoId], references: [id])
+  equipamento       HcrEquipamentosMedicos @relation("EquipamentoOrdens", fields: [equipamentoId], references: [id])
 }
 
 model HcrComputer {
@@ -220,6 +223,15 @@ enum StatusChamado {
   EM_ANDAMENTO
   FECHADO
   CANCELADO
+}
+enum Recorrencia {
+  NENHUMA      // para corretivas
+  DIARIA
+  SEMANAL
+  QUINZENAL
+  MENSAL
+  ANUAL
+  PERSONALIZADA // caso queira usar dias específicos (ex: 15 dias)
 }
 
 model Chamado {

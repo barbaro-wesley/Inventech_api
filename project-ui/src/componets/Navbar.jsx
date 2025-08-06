@@ -16,7 +16,7 @@ function Navbar({ setContent }) {
         </div>
         <div className="navbar-buttons">
           <button className="nav-btn btn-1" onClick={() => setContent('meuschamados')}>Meus Chamados</button>
-          <button className="nav-btn btn-2" onClick={() => setContent('calendario')}>Chamados Do grupo</button>
+          <button className="nav-btn btn-2" onClick={() => setContent('calendario')}>Calendario</button>
           <button className="nav-btn btn-3" onClick={() => setContent('chamados')}>EM DEV</button>
         </div>
       </nav>

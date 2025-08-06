@@ -219,29 +219,47 @@ const totalManutencao = equipamento.ordensServico
     <h3>Ordens de Serviço</h3>
     <div className="os-table-wrapper">
       <table className="os-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Descrição</th>
-            <th>Status</th>
-            <th>valor da Manutencao</th>
-          </tr>
-        </thead>
-        <tbody>
-          {equipamento.ordensServico.map((os) => (
-            <tr key={os.id}>
-              <td>{os.id}</td>
-              <td>{os.descricao}</td>
-              <td>{os.status}</td>
-              <td>
-  {os.valorManutencao
-    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(os.valorManutencao))
-    : '-'}
-</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Descrição</th>
+      <th>Status</th>
+      <th>Valor da Manutenção</th>
+      <th>Anexos</th>
+    </tr>
+  </thead>
+  <tbody>
+    {equipamento.ordensServico.map((os) => (
+      <tr key={os.id}>
+        <td>{os.id}</td>
+        <td>{os.descricao}</td>
+        <td>{os.status}</td>
+        <td>
+          {os.valorManutencao
+            ? new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              }).format(Number(os.valorManutencao))
+            : '-'}
+        </td>
+        <td>
+          {os.arquivos && os.arquivos.length > 0 ? (
+            os.arquivos.map((arquivo, idx) => (
+              <FaFilePdf
+                key={idx}
+                className="pdf-icon"
+                style={{ cursor: 'pointer', marginRight: '8px' }}
+                onClick={() => handleOpenPdf(arquivo)}
+              />
+            ))
+          ) : (
+            '-'
+          )}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
     </div>
   </div>
 )}

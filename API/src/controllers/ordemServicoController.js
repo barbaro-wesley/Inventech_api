@@ -1,51 +1,58 @@
 const ordemServicoService = require('../services/ordemServicoService');
 const { Prisma } = require('@prisma/client');
-const ordemServicoController = {
-async criar(req, res) {
-    const arquivos = req.files ? req.files.map(file => file.path) : [];
-    const data = {
-      descricao: req.body.descricao,
-      tipoEquipamentoId: Number(req.body.tipoEquipamentoId),
-      tecnicoId: Number(req.body.tecnicoId),
-      status: req.body.status,
-      preventiva: req.body.preventiva === 'true',
-      setorId: Number(req.body.setorId),
-      equipamentoId: Number(req.body.equipamentoId),
-      solicitanteId: Number(req.usuario.id),  
-      arquivos,
-    };
 
+const ordemServicoController = {
+ async criar(req, res) {
+  const arquivos = req.files ? req.files.map(file => file.path) : [];
+  const preventiva = req.body.preventiva === 'true' || req.body.preventiva === true;
+  const dataAgendada = req.body.dataAgendada ? new Date(req.body.dataAgendada) : null;
+  const recorrencia = req.body.recorrencia || 'NENHUMA';
+  const intervaloDias = req.body.intervaloDias ? Number(req.body.intervaloDias) : null;
+  const data = {
+    descricao: req.body.descricao,
+    tipoEquipamentoId: Number(req.body.tipoEquipamentoId),
+    tecnicoId: Number(req.body.tecnicoId),
+    status: req.body.status,
+    preventiva,
+    setorId: Number(req.body.setorId),
+    equipamentoId: Number(req.body.equipamentoId),
+    solicitanteId: Number(req.usuario.id),
+    arquivos,
+    dataAgendada,
+    recorrencia,
+    intervaloDias,
+  };
+  try {
+    const os = await ordemServicoService.criar(data);
+    res.status(201).json(os);
+  } catch (error) {
+    res.status(400).json({ error: 'Erro ao criar Ordem de Serviço', detalhes: error.message });
+  }
+},
+
+  async listar(req, res) {
     try {
-      const os = await ordemServicoService.criar(data);
-      res.status(201).json(os);
+      const { preventivas, corretivas, totalManutencao } = await ordemServicoService.listar();
+      res.status(200).json({ preventivas, corretivas, totalManutencao });
     } catch (error) {
-      res.status(400).json({ error: 'Erro ao criar Ordem de Serviço', detalhes: error.message });
+      res.status(400).json({ error: 'Erro ao listar ordens de serviço', detalhes: error.message });
     }
   },
 
- async listar(req, res) {
-  try {
-    const { osList, totalManutencao } = await ordemServicoService.listar();
-    res.status(200).json({ osList, totalManutencao });
-  } catch (error) {
-    res.status(400).json({ error: 'Erro ao listar ordens de serviço' });
-  }
-},
-
   async listarPorTecnico(req, res) {
-  try {
-    const tecnicoId = req.usuario.tecnicoId;
-    
-    if (!tecnicoId) {
-      return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
-    }
+    try {
+      const tecnicoId = req.usuario.tecnicoId;
 
-    const osList = await ordemServicoService.listarPorTecnico(tecnicoId);
-    res.status(200).json(osList);
-  } catch (error) {
-    res.status(400).json({ error: 'Erro ao listar OS do técnico', detalhes: error.message });
-  }
-},
+      if (!tecnicoId) {
+        return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
+      }
+
+      const osList = await ordemServicoService.listarPorTecnico(tecnicoId);
+      res.status(200).json(osList);
+    } catch (error) {
+      res.status(400).json({ error: 'Erro ao listar OS do técnico', detalhes: error.message });
+    }
+  },
 
   async buscarPorId(req, res) {
     try {
@@ -77,30 +84,32 @@ async criar(req, res) {
       res.status(400).json({ error: 'Erro ao deletar ordem de serviço' });
     }
   },
+
   async concluir(req, res) {
-  try {
-    const { id } = req.params;
-    const { resolucao, tecnicoId, finalizadoEm, valorManutencao } = req.body;
+    try {
+      const { id } = req.params;
+      const { resolucao, tecnicoId, finalizadoEm, valorManutencao } = req.body;
 
-    const caminhosArquivos = req.files?.map((file) => file.path) || [];
+      const caminhosArquivos = req.files?.map((file) => file.path) || [];
 
-    const dadosAtualizacao = {
-      resolucao,
-      tecnicoId: Number(tecnicoId),
-      finalizadoEm: new Date(finalizadoEm),
-      status: 'CONCLUIDA',
-      arquivos: caminhosArquivos,
-      valorManutencao: valorManutencao ? new Prisma.Decimal(valorManutencao) : null,
-    };
-    const osAtualizada = await ordemServicoService.concluir(Number(id), dadosAtualizacao);
-    res.status(200).json(osAtualizada);
-  } catch (error) {
-    res.status(400).json({
-      error: 'Erro ao concluir a OS',
-      detalhes: error.message,
-    });
+      const dadosAtualizacao = {
+        resolucao,
+        tecnicoId: Number(tecnicoId),
+        finalizadoEm: new Date(finalizadoEm),
+        status: 'CONCLUIDA',
+        arquivos: caminhosArquivos,
+        valorManutencao: valorManutencao ? new Prisma.Decimal(valorManutencao) : null,
+      };
+
+      const osAtualizada = await ordemServicoService.concluir(Number(id), dadosAtualizacao);
+      res.status(200).json(osAtualizada);
+    } catch (error) {
+      res.status(400).json({
+        error: 'Erro ao concluir a OS',
+        detalhes: error.message,
+      });
+    }
   }
-}
 };
 
 module.exports = ordemServicoController;

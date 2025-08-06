@@ -5,7 +5,7 @@ const autenticarUsuario = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 
 // Somente admin pode gerenciar técnicos
-router.use(autenticarUsuario, permitirSomente('admin'));
+router.use(autenticarUsuario);
 
 router.post('/', permitirSomente('admin','cadastro'),controller.criar);
 router.get('/',permitirSomente('admin','cadastro'), controller.listar);

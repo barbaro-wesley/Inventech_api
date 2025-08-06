@@ -53,6 +53,7 @@ function Sidebar({ setContent, isOpen, onClose }) {
             <ul className="submenu">
               <li onClick={() => handleContentChange('Oschamados')}>Chamados</li>
               <li onClick={() => handleContentChange('Os')}>Ordem de Serviço</li>
+              <li onClick={() => handleContentChange('preventiva')}>Preventiva</li>
             </ul>
           )}
         </div>
