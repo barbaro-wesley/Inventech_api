@@ -85,7 +85,7 @@ function EquipamentosMedicosPage() {
     const lower = term.toLowerCase();
     const filtered = equipamentos.filter((item) =>
       (item.numeroPatrimonio && item.numeroPatrimonio.toLowerCase().includes(lower)) ||
-      (item.numeroSerie && item.numeroSerie.toLowerCase().includes(lower))
+      (item.nomeEquipamento && item.nomeEquipamento.toLowerCase().includes(lower))
     );
     setFilteredEquipamentos(filtered);
     setCurrentPage(1);
@@ -119,7 +119,7 @@ function EquipamentosMedicosPage() {
         <div className="filter-bar">
           <input
             type="text"
-            placeholder="Buscar por Nº Patrimônio ou Nº Série"
+            placeholder="Buscar por Nº Patrimônio ou Nome do Equipamento"
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             className="filter-input"
