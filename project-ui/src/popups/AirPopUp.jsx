@@ -18,7 +18,7 @@ const AirPopUp = ({ equipamento, onClose }) => {
 
   const handleOpenPdf = (filePath) => {
     const filename = filePath.split('\\').pop();
-    const fileUrl = `${import.meta.env.VITE_API_URL2}/${filename.startsWith('uploads/') ? filename : `uploads/pdfs/${filename}`}`;
+    const fileUrl = `${import.meta.env.VITE_API_URL2}/${filename.startsWith('uploads/') ? filename : `uploads/airconditionings/${filename}`}`;
     window.open(fileUrl, '_blank');
   };
 
