@@ -180,7 +180,7 @@ function OS({ onClose, onSubmit }) {
         return `${equipamento.ip || 'Sem Nome'} - ${equipamento.marca || 'Sem Marca'}`;
       case '3': // Equipamentos médicos
       case '5': // Equipamentos Gerais
-        return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.modelo || 'Sem Modelo'}`;
+        return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.nomeEquipamento || 'Sem Modelo'}`;
       case '4': // Condicionadores
         return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
       default:

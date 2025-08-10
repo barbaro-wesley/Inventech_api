@@ -1,14 +1,17 @@
 const hcrAirConditioningService = require('../services/hcrAirConditioningService');
 
 const hcrAirConditioningController = {
-  async criar(req, res) {
-    try {
-      const equipamento = await hcrAirConditioningService.criar(req.body);
-      res.status(201).json(equipamento);
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao criar ar-condicionado', detalhes: error });
+ async criar(req, res) {
+  try {
+    if (!Array.isArray(req.body.arquivos)) {
+      req.body.arquivos = [];
     }
-  },
+    const equipamento = await hcrAirConditioningService.criar(req.body);
+    res.status(201).json(equipamento);
+  } catch (error) {
+    res.status(400).json({ error: 'Erro ao criar ar-condicionado', detalhes: error.message });
+  }
+},
 
   async listar(req, res) {
     try {

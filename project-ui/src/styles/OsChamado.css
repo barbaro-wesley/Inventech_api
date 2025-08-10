@@ -85,3 +85,21 @@
 .pagination-controls button:hover:not(:disabled) {
   background-color: #888;
 }
+
+.tab-container {
+  margin-bottom: 10px;
+}
+
+.tab-btn {
+  padding: 8px 14px;
+  border: none;
+  background: #ddd;
+  cursor: pointer;
+  margin-right: 5px;
+  border-radius: 4px;
+}
+
+.tab-btn.active {
+  background: #007bff;
+  color: #fff;
+}

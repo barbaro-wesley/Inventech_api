@@ -1,29 +1,31 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { FaEdit, FaEye } from 'react-icons/fa';
 import ArCondicionadoForm from '../forms/ArCondicionadoForm';
-import { FaEdit } from 'react-icons/fa';
+import AirPopUp from '../popups/AirPopUp';
 import '../styles/ArCondicionadoPage.css';
 import api from '../config/api';
 
 function ArCondicionadoPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [viewingItem, setViewingItem] = useState(null);
   const [arCondicionados, setArCondicionados] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFilter, setShowFilter] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await api.get('/condicionadores', {
-          withCredentials: true,
-        });
+        const response = await api.get('/condicionadores', { withCredentials: true });
         const validData = Array.isArray(response.data)
           ? response.data.filter(item => item && typeof item === 'object' && item.id)
           : [];
         setArCondicionados(validData);
-      } catch (error) {
-      }
+        setFilteredList(validData);
+      } catch (error) {}
     }
     fetchData();
   }, []);
@@ -38,25 +40,42 @@ function ArCondicionadoPage() {
     setShowForm(true);
   };
 
- const handleFormSubmit = (savedItem) => {
-  if (!savedItem || !savedItem.id) {
-    return;
-  }
-  if (editingItem) {
-    setArCondicionados((prev) =>
-      prev.map((ar) => (ar.id === savedItem.id ? savedItem : ar))
-    );
-  } else {
-    setArCondicionados((prev) => [...prev, savedItem]);
-  }
-  setShowForm(false);
-  setEditingItem(null);
-};
+  const handleViewClick = (item) => {
+    setViewingItem(item);
+  };
 
-  const totalPages = Math.ceil(arCondicionados.length / itemsPerPage);
+  const handleFormSubmit = (savedItem) => {
+    if (!savedItem || !savedItem.id) return;
+
+    let updatedList;
+    if (editingItem) {
+      updatedList = arCondicionados.map((ar) =>
+        ar.id === savedItem.id ? savedItem : ar
+      );
+    } else {
+      updatedList = [...arCondicionados, savedItem];
+    }
+    setArCondicionados(updatedList);
+    setFilteredList(updatedList);
+    setShowForm(false);
+    setEditingItem(null);
+  };
+
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    const lowerValue = value.toLowerCase();
+    const filtered = arCondicionados.filter((item) =>
+      item.nPatrimonio?.toString().toLowerCase().includes(lowerValue) ||
+      item.marca?.toLowerCase().includes(lowerValue)
+    );
+    setFilteredList(filtered);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(filteredList.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = arCondicionados.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredList.slice(indexOfFirstItem, indexOfLastItem);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -72,8 +91,18 @@ function ArCondicionadoPage() {
 
       <div className="pc-actions">
         <button className="btn-add" onClick={handleAddClick}>+ Adicionar</button>
-        <button className="btn-filter">Filtro</button>
+        <button className="btn-filter" onClick={() => setShowFilter(!showFilter)}>Filtro</button>
       </div>
+
+      {showFilter && (
+        <input
+          type="text"
+          placeholder="Buscar por Nº Patrimônio ou Marca..."
+          value={searchTerm}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="filter-input"
+        />
+      )}
 
       {showForm && (
         <ArCondicionadoForm
@@ -83,6 +112,13 @@ function ArCondicionadoPage() {
           }}
           onSubmit={handleFormSubmit}
           initialData={editingItem}
+        />
+      )}
+
+      {viewingItem && (
+        <AirPopUp
+          equipamento={viewingItem}
+          onClose={() => setViewingItem(null)}
         />
       )}
 
@@ -113,7 +149,14 @@ function ArCondicionadoPage() {
                   <td>{item.setor?.nome || '-'}</td>
                   <td>{item.localizacao?.nome || '-'}</td>
                   <td>{item.obs || '-'}</td>
-                  <td>
+                  <td className="acoes">
+                    <button
+                      className="btn-view"
+                      onClick={() => handleViewClick(item)}
+                      title="Visualizar equipamento"
+                    >
+                      <FaEye />
+                    </button>
                     <button
                       className="btn-edit"
                       onClick={() => handleEditClick(item)}

@@ -21,76 +21,127 @@ const PopupEquip = ({ equipamento, onClose }) => {
   };
 const handlePrint = () => {
   const currentDate = new Date().toLocaleString('pt-BR');
+
+  // Gerar linhas da tabela OS
+  const osRows = equipamento.ordensServico && equipamento.ordensServico.length > 0
+    ? equipamento.ordensServico.map(os => {
+      const valorFormatado = os.valorManutencao
+        ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(os.valorManutencao))
+        : '-';
+
+      // Lista de ícones PDF com nomes (não clicáveis, só visual)
+      const arquivosList = os.arquivos && os.arquivos.length > 0
+        ? os.arquivos.map(arq => arq.split('\\').pop()).join(', ')
+        : '-';
+
+      return `
+        <tr>
+          <td>${os.id}</td>
+          <td>${os.descricao || '-'}</td>
+          <td>${os.status || '-'}</td>
+          <td>${valorFormatado}</td>
+          <td>${arquivosList}</td>
+        </tr>
+      `;
+    }).join('')
+    : `<tr><td colspan="5" style="text-align:center;">Nenhuma ordem de serviço registrada.</td></tr>`;
+
+  const totalManutencao = equipamento.ordensServico
+    ? equipamento.ordensServico.reduce((acc, os) => acc + Number(os.valorManutencao || 0), 0)
+    : 0;
+
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
-        <meta charset="UTF-8">
-        
-        <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .print-container { width: 100%; max-width: 800px; margin: auto; padding: 20px; box-sizing: border-box; }
-            .print-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
-            .print-header p { margin: 0; font-size: 12px; }
-            .print-header img { max-height: 50px; }
-            .print-title { font-size: 18px; color: #333; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 5px; }
-            .print-section { margin-bottom: 20px; }
-            .print-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-            .print-item { font-size: 14px; line-height: 1.5; }
-            .print-item strong { display: block; margin-bottom: 5px; }
-            .full-width { grid-column: 1 / -1; }
-            .arquivos-container { display: flex; flex-direction: column; }
-        </style>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .print-container { width: 100%; max-width: 800px; margin: auto; padding: 20px; box-sizing: border-box; }
+        .print-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .print-header p { margin: 0; font-size: 12px; }
+        .print-header img { max-height: 50px; }
+        .print-title { font-size: 18px; color: #333; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 5px; }
+        .print-section { margin-bottom: 20px; }
+        .print-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .print-item { font-size: 14px; line-height: 1.5; }
+        .print-item strong { display: block; margin-bottom: 5px; }
+        .full-width { grid-column: 1 / -1; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        .total-manutencao { font-weight: bold; font-size: 16px; margin-top: 10px; text-align: right; }
+      </style>
     </head>
     <body>
-        <div class="print-container">
-            <div class="print-header">
-                <div class="header-logo">
-                    <img src="${logoUrl}" alt="Logo da Empresa" onerror="this.style.display='none';" />
-                </div>
-            </div>
-
-            <h2 class="print-title">Dados do Equipamento</h2>
-            <div class="print-section">
-                <div class="print-grid">
-                    <div class="print-item"><strong>Identificação:</strong> <span>${equipamento.identificacao || '-'}</span></div>
-                    <div class="print-item"><strong>Equipamento:</strong> <span>${equipamento.nomeEquipamento || '-'}</span></div>
-                    <div class="print-item"><strong>Nº Anvisa:</strong> <span>${equipamento.numeroAnvisa || '-'}</span></div>
-                    <div class="print-item"><strong>Fabricante:</strong> <span>${equipamento.fabricante || '-'}</span></div>
-                    <div class="print-item"><strong>Modelo:</strong> <span>${equipamento.modelo || '-'}</span></div>
-                    <div class="print-item"><strong>Nº Série:</strong> <span>${equipamento.numeroSerie || '-'}</span></div>
-                    <div class="print-item"><strong>Nº Patrimônio:</strong> <span>${equipamento.numeroPatrimonio || '-'}</span></div>
-                </div>
-            </div>
-            
-            <h3 class="print-title">Dados da Compra</h3>
-            <div class="print-section">
-                <div class="print-grid">
-                    <div class="print-item"><strong>Valor da Compra:</strong> <span>R$ ${equipamento.valorCompra ? equipamento.valorCompra.toFixed(2) : '0.00'}</span></div>
-                    <div class="print-item"><strong>Data da Compra:</strong> <span>${formatDate(equipamento.dataCompra)}</span></div>
-                    <div class="print-item"><strong>NF:</strong> <span>${equipamento.notaFiscal || '-'}</span></div>
-                    <div class="print-item"><strong>Início da Garantia:</strong> <span>${formatDate(equipamento.inicioGarantia)}</span></div>
-                    <div class="print-item"><strong>Fim da Garantia:</strong> <span>${formatDate(equipamento.terminoGarantia)}</span></div>
-                    <div class="print-item full-width"><strong>OBS:</strong> <span>${equipamento.obs || '-'}</span></div>
-                </div>
-            </div>
-            
-            <h3 class="print-title">Informações Adicionais</h3>
-            <div class="print-section">
-                <div class="print-grid">
-                    <div class="print-item"><strong>Setor:</strong> <span>${equipamento.setor?.nome || '-'}</span></div>
-                    <div class="print-item"><strong>Localização:</strong> <span>${equipamento.localizacao?.nome || '-'}</span></div>
-                    <div class="print-item"><strong>Tipo de Equipamento:</strong> <span>${equipamento.tipoEquipamento?.nome || '-'}</span></div>
-                </div>
-            </div>
-            
-            
+      <div class="print-container">
+        <div class="print-header">
+          <div class="header-logo">
+            <img src="${logoUrl}" alt="Logo da Empresa" onerror="this.style.display='none';" />
+          </div>
+          <p>Data impressão: ${currentDate}</p>
         </div>
+
+        <h2 class="print-title">Dados do Equipamento</h2>
+        <div class="print-section">
+          <div class="print-grid">
+            <div class="print-item"><strong>Identificação:</strong> <span>${equipamento.identificacao || '-'}</span></div>
+            <div class="print-item"><strong>Equipamento:</strong> <span>${equipamento.nomeEquipamento || '-'}</span></div>
+            <div class="print-item"><strong>Nº Anvisa:</strong> <span>${equipamento.numeroAnvisa || '-'}</span></div>
+            <div class="print-item"><strong>Fabricante:</strong> <span>${equipamento.fabricante || '-'}</span></div>
+            <div class="print-item"><strong>Modelo:</strong> <span>${equipamento.modelo || '-'}</span></div>
+            <div class="print-item"><strong>Nº Série:</strong> <span>${equipamento.numeroSerie || '-'}</span></div>
+            <div class="print-item"><strong>Nº Patrimônio:</strong> <span>${equipamento.numeroPatrimonio || '-'}</span></div>
+          </div>
+        </div>
+
+        <h3 class="print-title">Dados da Compra</h3>
+        <div class="print-section">
+          <div class="print-grid">
+            <div class="print-item"><strong>Valor da Compra:</strong> <span>R$ ${equipamento.valorCompra ? equipamento.valorCompra.toFixed(2) : '0.00'}</span></div>
+            <div class="print-item"><strong>Data da Compra:</strong> <span>${formatDate(equipamento.dataCompra)}</span></div>
+            <div class="print-item"><strong>NF:</strong> <span>${equipamento.notaFiscal || '-'}</span></div>
+            <div class="print-item"><strong>Início da Garantia:</strong> <span>${formatDate(equipamento.inicioGarantia)}</span></div>
+            <div class="print-item"><strong>Fim da Garantia:</strong> <span>${formatDate(equipamento.terminoGarantia)}</span></div>
+            <div class="print-item full-width"><strong>OBS:</strong> <span>${equipamento.obs || '-'}</span></div>
+          </div>
+        </div>
+
+        <h3 class="print-title">Informações Adicionais</h3>
+        <div class="print-section">
+          <div class="print-grid">
+            <div class="print-item"><strong>Setor:</strong> <span>${equipamento.setor?.nome || '-'}</span></div>
+            <div class="print-item"><strong>Localização:</strong> <span>${equipamento.localizacao?.nome || '-'}</span></div>
+            <div class="print-item"><strong>Tipo de Equipamento:</strong> <span>${equipamento.tipoEquipamento?.nome || '-'}</span></div>
+          </div>
+        </div>
+
+        <h3 class="print-title">Ordens de Serviço</h3>
+        <div class="print-section">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Valor da Manutenção</th>
+                <th>Anexos</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${osRows}
+            </tbody>
+          </table>
+          <div class="total-manutencao">
+            Total Valor da Manutenção: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalManutencao)}
+          </div>
+        </div>
+
+      </div>
     </body>
     </html>
   `;
 
-  // Open a new window and print the content
   const newWindow = window.open('', '', 'width=800,height=600');
   newWindow.document.write(htmlContent);
   newWindow.document.close();

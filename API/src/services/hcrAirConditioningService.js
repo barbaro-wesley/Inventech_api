@@ -3,18 +3,41 @@ const prisma = new PrismaClient();
 
 class HcrAirConditioningService {
   async criar(data) {
-    return await prisma.hcrAirConditioning.create({ data });
+  if (!Array.isArray(data.arquivos)) {
+    data.arquivos = [];
   }
+  return await prisma.hcrAirConditioning.create({ data });
+}
 
   async listar() {
-    return await prisma.hcrAirConditioning.findMany({
-      include: {
-        setor: true,
-        localizacao: true,
-        tipoEquipamento: true,
-      }
-    });
-  }
+  const condicionadores = await prisma.hcrAirConditioning.findMany({
+    include: {
+      setor: true,
+      localizacao: true,
+      tipoEquipamento: true,
+    }
+  });
+
+  const condicionadoresComOS = await Promise.all(
+    condicionadores.map(async (ar) => {
+      const ordensServico = await prisma.ordemServico.findMany({
+        where: { equipamentoId: ar.id },
+        include: {
+          tecnico: true,
+          solicitante: true,
+          tipoEquipamento: true,
+          Setor: true,
+        }
+      });
+      return {
+        ...ar,
+        ordensServico,
+      };
+    })
+  );
+
+  return condicionadoresComOS;
+}
 
   async buscarPorId(id) {
     return await prisma.hcrAirConditioning.findUnique({

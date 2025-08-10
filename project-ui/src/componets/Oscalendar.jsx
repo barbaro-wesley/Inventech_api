@@ -13,36 +13,40 @@ const Oscalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
-    const fetchOsData = async () => {
-      try {
-        const response = await api.get('/os');
-        const data = response.data;
+  const fetchOsData = async () => {
+    try {
+      const response = await api.get('/os');
+      const data = response.data;
 
-        const calendarEvents = data.preventivas.map(os => ({
-          id: os.id,
-          title: `${os.descricao} - ${os.Setor.nome}`,
-          start: new Date(os.dataAgendada),
-          end: new Date(new Date(os.dataAgendada).getTime() + 60 * 60 * 1000),
-          allDay: false,
-          resource: {
-            tecnico: os.tecnico.nome,
-            tipoEquipamento: os.tipoEquipamento.nome,
-            status: os.status,
-            recorrencia: os.recorrencia,
-            solicitante: os.solicitante.nome
-          }
-        }));
+      // Garante que data.preventivas existe e é array
+      const preventivas = Array.isArray(data.preventivas) ? data.preventivas : [];
 
-        setEvents(calendarEvents);
-        setLoading(false);
-      } catch (err) {
-        setError('Erro ao carregar dados das OS.');
-        setLoading(false);
-      }
-    };
+      const calendarEvents = preventivas.map(os => ({
+        id: os.id,
+        title: `${os.descricao} - ${os.Setor?.nome || 'Sem setor'}`,
+        start: new Date(os.dataAgendada),
+        end: new Date(new Date(os.dataAgendada).getTime() + 60 * 60 * 1000),
+        allDay: false,
+        resource: {
+          tecnico: os.tecnico?.nome || 'Não informado',
+          tipoEquipamento: os.tipoEquipamento?.nome || 'Não informado',
+          status: os.status,
+          recorrencia: os.recorrencia,
+          solicitante: os.solicitante?.nome || 'Não informado'
+        }
+      }));
 
-    fetchOsData();
-  }, []);
+      setEvents(calendarEvents);
+    } catch (err) {
+      console.error('Erro ao buscar OS preventivas:', err);
+      setError('Erro ao carregar dados das OS.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchOsData();
+}, []);
 
   const handleNavigate = (newDate) => {
     setCurrentDate(newDate);

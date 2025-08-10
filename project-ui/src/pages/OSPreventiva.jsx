@@ -12,10 +12,10 @@ function OSPreventiva({ onClose, onSubmit }) {
     tecnicoId: '',
     setorId: '',
     preventiva: true,
-    dataAgendada: '', // string datetime-local
+    dataAgendada: '',
     recorrencia: '',
-    intervaloDias: '', // string para input, pode ser convertido para number ou null
-    arquivos: [], // Adicionado para suportar anexos
+    intervaloDias: '',
+    arquivos: [],
   });
 
   const [tiposEquipamento, setTiposEquipamento] = useState([]);
@@ -23,7 +23,7 @@ function OSPreventiva({ onClose, onSubmit }) {
   const [filteredTecnicos, setFilteredTecnicos] = useState([]);
   const [equipamentos, setEquipamentos] = useState([]);
   const [grupo, setGrupo] = useState('');
-  const [fileNames, setFileNames] = useState([]); // Adicionado para exibir nomes dos arquivos
+  const [fileNames, setFileNames] = useState([]);
   const [loadingEquipamentos, setLoadingEquipamentos] = useState(false);
 
   const recorrencias = [
@@ -61,7 +61,7 @@ function OSPreventiva({ onClose, onSubmit }) {
   }, []);
 
   const handleChange = async (e) => {
-    const { name, value, files } = e.target;
+    const { name, value, files, type, checked } = e.target;
 
     if (name === 'arquivos') {
       const filesArray = Array.from(files);
@@ -70,37 +70,54 @@ function OSPreventiva({ onClose, onSubmit }) {
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (type === 'checkbox') {
+      setFormData({ ...formData, [name]: checked });
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (name === 'tipoEquipamentoId') {
-      const tipoId = value;
+      const tipoId = String(value);
       const tipo = tiposEquipamento.find((t) => t.id === parseInt(tipoId));
       setGrupo(tipo?.grupo?.nome || '');
 
-      const tecnicosFiltrados = tecnicos.filter((t) => t.grupo?.id === tipo?.grupo?.id);
-      setFilteredTecnicos(tecnicosFiltrados);
-      setFormData((prev) => ({ ...prev, tecnicoId: '' }));
+      // Filtrar técnicos
+      if (tipo?.grupo?.id) {
+        const filtered = tecnicos.filter(t => t.grupo?.id === tipo.grupo.id);
+        setFilteredTecnicos(filtered);
+        if (!filtered.some(t => t.id === parseInt(formData.tecnicoId))) {
+          setFormData(prev => ({ ...prev, tecnicoId: '' }));
+        }
+      } else {
+        setFilteredTecnicos(tecnicos);
+        setFormData(prev => ({ ...prev, tecnicoId: '' }));
+      }
 
+      // Buscar equipamentos
       const endpoint = endpointPorTipo[tipoId];
       if (endpoint) {
         try {
           setLoadingEquipamentos(true);
+          setEquipamentos([]);
           const res = await api.get(endpoint, {
             withCredentials: true,
-            params: { tipoEquipamentoId: tipoId },
+            params: { tipoEquipamentoId: tipoId }
           });
           const filteredEquipamentos = res.data.filter(e => String(e.tipoEquipamentoId) === tipoId);
           setEquipamentos(filteredEquipamentos);
           setFormData((prev) => ({ ...prev, equipamentoId: '', setorId: '' }));
         } catch (error) {
           console.error('Erro ao buscar equipamentos:', error);
+          setEquipamentos([]);
           toast.error('Erro ao carregar equipamentos');
         } finally {
           setLoadingEquipamentos(false);
         }
+      } else {
+        setEquipamentos([]);
+        setFormData((prev) => ({ ...prev, equipamentoId: '', setorId: '' }));
+        toast.warn('Nenhum endpoint configurado para este tipo de equipamento');
       }
     }
 
@@ -161,6 +178,23 @@ function OSPreventiva({ onClose, onSubmit }) {
     }
   };
 
+  const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
+    switch (String(tipoEquipamentoId)) {
+      case '1': // Computadores
+        return `${equipamento.nomePC || 'Sem Nome'} - ${equipamento.ip || 'Sem IP'}`;
+      case '2': // Impressoras
+        return `${equipamento.ip || 'Sem IP'} - ${equipamento.marca || 'Sem Marca'}`;
+      case '3': // Equipamentos médicos
+      case '5': // Equipamentos Gerais
+        return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.nomeEquipamento || 'Sem Modelo'}`;
+      case '4': // Condicionadores
+        return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
+      default:
+        return 'Equipamento não identificado';
+    }
+  };
+
+
   return (
     <div className="os-wrapper">
       <div className="os-card">
@@ -196,21 +230,21 @@ function OSPreventiva({ onClose, onSubmit }) {
 
           {/* Equipamento */}
           <div className="os-field">
-            <label>Equipamento</label>
-            <select
-              name="equipamentoId"
-              value={formData.equipamentoId}
-              onChange={handleChange}
-              required
-              disabled={loadingEquipamentos || !formData.tipoEquipamentoId}
-            >
-              <option value="">{loadingEquipamentos ? 'Carregando...' : 'Selecione'}</option>
-              {equipamentos.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nome || `Equipamento #${e.id}`}
-                </option>
-              ))}
-            </select>
+            <label htmlFor="equipamentoId">Equipamento</label>
+      <select
+        id="equipamentoId"
+        name="equipamentoId"
+        value={formData.equipamentoId}
+        onChange={handleChange}
+        disabled={loadingEquipamentos || equipamentos.length === 0}
+      >
+        <option value="">Selecione um equipamento</option>
+        {equipamentos.map((eq) => (
+          <option key={eq.id} value={eq.id}>
+            {getEquipamentoNome(eq, formData.tipoEquipamentoId)}
+          </option>
+        ))}
+      </select>
           </div>
 
           {/* Técnico Responsável */}

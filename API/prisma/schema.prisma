@@ -152,6 +152,7 @@ model HcrAirConditioning {
   terminoGarantia   DateTime?
   notaFiscal        String?
   valorCompra       Float?
+  arquivos         String[]  @default([])
 }
 
 model HcrMobilia {

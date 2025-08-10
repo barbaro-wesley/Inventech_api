@@ -1,36 +1,30 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import api from '../config/api';
 import { toast } from 'react-toastify';
 import "../styles/FormArCondicionado.css"
+
 function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
   const modoEdicao = !!initialData;
   const [formData, setFormData] = useState({
-  nPatrimonio: '',
-  nControle: '',
-  numeroSerie: '',
-  marca: '',
-  modelo: '',
-  BTUS: '',
-  setorId: '',
-  localizacaoId: '',
-  tipoEquipamentoId: '',
-  obs: '',
-  dataCompra: '',
-  inicioGarantia: '',
-  terminoGarantia: '',
-  notaFiscal: '',
-  valorCompra: '',
-});
-
-const formatarMoeda = (valor) => {
-  const numero = valor.replace(/\D/g, ''); 
-  const valorNumerico = (Number(numero) / 100).toFixed(2); 
-  return valorNumerico.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+    nPatrimonio: '',
+    nControle: '',
+    numeroSerie: '',
+    marca: '',
+    modelo: '',
+    BTUS: '',
+    setorId: '',
+    localizacaoId: '',
+    tipoEquipamentoId: '',
+    obs: '',
+    dataCompra: '',
+    inicioGarantia: '',
+    terminoGarantia: '',
+    notaFiscal: '',
+    valorCompra: '',
+    arquivos: []
   });
-};
+
+  const [arquivos, setArquivos] = useState([]);
 
   const [setores, setSetores] = useState([]);
   const [localizacoesFiltradas, setLocalizacoesFiltradas] = useState([]);
@@ -54,6 +48,7 @@ const formatarMoeda = (valor) => {
         terminoGarantia: initialData.terminoGarantia?.substring(0, 10) || '',
         notaFiscal: initialData.notaFiscal || '',
         valorCompra: initialData.valorCompra?.toString() || '',
+        arquivos: initialData.arquivos ?? [],
       });
     }
   }, [modoEdicao, initialData]);
@@ -61,21 +56,19 @@ const formatarMoeda = (valor) => {
   useEffect(() => {
     async function fetchSetores() {
       try {
-        const response = await api.get('/setor', {
-          withCredentials: true,
-        });
+        const response = await api.get('/setor', { withCredentials: true });
         setSetores(response.data);
       } catch (error) {
+        // tratar erro
       }
     }
 
     async function fetchTiposEquipamentos() {
       try {
-        const response = await api.get('/tipos-equipamento', {
-          withCredentials: true,
-        });
+        const response = await api.get('/tipos-equipamento', { withCredentials: true });
         setTiposEquipamentos(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
+        // tratar erro
       }
     }
 
@@ -92,84 +85,88 @@ const formatarMoeda = (valor) => {
     }
   }, [formData.setorId, setores]);
 
- const handleChange = (e) => {
-  const { name, value } = e.target;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-  if (name === 'valorCompra') {
-    const apenasNumeros = value.replace(/\D/g, ''); 
-    const valorFormatado = (Number(apenasNumeros) / 100).toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
+    if (name === 'valorCompra') {
+      const apenasNumeros = value.replace(/\D/g, '');
+      const valorFormatado = (Number(apenasNumeros) / 100).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        valorCompra: valorFormatado,
+      }));
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
-      valorCompra: valorFormatado,
+      [name]: value,
+      ...(name === 'setorId' ? { localizacaoId: '' } : {}),
     }));
-    return;
-  }
+  };
 
-  setFormData((prev) => ({
-    ...prev,
-    [name]: value,
-    ...(name === 'setorId' ? { localizacaoId: '' } : {}),
-  }));
-};
+  const handleArquivosChange = (e) => {
+    setArquivos(Array.from(e.target.files));
+  };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.nPatrimonio || !formData.numeroSerie || !formData.marca || !formData.BTUS) {
-    toast.error('Por favor, preencha todos os campos obrigatórios.');
-    return;
-  }
-
-  try {
-    const payload = {
-  nPatrimonio: formData.nPatrimonio,
-  nControle: formData.nControle || '0',
-  numeroSerie: formData.numeroSerie,
-  marca: formData.marca,
-  modelo: formData.modelo,
-  BTUS: formData.BTUS.toString(),
-  setorId: formData.setorId ? Number(formData.setorId) : null,
-  localizacaoId: formData.localizacaoId ? Number(formData.localizacaoId) : null,
-  tipoEquipamentoId: formData.tipoEquipamentoId ? Number(formData.tipoEquipamentoId) : null,
-  obs: formData.obs || null,
-  dataCompra: formData.dataCompra ? new Date(formData.dataCompra) : null,
-  inicioGarantia: formData.inicioGarantia ? new Date(formData.inicioGarantia) : null,
-  terminoGarantia: formData.terminoGarantia ? new Date(formData.terminoGarantia) : null,
-  notaFiscal: formData.notaFiscal || null,
-  valorCompra: formData.valorCompra
-  ? parseFloat(formData.valorCompra.replace(/\D/g, '')) / 100
-  : null,
-};
-console.log('Payload enviado:', payload);
-    const response = modoEdicao
-      ? await api.put(`/condicionadores/${initialData.id}`, payload, { withCredentials: true })
-      : await api.post('/condicionadores', payload, { withCredentials: true });
-        
-    if (!response.data || !response.data.id) {
-      throw new Error('Resposta da API inválida: item sem ID');
+    if (!formData.nPatrimonio || !formData.numeroSerie || !formData.marca || !formData.BTUS) {
+      toast.error('Por favor, preencha todos os campos obrigatórios.');
+      return;
     }
-    const setorCompleto = setores.find(s => s.id === payload.setorId);
-    const localizacaoCompleta = localizacoesFiltradas.find(l => l.id === payload.localizacaoId);
 
-    const itemCompleto = {
-      ...response.data, 
-      setor: setorCompleto || { nome: '--' },
-      localizacao: localizacaoCompleta || { nome: '--' },
-    };
+    try {
+      const formPayload = new FormData();
 
-    console.log('Equipamento salvo com sucesso!', itemCompleto);
-    onSubmit(itemCompleto);
+      formPayload.append('nPatrimonio', formData.nPatrimonio);
+      formPayload.append('nControle', formData.nControle || '0');
+      formPayload.append('numeroSerie', formData.numeroSerie);
+      formPayload.append('marca', formData.marca);
+      formPayload.append('modelo', formData.modelo);
+      formPayload.append('BTUS', formData.BTUS.toString());
+      formPayload.append('setorId', formData.setorId ? Number(formData.setorId) : '');
+      formPayload.append('localizacaoId', formData.localizacaoId ? Number(formData.localizacaoId) : '');
+      formPayload.append('tipoEquipamentoId', formData.tipoEquipamentoId ? Number(formData.tipoEquipamentoId) : '');
+      formPayload.append('obs', formData.obs || '');
+      formPayload.append('dataCompra', formData.dataCompra || '');
+      formPayload.append('inicioGarantia', formData.inicioGarantia || '');
+      formPayload.append('terminoGarantia', formData.terminoGarantia || '');
+      formPayload.append('notaFiscal', formData.notaFiscal || '');
+      formPayload.append('valorCompra', formData.valorCompra
+        ? parseFloat(formData.valorCompra.replace(/\D/g, '')) / 100
+        : '');
 
-    toast.success('Equipamento salvo com sucesso!');
-  } catch (error) {
-    console.error('Erro ao salvar condicionador:', error);
-    toast.error('Erro ao salvar o ar-condicionado. Tente novamente.');
-  }
-};
+      arquivos.forEach(file => {
+        formPayload.append('arquivos', file);
+      });
+
+      const config = {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true,
+      };
+
+      const response = modoEdicao
+        ? await api.put(`/condicionadores/${initialData.id}`, formPayload, config)
+        : await api.post('/condicionadores', formPayload, config);
+
+      if (!response.data || !response.data.id) {
+        throw new Error('Resposta da API inválida: item sem ID');
+      }
+
+      // Atualizar visualmente, buscar nomes completos etc. conforme sua lógica
+      onSubmit(response.data);
+      toast.success('Equipamento salvo com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar condicionador:', error);
+      toast.error('Erro ao salvar o ar-condicionado. Tente novamente.');
+    }
+  };
 
   return (
   <div className="form-container">
@@ -178,67 +175,126 @@ console.log('Payload enviado:', payload);
       <div className="form-grid">
         <div className="form-field">
           <label>Nº Patrimônio</label>
-          <input type="text" name="nPatrimonio" value={formData.nPatrimonio} onChange={handleChange} required />
+          <input
+            type="text"
+            name="nPatrimonio"
+            value={formData.nPatrimonio}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div className="form-field">
           <label>Nº Controle</label>
-          <input type="text" name="nControle" value={formData.nControle} onChange={handleChange} />
+          <input
+            type="text"
+            name="nControle"
+            value={formData.nControle}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-field">
           <label>Nº Série</label>
-          <input type="text" name="numeroSerie" value={formData.numeroSerie} onChange={handleChange} required />
+          <input
+            type="text"
+            name="numeroSerie"
+            value={formData.numeroSerie}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div className="form-field">
           <label>Marca</label>
-          <input type="text" name="marca" value={formData.marca} onChange={handleChange} required />
+          <input
+            type="text"
+            name="marca"
+            value={formData.marca}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div className="form-field">
           <label>Modelo</label>
-          <input type="text" name="modelo" value={formData.modelo} onChange={handleChange} />
+          <input
+            type="text"
+            name="modelo"
+            value={formData.modelo}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-field">
           <label>BTUs</label>
-          <input type="text" name="BTUS" value={formData.BTUS} onChange={handleChange} required />
+          <input
+            type="text"
+            name="BTUS"
+            value={formData.BTUS}
+            onChange={handleChange}
+            required
+          />
         </div>
+
         <div className="form-field">
-  <label>Data de Compra</label>
-  <input type="date" name="dataCompra" value={formData.dataCompra} onChange={handleChange} />
-</div>
-
-<div className="form-field">
-  <label>Início da Garantia</label>
-  <input type="date" name="inicioGarantia" value={formData.inicioGarantia} onChange={handleChange} />
-</div>
-
-<div className="form-field">
-  <label>Término da Garantia</label>
-  <input type="date" name="terminoGarantia" value={formData.terminoGarantia} onChange={handleChange} />
-</div>
-
-<div className="form-field">
-  <label>Nota Fiscal</label>
-  <input type="text" name="notaFiscal" value={formData.notaFiscal} onChange={handleChange} />
-</div>
-
-  <div className="form-field">
-  <label>Valor da Compra</label>
-  <input
-    type="text"
-    name="valorCompra"
-    value={formData.valorCompra}
-    onChange={handleChange}
-    placeholder="R$ 0,00"
-  />
+          <label>Data de Compra</label>
+          <input
+            type="date"
+            name="dataCompra"
+            value={formData.dataCompra}
+            onChange={handleChange}
+          />
         </div>
-        
+
+        <div className="form-field">
+          <label>Início da Garantia</label>
+          <input
+            type="date"
+            name="inicioGarantia"
+            value={formData.inicioGarantia}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-field">
+          <label>Término da Garantia</label>
+          <input
+            type="date"
+            name="terminoGarantia"
+            value={formData.terminoGarantia}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-field">
+          <label>Nota Fiscal</label>
+          <input
+            type="text"
+            name="notaFiscal"
+            value={formData.notaFiscal}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-field">
+          <label>Valor da Compra</label>
+          <input
+            type="text"
+            name="valorCompra"
+            value={formData.valorCompra}
+            onChange={handleChange}
+            placeholder="R$ 0,00"
+          />
+        </div>
+
         <div className="form-field">
           <label>Tipo de Equipamento</label>
-          <select name="tipoEquipamentoId" value={formData.tipoEquipamentoId} onChange={handleChange}>
+          <select
+            name="tipoEquipamentoId"
+            value={formData.tipoEquipamentoId}
+            onChange={handleChange}
+          >
             <option value="">Selecione um tipo de equipamento</option>
             {tiposEquipamentos.map((tipo) => (
               <option key={tipo.id} value={tipo.id}>
@@ -250,7 +306,11 @@ console.log('Payload enviado:', payload);
 
         <div className="form-field">
           <label>Setor</label>
-          <select name="setorId" value={formData.setorId} onChange={handleChange}>
+          <select
+            name="setorId"
+            value={formData.setorId}
+            onChange={handleChange}
+          >
             <option value="">Selecione um setor</option>
             {setores.map((setor) => (
               <option key={setor.id} value={setor.id}>
@@ -262,7 +322,11 @@ console.log('Payload enviado:', payload);
 
         <div className="form-field">
           <label>Localização</label>
-          <select name="localizacaoId" value={formData.localizacaoId} onChange={handleChange}>
+          <select
+            name="localizacaoId"
+            value={formData.localizacaoId}
+            onChange={handleChange}
+          >
             <option value="">Selecione uma localização</option>
             {localizacoesFiltradas.map((loc) => (
               <option key={loc.id} value={loc.id}>
@@ -271,12 +335,25 @@ console.log('Payload enviado:', payload);
             ))}
           </select>
         </div>
+
+        <div className="form-field">
+          <label>Arquivos (PDF, múltiplos)</label>
+          <input
+            type="file"
+            accept="application/pdf"
+            multiple
+            onChange={handleArquivosChange}
+          />
+        </div>
       </div>
 
-      {/* Campos de linha única abaixo do grid */}
       <div className="form-field">
         <label>Observações</label>
-        <textarea name="obs" value={formData.obs} onChange={handleChange} />
+        <textarea
+          name="obs"
+          value={formData.obs}
+          onChange={handleChange}
+        />
       </div>
 
       <div className="form-buttons">
@@ -293,3 +370,8 @@ console.log('Payload enviado:', payload);
 }
 
 export default ArCondicionadoForm;
+
+
+
+
+

@@ -83,3 +83,22 @@
 .pagination-controls button:hover:not(:disabled) {
   background-color: #888;
 }
+.acoes {
+  display: flex;
+  gap: 8px; /* espaço entre os ícones */
+}
+
+.btn-view, .btn-edit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.btn-view {
+  color: #007bff; /* azul */
+}
+
+.btn-edit {
+  color: #ffc107; /* amarelo */
+}
