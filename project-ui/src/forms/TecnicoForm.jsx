@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/TecnicoForm.css';
 import api from '../config/api';
-
-function TecnicoForm({ onClose, onSubmit }) {
+import { toast } from 'react-toastify';
+function TecnicoForm({onClose, onSubmit, initialData  }) {
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -20,15 +20,32 @@ function TecnicoForm({ onClose, onSubmit }) {
   useEffect(() => {
     async function fetchGrupos() {
       try {
-        const response = await api.get('/grupos-manutencao',{
+        const response = await api.get('/grupos-manutencao', {
           withCredentials: true,
         });
         setGruposOptions(response.data);
       } catch (error) {
+        // trate erro se quiser
       }
     }
     fetchGrupos();
   }, []);
+
+  // Preencher o form com os dados do técnico para edição
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        nome: initialData.nome || '',
+        email: initialData.email || '',
+        telefone: initialData.telefone || '',
+        grupoId: initialData.grupoId ? String(initialData.grupoId) : '',
+        cpf: initialData.cpf || '',
+        matricula: initialData.matricula || '',
+        admissao: initialData.admissao ? initialData.admissao.slice(0, 10) : '', // formato yyyy-MM-dd
+        telegramChatId: initialData.telegramChatId || '',
+      });
+    }
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,40 +53,65 @@ function TecnicoForm({ onClose, onSubmit }) {
   };
 
 const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const response = await api.post(
-      '/tecnicos',
-      {
-        nome: formData.nome,
-        email: formData.email,
-        telefone: formData.telefone,
-        grupoId: formData.grupoId ? Number(formData.grupoId) : null,
-        cpf: formData.cpf,
-        matricula: formData.matricula,
-        admissao: formData.admissao ? new Date(formData.admissao).toISOString() : null,
-        telegramChatId: formData.telegramChatId || null,
-      },
-      {
-        withCredentials: true, // Aqui sim, na config
+    e.preventDefault();
+    try {
+      // Se tiver id, faz update, senão cria novo
+      if (initialData?.id) {
+        const response = await api.put(
+          `/tecnicos/${initialData.id}`,
+          {
+            nome: formData.nome,
+            email: formData.email,
+            telefone: formData.telefone,
+            grupoId: formData.grupoId ? Number(formData.grupoId) : null,
+            cpf: formData.cpf,
+            matricula: formData.matricula,
+            admissao: formData.admissao ? new Date(formData.admissao).toISOString() : null,
+            telegramChatId: formData.telegramChatId || null,
+          },
+          {
+            withCredentials: true,
+          }
+        );
+
+        onSubmit(response.data);
+         toast.success('Técnico atualizado com sucesso!');
+      } else {
+        const response = await api.post(
+          '/tecnicos',
+          {
+            nome: formData.nome,
+            email: formData.email,
+            telefone: formData.telefone,
+            grupoId: formData.grupoId ? Number(formData.grupoId) : null,
+            cpf: formData.cpf,
+            matricula: formData.matricula,
+            admissao: formData.admissao ? new Date(formData.admissao).toISOString() : null,
+            telegramChatId: formData.telegramChatId || null,
+          },
+          {
+            withCredentials: true,
+          }
+        );
+        onSubmit(response.data);
+         toast.success('Técnico cadastrado com sucesso!');
       }
-    );
 
-    onSubmit(response.data);
-    setFormData({
-      nome: '',
-      email: '',
-      telefone: '',
-      grupoId: '',
-      cpf: '',
-      matricula: '',
-      admissao: '',
-      telegramChatId: '',
-    });
-  } catch (error) {
-
-  }
-};
+      // Limpar formulário após submit
+      setFormData({
+        nome: '',
+        email: '',
+        telefone: '',
+        grupoId: '',
+        cpf: '',
+        matricula: '',
+        admissao: '',
+        telegramChatId: '',
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="form-container">

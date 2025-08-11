@@ -1,5 +1,5 @@
-// src/pages/TecnicoPage.jsx
 import { useState, useEffect } from 'react';
+import { FaEdit } from 'react-icons/fa'; 
 import axios from 'axios';
 import TecnicoForm from '../forms/TecnicoForm';
 import '../styles/TecnicoPage.css';
@@ -9,12 +9,13 @@ function TecnicoPage() {
   const [showForm, setShowForm] = useState(false);
   const [tecnicos, setTecnicos] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingTecnico, setEditingTecnico] = useState(null); 
   const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await api.get('/tecnicos',{
+        const response = await api.get('/tecnicos', {
           withCredentials: true,
         });
         setTecnicos(response.data);
@@ -26,15 +27,26 @@ function TecnicoPage() {
   }, []);
 
   const handleAddClick = () => {
+    setEditingTecnico(null); 
     setShowForm(true);
   };
 
-  const handleFormSubmit = (newTecnico) => {
-    setTecnicos([...tecnicos, newTecnico]);
-    setShowForm(false);
+  const handleEditClick = (tecnico) => {
+    setEditingTecnico(tecnico);
+    setShowForm(true);
   };
 
-  // Pagination
+  const handleFormSubmit = (updatedTecnico) => {
+    if (editingTecnico) {
+      
+      setTecnicos(tecnicos.map(t => t.id === updatedTecnico.id ? updatedTecnico : t));
+    } else {
+      
+      setTecnicos([...tecnicos, updatedTecnico]);
+    }
+    setShowForm(false);
+    setEditingTecnico(null);
+  };
   const totalPages = Math.ceil(tecnicos.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -57,7 +69,16 @@ function TecnicoPage() {
         <button className="btn-filter">Filtro</button>
       </div>
 
-      {showForm && <TecnicoForm onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
+      {showForm && (
+        <TecnicoForm
+          onClose={() => {
+            setShowForm(false);
+            setEditingTecnico(null);
+          }}
+          onSubmit={handleFormSubmit}
+          initialData={editingTecnico} // envia dados para edição
+        />
+      )}
 
       <table className="tecnico-table">
         <thead>
@@ -86,7 +107,13 @@ function TecnicoPage() {
               <td>{new Date(item.admissao).toLocaleDateString()}</td>
               <td>{item.telegramChatId || '-'}</td>
               <td>{item.ativo ? 'Sim' : 'Não'}</td>
-              <td>{/* Placeholder for future actions */}</td>
+              <td>
+                <FaEdit
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleEditClick(item)}
+                  title="Editar Técnico"
+                />
+              </td>
             </tr>
           ))}
         </tbody>
