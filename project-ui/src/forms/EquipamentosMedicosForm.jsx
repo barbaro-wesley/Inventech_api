@@ -95,7 +95,6 @@ function EquipamentosMedicosForm({ onClose, onSubmit, initialData = null }) {
     }
   } else {
     setFilteredLocalizacoes([]);
-    // Evitar redefinir localizacaoId se setores ainda não foram carregados
     if (setores.length === 0) return;
     setFormData((prev) => ({ ...prev, localizacaoId: '' }));
   }

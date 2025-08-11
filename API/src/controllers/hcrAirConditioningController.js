@@ -42,17 +42,11 @@ async atualizar(req, res) {
     const arquivos = req.files
       ? req.files.map(file => `uploads/airconditionings/${file.filename}`)
       : [];
-
-    // Remove arquivosExistentes do corpo pois backend não usa isso
     const { arquivosExistentes, ...restBody } = req.body;
-
     const data = {
       ...restBody,
       arquivos,
     };
-
-    console.log('📥 Dados recebidos no controller atualizar:', { id, data });
-
     const equipamento = await hcrAirConditioningService.atualizar(Number(id), data);
     res.status(200).json(equipamento);
   } catch (error) {

@@ -167,11 +167,6 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
         }
       }
 
-      console.log('FormData contents:');
-      for (let [key, value] of formPayload.entries()) {
-        console.log(key, value);
-      }
-
       const config = {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true,
@@ -225,7 +220,6 @@ function ArCondicionadoForm({ onClose, onSubmit, initialData }) {
       });
       setFileNames([]);
     } catch (error) {
-      console.error('Erro ao salvar condicionador:', error.response?.data || error.message);
       toast.error(`Erro ao salvar o ar-condicionado: ${error.response?.data?.error || error.message}`);
     }
   };

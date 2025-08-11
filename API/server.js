@@ -11,7 +11,7 @@ const limiter = rateLimit({
 });
 const corsOptions = {
   origin: function (origin, callback) {
-    callback(null, origin || '*'); // permite qualquer origem
+    callback(null, origin || '*'); 
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
