@@ -4,34 +4,52 @@ const enviarNotificacaoTelegram = require('../utils/telegram');
 
 class OrdemServicoService {
   async criar(data) {
-  const novaOS = await prisma.ordemServico.create({
-    data: {
-      ...data,
-      preventiva: data.preventiva,
-      dataAgendada: data.dataAgendada ?? null,
-      recorrencia: data.recorrencia ?? 'NENHUMA',
-      intervaloDias: data.intervaloDias ?? null,
-      arquivos: data.arquivos || [],
-    },
-    include: {
-      tipoEquipamento: true,
-      tecnico: true,
-      solicitante: {
-        select: {
-          nome: true
-        }
+    const novaOS = await prisma.ordemServico.create({
+      data: {
+        ...data,
+        preventiva: data.preventiva,
+        dataAgendada: data.dataAgendada ?? null,
+        recorrencia: data.recorrencia ?? 'NENHUMA',
+        intervaloDias: data.intervaloDias ?? null,
+        arquivos: data.arquivos || [],
       },
-      Setor: true,
-    },
-  });
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        solicitante: {
+          select: {
+            nome: true,
+          },
+        },
+        Setor: true,
+      },
+    });
 
-  if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
-    const msg = `📄 <b>Nova OS Atribuída</b>\n\n🔧 Técnico: ${novaOS.tecnico.nome}\n📌 Descrição: ${novaOS.descricao}`;
-    await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
+    if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
+      // Monta mensagem com setor, solicitante e data agendada opcional
+      let msg = `📄 <b>Nova OS Atribuída</b>\n\n`;
+      msg += `🔧 Técnico: ${novaOS.tecnico.nome}\n`;
+      msg += `📌 Descrição: ${novaOS.descricao}\n`;
+      msg += `📍 Setor: ${novaOS.Setor?.nome || 'Não informado'}\n`;
+      msg += `🙋 Solicitante: ${novaOS.solicitante?.nome || 'Não informado'}\n`;
+
+      if (novaOS.dataAgendada) {
+        // Formata a data para algo legível
+        const dataFormatada = new Date(novaOS.dataAgendada).toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        msg += `📅 Data Agendada: ${dataFormatada}\n`;
+      }
+
+      await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
+    }
+
+    return novaOS;
   }
-
-  return novaOS;
-}
 
 async listar() {
   const [preventivas, corretivas] = await Promise.all([
