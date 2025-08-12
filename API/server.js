@@ -37,7 +37,7 @@ const chamado = require('./src/routes/chamadoRoutes.js');
 const sobreavisoRoutes = require('./src/routes/sobreavisoRoutes.js');
 const incidenteRoutes = require('./src/routes/incidente.routes');
 const hcrPrinterRoutes = require('./src/routes/hcrPrinterRoutes');
-
+const hcrMobiliaRoutes = require('./src/routes/hcrMobiliaRoutes');
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
@@ -55,6 +55,7 @@ app.use('/api/upload', uploadRouter);
 app.use("/api/chamados",chamado)
 app.use("/api/sobreaviso",sobreavisoRoutes)
 app.use('/api/incidentes', incidenteRoutes);
+app.use('/api/hcr-mobilia', hcrMobiliaRoutes);
 const PORT = process.env.PORT ;
 const HOST = process.env.HOST;
 
