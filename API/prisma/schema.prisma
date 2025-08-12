@@ -40,6 +40,7 @@ model Usuario {
   tecnicoId    Int?
   OrdemServico OrdemServico[]
   tecnico      Tecnico?       @relation(fields: [tecnicoId], references: [id])
+  movimentacoes StockMovement[]
 }
 
 model GrupoManutencao {
@@ -159,8 +160,6 @@ model HcrMobilia {
   id                Int             @id @default(autoincrement())
   nPatrimonio       String
   nome              String
-  tipo              String
-  material          String
   estado            String
   obs               String?
   tipoEquipamentoId Int
@@ -276,4 +275,40 @@ model Incidente {
   oQueFoiFeito   String?    // Campo opcional
   criadoEm       DateTime   @default(now())
   atualizadoEm   DateTime   @updatedAt
+}
+
+
+model ProductCategory {
+  id       Int       @id @default(autoincrement())
+  nome     String    @unique
+  produtos Product[]
+}
+
+model Product {
+  id              Int              @id @default(autoincrement())
+  nome            String
+  descricao       String?
+  categoriaId     Int
+  categoria       ProductCategory  @relation(fields: [categoriaId], references: [id])
+  quantidade      Int              @default(0)
+  quantidadeMin   Int              @default(0)
+  movimentacoes   StockMovement[]
+}
+
+model StockMovement {
+  id          Int       @id @default(autoincrement())
+  tipo        TipoMovimento
+  produtoId   Int
+  produto     Product   @relation(fields: [produtoId], references: [id])
+  quantidade  Int
+  motivo      String?
+  data        DateTime  @default(now())
+  usuarioId   Int
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+}
+
+
+enum TipoMovimento {
+  ENTRADA
+  SAIDA
 }
