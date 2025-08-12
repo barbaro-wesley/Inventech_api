@@ -87,8 +87,6 @@ function OsChamado() {
           Preventivas
         </button>
       </div>
-
-      {/* Filtros */}
       <div className="os-chamado-actions">
         <div className="filter-controls">
           <input
@@ -112,22 +110,24 @@ function OsChamado() {
         </div>
       </div>
 
-      {/* Tabela */}
       <table className="os-chamado-table">
         <thead>
           <tr>
+            <th>N.Ordem</th>
             <th>Descrição</th>
             <th>Tipo de Equipamento</th>
             <th>Técnico</th>
             <th>Status</th>
             <th>Setor</th>
             <th>Solicitante</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
           {currentItems.length > 0 ? (
             currentItems.map((item) => (
               <tr key={item.id}>
+                <td>{item.id}</td>
                 <td>{item.descricao}</td>
                 <td>{item.tipoEquipamento?.nome || '-'}</td>
                 <td>{item.tecnico?.nome || '-'}</td>

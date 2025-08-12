@@ -78,7 +78,7 @@ const AirPopUp = ({ equipamento, onClose }) => {
                 <table className="os-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
+                      <th>N°Ordem</th>
                       <th>Descrição</th>
                       <th>Status</th>
                       <th>Valor da Manutenção</th>
