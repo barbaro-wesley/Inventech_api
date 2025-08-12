@@ -4,12 +4,20 @@ const prisma = new PrismaClient();
 class HcrMobiliaService {
   async criar(data) {
     return prisma.hcrMobilia.create({
-      data,
+      data: {
+        nPatrimonio: data.nPatrimonio,
+        nome: data.nome,
+        estado: data.estado,
+        obs: data.obs,
+        tipoEquipamentoId: Number(data.tipoEquipamentoId),
+        localizacaoId: Number(data.localizacaoId),
+        setorId: Number(data.setorId),
+      },
       include: {
         localizacao: true,
         setor: true,
-        tipoEquipamento: true
-      }
+        tipoEquipamento: true,
+      },
     });
   }
 

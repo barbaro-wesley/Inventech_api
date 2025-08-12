@@ -39,10 +39,10 @@ function Sidebar({ setContent, isOpen, onClose }) {
               <li onClick={() => handleContentChange('equipamentos_medicos')}>Equipamentos </li>
               <li onClick={() => handleContentChange('ares_condicionados')}>Ar-Condicionado</li>
               <li onClick={() => handleContentChange('impressoras')}>Impressoras</li>
+              <li onClick={() => handleContentChange('mobilia')}>Mobilias</li>
             </ul>
           )}
         </div>
-
         <div className="menu-group">
           <button className="menu-btn" onClick={() => toggleMenu('manutencao')}>
            <FaGears />

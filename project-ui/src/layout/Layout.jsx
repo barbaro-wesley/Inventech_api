@@ -18,6 +18,7 @@ import PrinterPage from '../pages/PrinterPage';
 import ChamadosTecnico from '../pages/ChamadosTecnico';
 import OSPreventiva from '../pages/OSPreventiva';
 import Oscalendar from '../componets/Oscalendar';
+import HcrMobiliaPage from '../pages/HcrMobiliaPage';
 function Layout() {
   const [content, setContent] = useState('home');
 
@@ -47,6 +48,8 @@ function Layout() {
         return <TecnicoPage/>;
       case 'usuarios':
         return <UsuarioPage/>;
+      case 'mobilia':
+        return <HcrMobiliaPage/>;
       case 'chamados':
         return <ChamadoPage/>;
         case 'preventiva':
