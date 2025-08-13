@@ -162,6 +162,12 @@ model HcrMobilia {
   nome              String
   estado            String
   obs               String?
+  valorCompra       Float?
+  taxaDepreciacao   Float?          // em porcentagem, ex: 10 para 10% ao ano
+  dataCompra        DateTime?
+  inicioGarantia    DateTime?
+  terminoGarantia   DateTime?
+  notaFiscal        String?
   tipoEquipamentoId Int
   localizacaoId     Int
   setorId           Int
