@@ -65,3 +65,33 @@
   background-color: rgb(244, 133, 54); /* laranja - secondary */
   color: #fffbe6; /* amarelo claro quase branco para alto contraste */
 }
+@media (max-width: 768px) {
+  .navbar {
+    padding: 1rem;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .navbar-buttons {
+    display: none; /* esconde os botões no mobile */
+  }
+
+  .navbar-left {
+    gap: 0.3rem;
+    font-size: 1.5rem;
+  }
+
+  .navbar img {
+    width: 60px; /* logo menor no mobile */
+  }
+}
+.mobile-menu {
+  display: none;
+}
+
+/* Mostrar o hamburger no mobile */
+@media (max-width: 768px) {
+  .mobile-menu {
+    display: block;
+  }
+}
