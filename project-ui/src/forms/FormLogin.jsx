@@ -28,7 +28,7 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://192.168.0.70:5000/api/usuarios/login", {
+      const response = await fetch("https://intranet.hcrmarau.com.br/api/usuarios/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
