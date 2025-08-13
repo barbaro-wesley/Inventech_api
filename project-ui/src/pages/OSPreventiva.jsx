@@ -40,6 +40,7 @@ function OSPreventiva({ onClose, onSubmit }) {
     '3': '/equipamentos-medicos',
     '4': '/condicionadores',
     '5': '/equipamentos-medicos',
+    '6': '/hcr-mobilia'
   };
 
   useEffect(() => {
@@ -189,6 +190,8 @@ function OSPreventiva({ onClose, onSubmit }) {
         return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.nomeEquipamento || 'Sem Modelo'}`;
       case '4': // Condicionadores
         return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
+        case '6': //  Mobilia
+        return `${equipamento.nPatrimonio || 'Sem Marca'} - ${equipamento.nome || 'Sem Patrimônio'}`;
       default:
         return 'Equipamento não identificado';
     }
