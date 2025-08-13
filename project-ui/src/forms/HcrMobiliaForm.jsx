@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import api from '../config/api';
-import '../styles/HcrMobiliaForm.css'; 
+import '../styles/HcrMobiliaForm.css';
 import { toast } from 'react-toastify';
+
 const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
   const [form, setForm] = useState({
     nPatrimonio: '',
     nome: '',
     estado: '',
     obs: '',
+    valorCompra: '',
+    dataCompra: '',
     tipoEquipamentoId: '',
     localizacaoId: '',
     setorId: ''
@@ -23,6 +26,7 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
     api.get('/localizacao').then(res => setLocalizacoes(res.data));
     api.get('/setor').then(res => setSetores(res.data));
   }, []);
+
   useEffect(() => {
     if (form.setorId) {
       setLocalizacoesFiltradas(
@@ -48,6 +52,8 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
     <div className="equip-form">
       <h2>Adicionar Mobiliário</h2>
       <form onSubmit={handleSubmit}>
+        
+        {/* Linha 1 */}
         <div className="form-row">
           <div className="form-group">
             <label>Nº Patrimônio</label>
@@ -78,6 +84,19 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
           </div>
         </div>
 
+        {/* Linha 2 - Novos Campos */}
+        <div className="form-row">
+          <div className="form-group">
+            <label>Valor de Compra (R$)</label>
+            <input type="number" step="0.01" name="valorCompra" value={form.valorCompra} onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Data de Compra</label>
+            <input type="date" name="dataCompra" value={form.dataCompra} onChange={handleChange} />
+          </div>
+        </div>
+
+        {/* Linha 3 */}
         <div className="form-row">
           <div className="form-group">
             <label>Setor</label>
@@ -88,7 +107,6 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
               ))}
             </select>
           </div>
-
           <div className="form-group">
             <label>Localização</label>
             <select
@@ -104,13 +122,13 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
               ))}
             </select>
           </div>
-
           <div className="form-group" style={{ flex: '1 1 100%' }}>
             <label>Observações</label>
             <textarea name="obs" value={form.obs} onChange={handleChange}></textarea>
           </div>
         </div>
 
+        {/* Botões */}
         <div className="form-buttons">
           <button type="submit" className="btn-submit">Salvar</button>
           <button type="button" className="btn-cancel" onClick={onCancel}>Cancelar</button>

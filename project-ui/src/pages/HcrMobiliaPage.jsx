@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import HcrMobiliaForm from '../forms/HcrMobiliaForm';
 import api from '../config/api';
 import '../styles/HcrMobiliaPage1.css'; 
+import PopUpMobilia from '../popups/PopUpMobilia';
+import { FaEye } from 'react-icons/fa';
 
 const HcrMobiliaPage = () => {
   const [mobilias, setMobilias] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [filtro, setFiltro] = useState('');
 
+  const [mobiliaSelecionada, setMobiliaSelecionada] = useState(null);
   const carregarMobilias = async () => {
     try {
       const res = await api.get('/hcr-mobilia');
@@ -49,42 +52,51 @@ const HcrMobiliaPage = () => {
       </div>
 
       <div className="table-container">
-        <table className="equip-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nº Patrimônio</th>
-              <th>Nome</th>
-              <th>Estado</th>
-              <th>Tipo</th>
-              <th>Localização</th>
-              <th>Setor</th>
-              <th>Obs</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mobiliasFiltradas.length > 0 ? (
-              mobiliasFiltradas.map(m => (
-                <tr key={m.id}>
-                  <td>{m.id}</td>
-                  <td>{m.nPatrimonio}</td>
-                  <td>{m.nome}</td>
-                  <td>{m.estado}</td>
-                  <td>{m.tipoEquipamento?.nome}</td>
-                  <td>{m.localizacao?.nome}</td>
-                  <td>{m.setor?.nome}</td>
-                  <td>{m.obs || '-'}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="8" style={{ textAlign: 'center' }}>Nenhum registro encontrado</td>
+         <table className="equip-table">
+        <thead>
+          <tr>
+            <th>Nº Patrimônio</th>
+            <th>Nome</th>
+            <th>Estado</th>
+            <th>Tipo</th>
+            <th>Localização</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mobiliasFiltradas.length > 0 ? (
+            mobiliasFiltradas.map(m => (
+              <tr key={m.id}>
+                <td>{m.nPatrimonio}</td>
+                <td>{m.nome}</td>
+                <td>{m.estado}</td>
+                <td>{m.tipoEquipamento?.nome}</td>
+                <td>{m.localizacao?.nome}</td>
+                <td>
+                  <button
+                    className="btn-view"
+                    onClick={() => setMobiliaSelecionada(m)}
+                  >
+                    <FaEye />
+                  </button>
+                </td>
               </tr>
-            )}
-          </tbody>
-        </table>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6" style={{ textAlign: 'center' }}>Nenhum registro encontrado</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
       </div>
-
+ {/* Popup */}
+      {mobiliaSelecionada && (
+        <PopUpMobilia
+          mobilia={mobiliaSelecionada}
+          onClose={() => setMobiliaSelecionada(null)}
+        />
+      )}
       {showForm && (
         <div className="form-container">
           <HcrMobiliaForm

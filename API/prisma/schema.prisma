@@ -163,6 +163,7 @@ model HcrMobilia {
   estado            String
   obs               String?
   valorCompra       Float?
+  valorAtual        Float?
   taxaDepreciacao   Float?          // em porcentagem, ex: 10 para 10% ao ano
   dataCompra        DateTime?
   inicioGarantia    DateTime?

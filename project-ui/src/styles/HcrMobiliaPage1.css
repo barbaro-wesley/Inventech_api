@@ -83,7 +83,22 @@
 .table-container tr:hover {
   background-color: #f9f9f9;
 }
+.btn-view {
+  background-color: #4CAF50; /* Verde */
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
 
+.btn-view:hover {
+  background-color: #45a049;
+}
 /* Responsividade */
 @media (max-width: 768px) {
   .page-header {
