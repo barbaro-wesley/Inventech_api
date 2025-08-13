@@ -3,7 +3,14 @@ const hcrMobiliaService = require('../services/hcrMobiliaService');
 class HcrMobiliaController {
   async criar(req, res) {
     try {
-      const novaMobilia = await hcrMobiliaService.criar(req.body);
+      const data = {
+        ...req.body,
+        valorCompra: req.body.valorCompra ? Number(req.body.valorCompra) : null,
+        taxaDepreciacao: req.body.taxaDepreciacao ? Number(req.body.taxaDepreciacao) : null,
+        dataCompra: req.body.dataCompra ? new Date(req.body.dataCompra) : null
+      };
+
+      const novaMobilia = await hcrMobiliaService.criar(data);
       res.status(201).json(novaMobilia);
     } catch (error) {
       console.error('Erro ao criar mobilia:', error);
@@ -36,7 +43,14 @@ class HcrMobiliaController {
 
   async atualizar(req, res) {
     try {
-      const mobiliaAtualizada = await hcrMobiliaService.atualizar(req.params.id, req.body);
+      const data = {
+        ...req.body,
+        valorCompra: req.body.valorCompra ? Number(req.body.valorCompra) : undefined,
+        taxaDepreciacao: req.body.taxaDepreciacao ? Number(req.body.taxaDepreciacao) : undefined,
+        dataCompra: req.body.dataCompra ? new Date(req.body.dataCompra) : undefined
+      };
+
+      const mobiliaAtualizada = await hcrMobiliaService.atualizar(req.params.id, data);
       res.json(mobiliaAtualizada);
     } catch (error) {
       console.error('Erro ao atualizar mobilia:', error);

@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100 // max 100 requisições por 15 minutos
+  max: 500 
 });
 const corsOptions = {
   origin: function (origin, callback) {
