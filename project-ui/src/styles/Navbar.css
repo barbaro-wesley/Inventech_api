@@ -13,8 +13,7 @@
 
 .navbar-content {
   width: 100%;
-  max-width: 1200px; /* limite opcional para o conteúdo */
-  margin: 0 auto;
+  margin: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -23,9 +22,10 @@
 .navbar-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.8rem; /* Espaço um pouco maior entre imagem e título */
+  margin-left: 0.5rem; /* Encosta mais à esquerda */
   font-weight: bold;
-  font-size: clamp(1.2rem, 2vw, 2rem);
+  font-size: clamp(1.3rem, 2vw, 2.2rem);
   background: linear-gradient(
     to right,
     hsl(215, 85%, 20%) 0%, 
@@ -36,11 +36,12 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: transparent;
 }
 
+
+
 .navbar img {
-  height: clamp(35px, 5vw, 50px);
+  height: clamp(50px, 7vw, 80px); /* Aumentei tamanho */
 }
 
 .navbar-buttons {
