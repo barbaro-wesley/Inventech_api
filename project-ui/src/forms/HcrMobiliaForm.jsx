@@ -11,6 +11,9 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
     obs: '',
     valorCompra: '',
     dataCompra: '',
+    inicioGarantia: '',
+    terminoGarantia: '',
+    notaFiscal: '',
     tipoEquipamentoId: '',
     localizacaoId: '',
     setorId: ''
@@ -43,9 +46,14 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    await api.post('/hcr-mobilia', form);
-    onSuccess();
-    toast.success('Mobiliário cadastrado com sucesso!');
+    try {
+      await api.post('/hcr-mobilia', form);
+      onSuccess();
+      toast.success('Mobiliário cadastrado com sucesso!');
+    } catch (err) {
+      toast.error('Erro ao cadastrar mobiliário');
+      console.error(err);
+    }
   };
 
   return (
@@ -84,7 +92,7 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
           </div>
         </div>
 
-        {/* Linha 2 - Novos Campos */}
+        {/* Linha 2 */}
         <div className="form-row">
           <div className="form-group">
             <label>Valor de Compra (R$)</label>
@@ -97,6 +105,22 @@ const HcrMobiliaForm = ({ onSuccess, onCancel }) => {
         </div>
 
         {/* Linha 3 */}
+        <div className="form-row">
+          <div className="form-group">
+            <label>Início da Garantia</label>
+            <input type="date" name="inicioGarantia" value={form.inicioGarantia} onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Término da Garantia</label>
+            <input type="date" name="terminoGarantia" value={form.terminoGarantia} onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Nota Fiscal</label>
+            <input name="notaFiscal" value={form.notaFiscal} onChange={handleChange} />
+          </div>
+        </div>
+
+        {/* Linha 4 */}
         <div className="form-row">
           <div className="form-group">
             <label>Setor</label>

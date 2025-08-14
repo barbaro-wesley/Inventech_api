@@ -46,13 +46,25 @@ const PopUpMobilia = ({ mobilia, onClose }) => {
                 <span>R$ {mobilia.valorCompra?.toFixed(2) || '-'}</span>
               </div>
               <div className="grid-item">
+                <strong>Valor Atual:</strong>
+                <span>R$ {mobilia.valorAtual?.toFixed(2) || '-'}</span>
+              </div>
+              <div className="grid-item">
                 <strong>Data de Compra:</strong>
                 <span>{mobilia.dataCompra ? new Date(mobilia.dataCompra).toLocaleDateString() : '-'}</span>
               </div>
               <div className="grid-item">
-                <strong>Valor Atual:</strong>
-                <span>R$ {mobilia.valorAtual?.toFixed(2) || '-'}</span>
+                <strong>inicio da Garantia:</strong>
+                <span>{mobilia.inicioGarantia ? new Date(mobilia.inicioGarantia).toLocaleDateString() : '-'}</span>
               </div>
+              <div className="grid-item">
+                <strong>termino da Garantia:</strong>
+                <span>{mobilia.terminoGarantia ? new Date(mobilia.terminoGarantia).toLocaleDateString() : '-'}</span>
+              </div>
+              <div className="grid-item">
+                  <strong>NF:</strong>
+                  <span>{mobilia.notaFiscal || '-'}</span>
+                </div>
             </div>
           </div>
 

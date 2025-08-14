@@ -13,35 +13,40 @@ function calcularValorDepreciado(valorCompra, taxaDepreciacao, dataCompra) {
   return valorFinal < 0 ? 0 : parseFloat(valorFinal.toFixed(2));
 }
 class HcrMobiliaService {
-  async criar(data) {
-    const taxaDepreciacao = 10; // fixa 10%
-    const valorAtual = calcularValorDepreciado(
-      Number(data.valorCompra),
-      taxaDepreciacao,
-      data.dataCompra
-    );
-
-    return prisma.hcrMobilia.create({
-      data: {
-        nPatrimonio: data.nPatrimonio,
-        nome: data.nome,
-        estado: data.estado,
-        obs: data.obs,
-        valorCompra: data.valorCompra ? Number(data.valorCompra) : null,
-        dataCompra: data.dataCompra ? new Date(data.dataCompra) : null,
+async criar(data) {
+  const taxaDepreciacao = data.taxaDepreciacao ?? 10; // usa valor enviado ou 10%
+  const valorAtual = data.valorCompra
+    ? calcularValorDepreciado(
+        Number(data.valorCompra),
         taxaDepreciacao,
-        valorAtual,
-        tipoEquipamentoId: Number(data.tipoEquipamentoId),
-        localizacaoId: Number(data.localizacaoId),
-        setorId: Number(data.setorId),
-      },
-      include: {
-        localizacao: true,
-        setor: true,
-        tipoEquipamento: true,
-      },
-    });
-  }
+        data.dataCompra
+      )
+    : null;
+
+  return prisma.hcrMobilia.create({
+    data: {
+      nPatrimonio: data.nPatrimonio,
+      nome: data.nome,
+      estado: data.estado,
+      obs: data.obs || null,
+      valorCompra: data.valorCompra ? Number(data.valorCompra) : null,
+      dataCompra: data.dataCompra ? new Date(data.dataCompra) : null,
+      inicioGarantia: data.inicioGarantia ? new Date(data.inicioGarantia) : null,
+      terminoGarantia: data.terminoGarantia ? new Date(data.terminoGarantia) : null,
+      notaFiscal: data.notaFiscal || null,
+      taxaDepreciacao,
+      valorAtual,
+      tipoEquipamentoId: Number(data.tipoEquipamentoId),
+      localizacaoId: Number(data.localizacaoId),
+      setorId: Number(data.setorId),
+    },
+    include: {
+      localizacao: true,
+      setor: true,
+      tipoEquipamento: true,
+    },
+  });
+}
 
   async listar() {
     return prisma.hcrMobilia.findMany({

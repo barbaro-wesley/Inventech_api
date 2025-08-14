@@ -184,7 +184,9 @@ function OS({ onClose, onSubmit }) {
         return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.nomeEquipamento || 'Sem Modelo'}`;
       case '4': // Condicionadores
         return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
-        case '6': // Condicionadores
+      case '6': // Condicionadores
+        return `${equipamento.nPatrimonio || 'Sem Marca'} - ${equipamento.nome || 'Sem Patrimônio'}`;
+      case '7': // Condicionadores
         return `${equipamento.nPatrimonio || 'Sem Marca'} - ${equipamento.nome || 'Sem Patrimônio'}`;
       default:
         return 'Equipamento não identificado';

@@ -1,22 +1,30 @@
 const hcrMobiliaService = require('../services/hcrMobiliaService');
 
 class HcrMobiliaController {
-  async criar(req, res) {
-    try {
-      const data = {
-        ...req.body,
-        valorCompra: req.body.valorCompra ? Number(req.body.valorCompra) : null,
-        taxaDepreciacao: req.body.taxaDepreciacao ? Number(req.body.taxaDepreciacao) : null,
-        dataCompra: req.body.dataCompra ? new Date(req.body.dataCompra) : null
-      };
+ async criar(req, res) {
+  try {
+    const data = {
+      ...req.body,
+      valorCompra: req.body.valorCompra ? Number(req.body.valorCompra) : null,
+      taxaDepreciacao: req.body.taxaDepreciacao
+        ? Number(req.body.taxaDepreciacao)
+        : null,
+      dataCompra: req.body.dataCompra ? new Date(req.body.dataCompra) : null,
+      inicioGarantia: req.body.inicioGarantia
+        ? new Date(req.body.inicioGarantia)
+        : null,
+      terminoGarantia: req.body.terminoGarantia
+        ? new Date(req.body.terminoGarantia)
+        : null,
+    };
 
-      const novaMobilia = await hcrMobiliaService.criar(data);
-      res.status(201).json(novaMobilia);
-    } catch (error) {
-      console.error('Erro ao criar mobilia:', error);
-      res.status(500).json({ error: 'Erro ao criar mobilia' });
-    }
+    const novaMobilia = await hcrMobiliaService.criar(data);
+    res.status(201).json(novaMobilia);
+  } catch (error) {
+    console.error('Erro ao criar mobilia:', error);
+    res.status(500).json({ error: 'Erro ao criar mobilia' });
   }
+}
 
   async listar(req, res) {
     try {
