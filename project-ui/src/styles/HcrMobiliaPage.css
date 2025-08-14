@@ -24,7 +24,7 @@
 /* Botões de ação no cabeçalho */
 .header-buttons {
   display: flex;
-  gap: 1rem;
+  gap: rem;
   flex-wrap: wrap;
 }
 
@@ -40,8 +40,14 @@
 .btn-add {
   background-color: rgb(10, 21, 122);
   color: white;
+  padding: 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
-
+.btn-add:focus {
+  outline: none; /* remove borda azul ao focar */
+}
 .btn-add:hover {
   background-color: rgb(15, 30, 150);
 }
@@ -101,31 +107,74 @@
 }
 /* Responsividade */
 @media (max-width: 768px) {
-  .page-header {
+  .equip-actions {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .header-buttons {
-    width: 100%;
-    justify-content: flex-start;
+    gap: 0.8rem;
   }
 
   .btn-add,
   .btn-filter {
-    width: auto;
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .filter-bar {
+    width: 100%;
+  }
+
+  .filter-input {
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 0.95rem;
   }
 }
 
 @media (max-width: 480px) {
   .btn-add,
   .btn-filter {
-    width: 100%;
+    font-size: 0.95rem;
+    padding: 0.7rem;
   }
 
-  .header-buttons {
-    flex-direction: column;
-    gap: 0.5rem;
+  .equip-actions {
+    gap: 0.6rem;
   }
+}
+/* Container de paginação */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+/* Botões de paginação */
+.pagination button {
+  background-color: #1e90ff;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+}
+
+.pagination button:hover {
+  background-color: #006edc;
+}
+
+.pagination button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Texto da página atual */
+.pagination span {
+  font-weight: bold;
+  color: #333;
 }
