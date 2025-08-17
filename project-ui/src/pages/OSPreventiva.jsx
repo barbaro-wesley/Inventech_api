@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import api from '../config/api';
 import '../styles/OS.css';
 
-function OSPreventiva({ onClose, onSubmit }) {
+function OSPreventiva({ onClose, onSubmit, initialData }) {
   const [formData, setFormData] = useState({
     descricao: '',
     tipoEquipamentoId: '',
@@ -40,7 +40,7 @@ function OSPreventiva({ onClose, onSubmit }) {
     '3': '/equipamentos-medicos',
     '4': '/condicionadores',
     '5': '/equipamentos-medicos',
-    '6': '/hcr-mobilia'
+    '6': '/hcr-mobilia',
   };
 
   useEffect(() => {
@@ -60,6 +60,60 @@ function OSPreventiva({ onClose, onSubmit }) {
     }
     fetchOptions();
   }, []);
+
+  useEffect(() => {
+    if (initialData && initialData.equipamento) {
+      const eq = initialData.equipamento;
+      setFormData({
+        ...formData,
+        tipoEquipamentoId: String(eq.tipoEquipamentoId || ''),
+        equipamentoId: String(eq.id || ''),
+        setorId: eq.setor?.id || '',
+        preventiva: !!initialData.preventiva,
+      });
+
+      // Initialize equipamentos with the provided equipment
+      setEquipamentos([eq]);
+
+      // Fetch additional equipment for the same tipoEquipamentoId
+      const tipoId = String(eq.tipoEquipamentoId || '');
+      const endpoint = endpointPorTipo[tipoId];
+      if (endpoint) {
+        (async () => {
+          try {
+            setLoadingEquipamentos(true);
+            const res = await api.get(endpoint, {
+              withCredentials: true,
+              params: { tipoEquipamentoId: tipoId },
+            });
+            const filteredEquipamentos = res.data.filter(e => String(e.tipoEquipamentoId) === tipoId);
+            // Ensure the initial equipment is included, avoiding duplicates
+            setEquipamentos(prev => {
+              const allEquipamentos = [...prev, ...filteredEquipamentos];
+              return Array.from(new Map(allEquipamentos.map(e => [e.id, e])).values());
+            });
+          } catch (error) {
+            console.error('Erro ao buscar equipamentos:', error);
+            toast.error('Erro ao carregar equipamentos');
+          } finally {
+            setLoadingEquipamentos(false);
+          }
+        })();
+      } else {
+        toast.warn('Nenhum endpoint configurado para este tipo de equipamento');
+      }
+
+      // Set grupo and filter técnicos based on tipoEquipamentoId
+      const selectedTipo = tiposEquipamento.find(t => t.id === parseInt(tipoId));
+      setGrupo(selectedTipo?.grupo?.nome || '');
+      if (selectedTipo?.grupo?.id) {
+        const filtered = tecnicos.filter(t => t.grupo?.id === selectedTipo.grupo.id);
+        setFilteredTecnicos(filtered);
+      } else {
+        setFilteredTecnicos(tecnicos);
+      }
+    }
+  }, [initialData, tiposEquipamento, tecnicos]);
 
   const handleChange = async (e) => {
     const { name, value, files, type, checked } = e.target;
@@ -190,13 +244,12 @@ function OSPreventiva({ onClose, onSubmit }) {
         return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.nomeEquipamento || 'Sem Modelo'}`;
       case '4': // Condicionadores
         return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
-        case '6': //  Mobilia
+      case '6': // Mobilia
         return `${equipamento.nPatrimonio || 'Sem Marca'} - ${equipamento.nome || 'Sem Patrimônio'}`;
       default:
         return 'Equipamento não identificado';
     }
   };
-
 
   return (
     <div className="os-wrapper">
@@ -234,20 +287,20 @@ function OSPreventiva({ onClose, onSubmit }) {
           {/* Equipamento */}
           <div className="os-field">
             <label htmlFor="equipamentoId">Equipamento</label>
-      <select
-        id="equipamentoId"
-        name="equipamentoId"
-        value={formData.equipamentoId}
-        onChange={handleChange}
-        disabled={loadingEquipamentos || equipamentos.length === 0}
-      >
-        <option value="">Selecione um equipamento</option>
-        {equipamentos.map((eq) => (
-          <option key={eq.id} value={eq.id}>
-            {getEquipamentoNome(eq, formData.tipoEquipamentoId)}
-          </option>
-        ))}
-      </select>
+            <select
+              id="equipamentoId"
+              name="equipamentoId"
+              value={formData.equipamentoId}
+              onChange={handleChange}
+              disabled={loadingEquipamentos || equipamentos.length === 0}
+            >
+              <option value="">Selecione um equipamento</option>
+              {equipamentos.map((eq) => (
+                <option key={eq.id} value={eq.id}>
+                  {getEquipamentoNome(eq, formData.tipoEquipamentoId)}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Técnico Responsável */}
@@ -275,8 +328,6 @@ function OSPreventiva({ onClose, onSubmit }) {
               readOnly
             />
           </div>
-
-          
 
           {/* Data Agendada */}
           <div className="os-field">

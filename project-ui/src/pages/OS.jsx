@@ -4,7 +4,7 @@ import '../styles/OS.css';
 import { toast } from 'react-toastify';
 import api from '../config/api';
 
-function OS({ onClose, onSubmit }) {
+function OS({ onClose, onSubmit, initialData }) {
   const [formData, setFormData] = useState({
     arquivos: [],
     descricao: '',
@@ -35,8 +35,8 @@ function OS({ onClose, onSubmit }) {
     '2': '/printers',
     '3': '/equipamentos-medicos',
     '4': '/condicionadores',
-    '5': '/equipamentos-medicos', // Equipamentos Gerais
-    '6': '/hcr-mobilia',  
+    '5': '/equipamentos-medicos',
+    '6': '/hcr-mobilia',
   };
 
   useEffect(() => {
@@ -50,12 +50,60 @@ function OS({ onClose, onSubmit }) {
         setTecnicos(tecnicosRes.data);
         setFilteredTecnicos(tecnicosRes.data);
       } catch (error) {
-        console.error('Erro ao buscar opções:', error);
         toast.error('Erro ao carregar opções do formulário');
       }
     }
     fetchOptions();
   }, []);
+
+  useEffect(() => {
+    if (initialData && initialData.equipamento) {
+      const eq = initialData.equipamento;
+      setFormData({
+        arquivos: [],
+        descricao: '',
+        tipoEquipamentoId: String(eq.tipoEquipamentoId || ''),
+        tecnicoId: '',
+        status: 'ABERTA',
+        preventiva: !!initialData.preventiva,
+        setorId: eq.setor?.id || '',
+        equipamentoId: String(eq.id || ''),
+      });
+      setEquipamentos([eq]);
+      const tipoId = String(eq.tipoEquipamentoId || '');
+      const endpoint = endpointPorTipo[tipoId];
+      if (endpoint) {
+        (async () => {
+          try {
+            setLoadingEquipamentos(true);
+            const res = await api.get(endpoint, {
+              withCredentials: true,
+              params: { tipoEquipamentoId: tipoId },
+            });
+            const filteredEquipamentos = res.data.filter(e => String(e.tipoEquipamentoId) === tipoId);
+            setEquipamentos(prev => {
+              const allEquipamentos = [...prev, ...filteredEquipamentos];
+              return Array.from(new Map(allEquipamentos.map(e => [e.id, e])).values());
+            });
+          } catch (error) {
+            toast.error('Erro ao carregar equipamentos');
+          } finally {
+            setLoadingEquipamentos(false);
+          }
+        })();
+      } else {
+        toast.warn('Nenhum endpoint configurado para este tipo de equipamento');
+      }
+      const selectedTipo = tiposEquipamento.find(t => t.id === parseInt(tipoId));
+      setGrupo(selectedTipo?.grupo?.nome || '');
+      if (selectedTipo?.grupo?.id) {
+        const filtered = tecnicos.filter(t => t.grupo?.id === selectedTipo.grupo.id);
+        setFilteredTecnicos(filtered);
+      } else {
+        setFilteredTecnicos(tecnicos);
+      }
+    }
+  }, [initialData, tiposEquipamento, tecnicos]);
 
   const handleChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -79,7 +127,6 @@ function OS({ onClose, onSubmit }) {
         const selectedTipo = tiposEquipamento.find((t) => t.id === parseInt(value));
         setGrupo(selectedTipo?.grupo?.nome || '');
 
-        // Filtrar técnicos
         if (selectedTipo?.grupo?.id) {
           const filtered = tecnicos.filter(t => t.grupo?.id === selectedTipo.grupo.id);
           setFilteredTecnicos(filtered);
@@ -91,22 +138,19 @@ function OS({ onClose, onSubmit }) {
           setFormData(prev => ({ ...prev, tecnicoId: '' }));
         }
 
-        // Buscar equipamentos
         const endpoint = endpointPorTipo[tipoId];
         if (endpoint) {
           try {
             setLoadingEquipamentos(true);
             setEquipamentos([]);
-            const res = await api.get(endpoint, { 
+            const res = await api.get(endpoint, {
               withCredentials: true,
-              params: { tipoEquipamentoId: tipoId } // Enviar tipoEquipamentoId como parâmetro
+              params: { tipoEquipamentoId: tipoId }
             });
-            // Filtrar equipamentos no frontend, caso a API não faça isso
             const filteredEquipamentos = res.data.filter(e => String(e.tipoEquipamentoId) === tipoId);
             setEquipamentos(filteredEquipamentos);
             setFormData((prev) => ({ ...prev, equipamentoId: '', setorId: '' }));
           } catch (error) {
-            console.error('Erro ao buscar equipamentos:', error);
             setEquipamentos([]);
             toast.error('Erro ao carregar equipamentos');
           } finally {
@@ -168,25 +212,24 @@ function OS({ onClose, onSubmit }) {
         onClose();
       }
     } catch (error) {
-      console.error('Erro ao cadastrar OS:', error.response?.data || error);
       toast.error('Erro ao cadastrar Ordem de Serviço');
     }
   };
 
   const getEquipamentoNome = (equipamento, tipoEquipamentoId) => {
     switch (tipoEquipamentoId) {
-      case '1': // Computadores
+      case '1':
         return `${equipamento.nomePC || 'Sem Nome'} - ${equipamento.ip || 'Sem IP'}`;
-      case '2': // Impressoras
+      case '2':
         return `${equipamento.ip || 'Sem Nome'} - ${equipamento.marca || 'Sem Marca'}`;
-      case '3': // Equipamentos médicos
-      case '5': // Equipamentos Gerais
+      case '3':
+      case '5':
         return `${equipamento.numeroSerie || 'Sem Nº de Série'} - ${equipamento.nomeEquipamento || 'Sem Modelo'}`;
-      case '4': // Condicionadores
+      case '4':
         return `${equipamento.marca || 'Sem Marca'} - ${equipamento.nPatrimonio || 'Sem Patrimônio'}`;
-      case '6': // Condicionadores
+      case '6':
         return `${equipamento.nPatrimonio || 'Sem Marca'} - ${equipamento.nome || 'Sem Patrimônio'}`;
-      case '7': // Condicionadores
+      case '7':
         return `${equipamento.nPatrimonio || 'Sem Marca'} - ${equipamento.nome || 'Sem Patrimônio'}`;
       default:
         return 'Equipamento não identificado';
@@ -198,7 +241,6 @@ function OS({ onClose, onSubmit }) {
       <div className="os-card">
         <h2 className="os-title">Cadastro de OS</h2>
         <form onSubmit={handleSubmit} className="os-form-grid">
-          {/* Tipo de Equipamento */}
           <div className="os-field">
             <label>Tipo de Equipamento</label>
             <select
@@ -216,7 +258,6 @@ function OS({ onClose, onSubmit }) {
             </select>
           </div>
 
-          {/* Equipamento */}
           <div className="os-field">
             <label>Equipamento</label>
             <select
@@ -235,7 +276,6 @@ function OS({ onClose, onSubmit }) {
             </select>
           </div>
 
-          {/* Técnico */}
           <div className="os-field">
             <label>Técnico Responsável</label>
             <select
@@ -253,7 +293,6 @@ function OS({ onClose, onSubmit }) {
             </select>
           </div>
 
-          {/* Grupo do Técnico */}
           <div className="os-field">
             <label>Grupo</label>
             <input
@@ -265,7 +304,6 @@ function OS({ onClose, onSubmit }) {
             />
           </div>
 
-          {/* Status */}
           <div className="os-field">
             <label>Status</label>
             <select
@@ -283,13 +321,11 @@ function OS({ onClose, onSubmit }) {
             </select>
           </div>
 
-          {/* Grupo do Equipamento */}
           <div className="os-field">
             <label>Grupo do Equipamento</label>
             <input type="text" value={grupo} readOnly />
           </div>
 
-          {/* Upload de Arquivos */}
           <div className="os-field full os-upload-area">
             <label>
               <Paperclip size={18} style={{ marginRight: 6 }} />
@@ -315,7 +351,6 @@ function OS({ onClose, onSubmit }) {
             )}
           </div>
 
-          {/* Descrição */}
           <div className="os-field full">
             <label>Descrição</label>
             <textarea
@@ -327,7 +362,6 @@ function OS({ onClose, onSubmit }) {
             />
           </div>
 
-          {/* Botões */}
           <div className="os-buttons full">
             <button type="submit" className="btn-primary btn-large">
               Salvar

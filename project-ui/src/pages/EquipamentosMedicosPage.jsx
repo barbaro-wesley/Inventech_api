@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import EquipamentosMedicosForm from '../forms/EquipamentosMedicosForm';
 import PopupEquip from '../popups/Popup';
-import { FaEdit, FaEye } from 'react-icons/fa';
-import "../styles/EquipamentosMedicosPage.css"
+import OS from './OS';
+import OSPreventiva from './OSPreventiva';
+import { FaEdit, FaEye, FaCog } from 'react-icons/fa';
+import "../styles/EquipamentosMedicosPage.css";
 import api from '../config/api';
 
 function EquipamentosMedicosPage() {
@@ -17,6 +19,11 @@ function EquipamentosMedicosPage() {
   const [equipamentoParaVisualizar, setEquipamentoParaVisualizar] = useState(null);
   const [showFilter, setShowFilter] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showMaintenancePopup, setShowMaintenancePopup] = useState(false);
+  const [selectedEquipamento, setSelectedEquipamento] = useState(null);
+  const [showOSPopup, setShowOSPopup] = useState(false);
+  const [showOSPreventivaPopup, setShowOSPreventivaPopup] = useState(false);
+  const [osInitialData, setOSInitialData] = useState(null);
 
   const itemsPerPage = 10;
 
@@ -50,6 +57,22 @@ function EquipamentosMedicosPage() {
     setShowDetailsModal(true);
   };
 
+  const handleMaintenanceClick = (equipamento) => {
+    setSelectedEquipamento(equipamento);
+    setShowMaintenancePopup(true);
+  };
+
+  const handleOptionClick = (tipo) => {
+    setShowMaintenancePopup(false);
+    if (tipo === 'Preventiva') {
+      setOSInitialData({ equipamento: selectedEquipamento, preventiva: true });
+      setShowOSPreventivaPopup(true);
+    } else {
+      setOSInitialData({ equipamento: selectedEquipamento, preventiva: false });
+      setShowOSPopup(true);
+    }
+  };
+
   const handleFormSubmit = async (formData) => {
     try {
       if (editMode && equipamentoParaEditar) {
@@ -72,6 +95,13 @@ function EquipamentosMedicosPage() {
     } catch (error) {
       console.error('Erro ao salvar equipamento:', error);
     }
+  };
+
+  const handleOSSubmit = (osData) => {
+    console.log('OS submitted:', osData);
+    setShowOSPopup(false);
+    setShowOSPreventivaPopup(false);
+    setOSInitialData(null);
   };
 
   const handleFilterClick = () => {
@@ -143,7 +173,64 @@ function EquipamentosMedicosPage() {
         <PopupEquip
           equipamento={equipamentoParaVisualizar}
           onClose={() => setShowDetailsModal(false)}
+          onOptionClick={handleOptionClick}
         />
+      )}
+
+      {showMaintenancePopup && (
+        <div className="maintenance-popup">
+          <div className="maintenance-popup-content">
+            <h3>Selecionar Tipo de Manutenção</h3>
+            <button
+              onClick={() => handleOptionClick('Corretiva')}
+              className="btn-corretiva"
+            >
+              Corretiva
+            </button>
+            <button
+              onClick={() => handleOptionClick('Preventiva')}
+              className="btn-preventiva"
+            >
+              Preventiva
+            </button>
+            <button
+              onClick={() => setShowMaintenancePopup(false)}
+              className="btn-cancel"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showOSPopup && (
+        <div className="os-popup">
+          <div className="os-popup-content">
+            <button className="close-btn" onClick={() => setShowOSPopup(false)}>
+              &times;
+            </button>
+            <OS
+              initialData={osInitialData}
+              onClose={() => setShowOSPopup(false)}
+              onSubmit={handleOSSubmit}
+            />
+          </div>
+        </div>
+      )}
+
+      {showOSPreventivaPopup && (
+        <div className="os-popup">
+          <div className="os-popup-content">
+            <button className="close-btn" onClick={() => setShowOSPreventivaPopup(false)}>
+              &times;
+            </button>
+            <OSPreventiva
+              initialData={osInitialData}
+              onClose={() => setShowOSPreventivaPopup(false)}
+              onSubmit={handleOSSubmit}
+            />
+          </div>
+        </div>
       )}
 
       <div className="table-container">
@@ -178,6 +265,9 @@ function EquipamentosMedicosPage() {
                   </button>
                   <button className="btn-view" onClick={() => handleViewClick(item)} title="Visualizar detalhes">
                     <FaEye />
+                  </button>
+                  <button className="btn-maintenance" onClick={() => handleMaintenanceClick(item)} title="Manutenção">
+                    <FaCog />
                   </button>
                 </td>
               </tr>

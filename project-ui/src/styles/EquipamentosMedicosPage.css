@@ -59,12 +59,10 @@
 
 .equip-table th,
 .equip-table td {
-  padding: 0.8rem;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-  white-space: normal;
-  word-break: break-word;
-  max-width: 200px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .equip-table th {
@@ -125,9 +123,15 @@
 /* Estilos para a célula de ações */
 .actions-cell {
   display: flex;
-  gap: 10px; /* Adiciona um espaço entre os botões */
-  justify-content: center; /* Centraliza os botões */
+  gap: 8px;
+  justify-content: center;
   align-items: center;
+  border-bottom: 1px solid #ddd; /* mantém linha igual às outras */
+  padding: 8px 0;
+  background: transparent; /* garante que não quebre a linha */
+}
+.actions-cell button {
+  flex-shrink: 0;
 }
 .btn-view {
   background-color: #4CAF50; /* Verde */
@@ -201,4 +205,265 @@
   width: 300px;
   border-radius: 5px;
   border: 1px solid #ccc;
+}
+/* Styles for maintenance popup */
+.maintenance-popup {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+  padding: 16px;
+}
+
+.maintenance-popup-content {
+  background: #fff;
+  padding: 28px 20px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  animation: popupFadeIn 0.3s ease;
+}
+
+.maintenance-popup-content h3 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #0a157a;
+}
+.maintenance-popup-content button {
+  padding: 12px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+/* animação */
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.btn-corretiva {
+  background: linear-gradient(135deg, #e63946, #d90429);
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(220, 53, 69, 0.4);
+}
+
+.btn-corretiva:hover {
+  background: linear-gradient(135deg, #d90429, #9b1c1c);
+  transform: scale(1.03);
+}
+
+
+.btn-preventiva {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(46, 204, 113, 0.4);
+}
+.btn-preventiva:hover {
+  background: linear-gradient(135deg, #27ae60, #1e8449);
+  transform: scale(1.03);
+}
+
+.btn-cancel {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #5a6268;
+}
+
+/* Styles for OS popup */
+.os-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.os-popup-content {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 800px; /* Larger on desktop */
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+}
+
+.close-btn:hover {
+  color: #000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .equip-page {
+    padding: 10px;
+  }
+
+  .equip-title {
+    font-size: 20px;
+  }
+
+  .equip-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-add, .btn-filter {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .filter-input {
+    max-width: 100%;
+    font-size: 12px;
+  }
+
+  .equip-table th, .equip-table td {
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .btn-edit, .btn-view, .btn-maintenance {
+    font-size: 16px;
+  }
+
+  .pagination-controls button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .pagination-controls span {
+    font-size: 12px;
+  }
+
+  .maintenance-popup-content {
+    max-width: 90vw; /* Responsive width */
+    padding: 16px;
+  }
+
+  .maintenance-popup-content h3 {
+    font-size: 16px;
+  }
+
+.maintenance-popup-content button {
+  padding: 12px 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+}
+
+  .os-popup-content {
+    max-width: 95vw; /* Responsive width */
+    padding: 16px;
+    max-height: 85vh;
+  }
+
+  .close-btn {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .equip-title {
+    font-size: 18px;
+  }
+
+  .equip-table th, .equip-table td {
+    padding: 4px;
+    font-size: 10px;
+  }
+
+  .btn-edit, .btn-view, .btn-maintenance {
+    font-size: 14px;
+  }
+
+  .maintenance-popup-content {
+    max-width: 85vw;
+    padding: 12px;
+  }
+
+  .maintenance-popup-content h3 {
+    font-size: 14px;
+  }
+
+  .maintenance-popup-content button {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .os-popup-content {
+    max-width: 90vw;
+    padding: 12px;
+  }
+}
+.btn-maintenance {
+  background: #f1f1f1;
+  border: none;
+  border-radius: 50%;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #555;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn-maintenance:hover {
+  background: #0a157a;
+  color: #fff;
+  transform: rotate(20deg) scale(1.1);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
