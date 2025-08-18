@@ -1,7 +1,6 @@
 import { useState } from "react";
 import "../styles/FormLogin.css"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Logo from "../assets/logo.png"
@@ -28,7 +27,7 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/api/usuarios/login", {
+      const response = await fetch("https://intranet.hcrmarau.com.br/api/usuarios/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

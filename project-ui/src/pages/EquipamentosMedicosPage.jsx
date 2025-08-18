@@ -24,6 +24,7 @@ function EquipamentosMedicosPage() {
   const [showOSPopup, setShowOSPopup] = useState(false);
   const [showOSPreventivaPopup, setShowOSPreventivaPopup] = useState(false);
   const [osInitialData, setOSInitialData] = useState(null);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -45,7 +46,10 @@ function EquipamentosMedicosPage() {
   const handleAddClick = () => {
     setShowForm(true);
   };
-
+  const handleQRScan = (data) => {
+  console.log("QR Code lido:", data);
+  handleSearch(data);
+};
   const handleEditClick = (equipamento) => {
     setEquipamentoParaEditar(equipamento);
     setEditMode(true);
