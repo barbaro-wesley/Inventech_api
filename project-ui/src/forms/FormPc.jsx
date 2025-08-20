@@ -68,8 +68,8 @@ const handleSubmit = async (e) => {
   e.preventDefault();
 
   const payload = {
-    nPatrimonio: formData.nPatrimonio,
-    nomePC: formData.nomePC,
+    numeroPatrimonio: formData.nPatrimonio,
+    nomeEquipamento: formData.nomePC,
     ip: formData.ip,
     sistemaOperacional: formData.sistemaOperacional,
     setorId: Number(formData.setorId),
@@ -90,7 +90,7 @@ const handleSubmit = async (e) => {
     } else {
 
       response = await api.post(
-        '/hcr-computers',
+        '/equipamentos-medicos',
         payload,
         { withCredentials: true }
       );

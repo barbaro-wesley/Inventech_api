@@ -37,6 +37,11 @@ router.post(
   upload.array('arquivos', 5),
   equipamentoController.criar
 );
+router.get(
+  '/tipo/:tipoEquipamentoId',
+  permitirSomente('admin','cadastro'),
+  equipamentoController.listarPorTipo
+);
 router.get('/', permitirSomente('admin','cadastro'),equipamentoController.listar);
 router.get('/:id',permitirSomente('admin','cadastro') ,equipamentoController.buscarPorId);
 router.put('/:id',upload.array('arquivos'),permitirSomente('admin', 'cadastro'),equipamentoController.atualizar);

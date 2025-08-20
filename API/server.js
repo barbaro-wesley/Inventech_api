@@ -38,6 +38,11 @@ const sobreavisoRoutes = require('./src/routes/sobreavisoRoutes.js');
 const incidenteRoutes = require('./src/routes/incidente.routes');
 const hcrPrinterRoutes = require('./src/routes/hcrPrinterRoutes');
 const hcrMobiliaRoutes = require('./src/routes/hcrMobiliaRoutes');
+const capacitacao = require('./src/routes/capacitacao.routes');
+const funcionario = require('./src/routes/funcionario.routes');
+const tiposDocumentos = require('./src/routes/tipoDocumento.routes');
+
+
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
@@ -56,6 +61,10 @@ app.use("/api/chamados",chamado)
 app.use("/api/sobreaviso",sobreavisoRoutes)
 app.use('/api/incidentes', incidenteRoutes);
 app.use('/api/hcr-mobilia', hcrMobiliaRoutes);
+app.use('/api/capacitacao', capacitacao);
+app.use('/api/funcionarios', funcionario);
+
+
 const PORT = process.env.PORT ;
 const HOST = process.env.HOST;
 

@@ -178,30 +178,46 @@ model HcrMobilia {
 }
 
 model HcrEquipamentosMedicos {
-  id                Int              @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   numeroPatrimonio  String?
   numeroSerie       String?
   numeroAnvisa      String?
-  nomeEquipamento   String
+  nomeEquipamento   String?
+  marca             String?
   modelo            String?
+  fabricante        String?
+  identificacao     String?
+  
+  // Campos que antes eram exclusivos de outros tipos
+  ip                String?     // computadores / impressoras
+  sistemaOperacional String?    // computadores
+  nControle         String?     // ar-condicionado
+  BTUS              String?     // ar-condicionado
+  estado            String?     // mobiliário
+  taxaDepreciacao   Float?      // mobiliário
+  valorAtual        Float?      // mobiliário
+
   valorCompra       Float?
   dataCompra        DateTime?
   inicioGarantia    DateTime?
   terminoGarantia   DateTime?
   notaFiscal        String?
   obs               String?
+
   setorId           Int?
   localizacaoId     Int?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime?        @updatedAt
   tipoEquipamentoId Int?
-  fabricante        String?
-  identificacao     String?
-  localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime? @updatedAt
+
+  arquivos          String[]   @default([])
+
+  // Relações
   setor             Setor?           @relation(fields: [setorId], references: [id])
+  localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
   tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
-  arquivos         String[]  @default([])
-  ordensServico OrdemServico[] @relation("EquipamentoOrdens")
+  ordensServico     OrdemServico[]   @relation("EquipamentoOrdens")
 }
 
 enum PapelUsuario {
@@ -318,4 +334,58 @@ model StockMovement {
 enum TipoMovimento {
   ENTRADA
   SAIDA
+}
+
+model Funcionario {
+  id        Int       @id @default(autoincrement())
+  nome      String
+  cpf       String    @unique
+  cargo     String?
+  setor     String?
+  email     String    @unique
+  telefone  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  participacoes CapacitaçãoParticipante[]
+}
+
+model TipoDocumento {
+  id        Int       @id @default(autoincrement())
+  nome      String    @unique
+  descricao String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  capacitacoes Capacitação[]
+}
+
+model Capacitação {
+  id               Int       @id @default(autoincrement())
+  titulo           String
+  data             DateTime
+  local            String?
+  instrutor        String?
+  tipoDocumentoId  Int
+  arquivoPdf       String?
+  arquivoAssinado  String?
+  status           String    @default("pendente") // pendente, em_assinatura, concluido
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tipoDocumento    TipoDocumento @relation(fields: [tipoDocumentoId], references: [id])
+  participantes    CapacitaçãoParticipante[]
+}
+
+model CapacitaçãoParticipante {
+  id               Int        @id @default(autoincrement())
+  capacitacaoId    Int
+  funcionarioId    Int
+  assinaturaStatus String     @default("pendente") // pendente, enviado, assinado
+  assinaturaData   DateTime?
+
+  capacitacao      Capacitação  @relation(fields: [capacitacaoId], references: [id])
+  funcionario      Funcionario  @relation(fields: [funcionarioId], references: [id])
+
+  @@unique([capacitacaoId, funcionarioId])
 }

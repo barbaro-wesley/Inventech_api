@@ -1,25 +1,24 @@
 const service = require('../services/hcrEquipamentosMedicosService');
 
 class HcrEquipamentosMedicosController {
-async criar(req, res) {
-  try {
-       const arquivos = req.files ? req.files.map(file => `uploads/pdfs/${file.filename}`) : [];
+  async criar(req, res) {
+    try {
+      const arquivos = req.files ? req.files.map(file => `uploads/pdfs/${file.filename}`) : [];
 
-    const data = {
-      ...req.body,
-      arquivos,
-    };
+      const data = {
+        ...req.body,
+        arquivos,
+      };
 
-    const equipamento = await service.criar(data);
-    res.status(201).json(equipamento);
-
-  } catch (error) {
-    res.status(500).json({
-      error: 'Erro ao criar equipamento médico',
-      detalhes: error.message,
-    });
+      const equipamento = await service.criar(data);
+      res.status(201).json(equipamento);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Erro ao criar equipamento médico',
+        detalhes: error.message,
+      });
+    }
   }
-}
 
   async listar(req, res) {
     try {
@@ -29,6 +28,18 @@ async criar(req, res) {
       res.status(500).json({ error: 'Erro ao listar os equipamentos.' });
     }
   }
+  async listarPorTipo(req, res) {
+  try {
+    const tipoEquipamentoId = parseInt(req.params.tipoEquipamentoId, 10);
+    const lista = await service.listarPorTipo(tipoEquipamentoId);
+    res.json(lista);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Erro ao listar os equipamentos por tipo.',
+      detalhes: error.message
+    });
+  }
+}
 
   async buscarPorId(req, res) {
     try {
@@ -42,23 +53,25 @@ async criar(req, res) {
     }
   }
 
-async atualizar(req, res) {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const arquivos = req.files ? req.files.map(file => `uploads/pdfs/${file.filename}`) : [];
-    const data = {
-      ...req.body,
-      arquivos,
-    };
-    const result = await service.atualizar(id, data);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({
-      error: 'Erro ao atualizar equipamento',
-      detalhes: error.message,
-    });
+  async atualizar(req, res) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const arquivos = req.files ? req.files.map(file => `uploads/pdfs/${file.filename}`) : [];
+
+      const data = {
+        ...req.body,
+        arquivos,
+      };
+
+      const result = await service.atualizar(id, data);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Erro ao atualizar equipamento',
+        detalhes: error.message,
+      });
+    }
   }
-}
 
   async deletar(req, res) {
     try {
