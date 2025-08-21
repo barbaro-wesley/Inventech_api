@@ -1,54 +1,33 @@
-const prisma = require('../prisma/client');
+// src/controllers/capacitacao.controller.js
+const capacitacaoService = require('../services/capacitacao.service');
 
-const getAllCapacitacoes = async () => {
-  return prisma.capacitacao.findMany({
-    include: {
-      tipoDocumento: true,
-      participantes: { include: { funcionario: true } }
-    },
-    orderBy: { data: 'desc' }
-  });
-};
-
-const getCapacitacaoById = async (id) => {
-  return prisma.capacitacao.findUnique({
-    where: { id: parseInt(id) },
-    include: {
-      tipoDocumento: true,
-      participantes: { include: { funcionario: true } }
-    }
-  });
-};
-
-const createCapacitacao = async (data) => {
-  const { titulo, dataEvento, local, instrutor, tipoDocumentoId, participantesIds = [], arquivoPdf } = data;
-
-  if (!titulo || !dataEvento || !tipoDocumentoId) {
-    throw new Error('Campos obrigatórios: titulo, dataEvento e tipoDocumentoId');
+const getAllCapacitacoes = async (req, res) => {
+  try {
+    const capacitacoes = await capacitacaoService.getAllCapacitacoes();
+    res.json(capacitacoes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
+};
 
-  const capacitacao = await prisma.capacitacao.create({
-    data: {
-      titulo,
-      data: new Date(dataEvento),
-      local,
-      instrutor,
-      tipoDocumentoId: parseInt(tipoDocumentoId),
-      arquivoPdf,
-      participantes: {
-        create: participantesIds.map((id) => ({
-          funcionarioId: parseInt(id)
-        }))
-      }
-    },
-    include: {
-      participantes: {
-        include: { funcionario: true }
-      }
-    }
-  });
+const getCapacitacaoById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const capacitacao = await capacitacaoService.getCapacitacaoById(id);
+    res.json(capacitacao);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
-  return capacitacao;
+const createCapacitacao = async (req, res) => {
+  try {
+    const data = req.body;
+    const capacitacao = await capacitacaoService.createCapacitacao(data);
+    res.status(201).json(capacitacao);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 };
 
 module.exports = {

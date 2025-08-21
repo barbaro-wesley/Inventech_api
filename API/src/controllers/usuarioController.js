@@ -15,12 +15,12 @@ const login = async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // só HTTPS em produção
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
       maxAge: 24 * 60 * 60 * 1000, // 1 dia
     });
 
-    res.json({ mensagem: 'Login realizado com sucesso' });
+    res.json({ mensagem: 'Login realizado com sucesso', token });
   } catch (error) {
     res.status(401).json({ error: error.message });
   }
@@ -44,9 +44,31 @@ const listarUsuarios = async (req, res) => {
   }
 };
 
+const vincularModulo = async (req, res) => {
+  try {
+    const { usuarioId, moduloId } = req.body;
+    const usuario = await usuarioService.vincularModulo(usuarioId, moduloId);
+    res.json(usuario);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const removerModulo = async (req, res) => {
+  try {
+    const { usuarioId, moduloId } = req.body;
+    const usuario = await usuarioService.removerModulo(usuarioId, moduloId);
+    res.json(usuario);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   criarUsuario,
   login,
   perfil,
   listarUsuarios,
+  vincularModulo,
+  removerModulo,
 };

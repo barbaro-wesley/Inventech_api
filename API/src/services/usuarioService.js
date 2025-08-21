@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const criarUsuario = async (dados) => {
-  const { nome, email, senha, papel, tecnicoId } = dados;
+  const { nome, email, senha, papel, tecnicoId, modulos } = dados;
 
   const usuarioExistente = await prisma.usuario.findUnique({ where: { email } });
   if (usuarioExistente) throw new Error('E-mail já cadastrado');
@@ -16,13 +16,24 @@ const criarUsuario = async (dados) => {
       email,
       senha: senhaCriptografada,
       papel,
-      tecnicoId: tecnicoId ? parseInt(tecnicoId) : null, // 🔥 Aqui é o fix
+      tecnicoId: tecnicoId ? parseInt(tecnicoId) : null,
+      modulos: modulos
+        ? {
+            create: modulos.map((moduloId) => ({
+              modulo: { connect: { id: moduloId } },
+            })),
+          }
+        : undefined,
+    },
+    include: {
+      modulos: { include: { modulo: true } }, // 👈 já traz os módulos
     },
   });
 
   const { senha: _, ...usuarioSemSenha } = novoUsuario;
   return usuarioSemSenha;
 };
+
 const buscarPorId = async (id) => {
   const usuario = await prisma.usuario.findUnique({
     where: { id },
@@ -31,12 +42,27 @@ const buscarPorId = async (id) => {
       nome: true,
       email: true,
       papel: true,
+      modulos: {
+        select: {
+          ativo: true,
+          dataVinculo: true,
+          modulo: {
+            select: { id: true, nome: true, descricao: true },
+          },
+        },
+      },
     },
   });
   return usuario;
 };
+
 const login = async ({ email, senha }) => {
-  const usuario = await prisma.usuario.findUnique({ where: { email } });
+  const usuario = await prisma.usuario.findUnique({
+    where: { email },
+    include: {
+      modulos: { include: { modulo: true } },
+    },
+  });
   if (!usuario) throw new Error('Usuário não encontrado');
 
   const senhaValida = await bcrypt.compare(senha, usuario.senha);
@@ -50,6 +76,7 @@ const login = async ({ email, senha }) => {
 
   return token;
 };
+
 const listarTodos = async () => {
   const usuarios = await prisma.usuario.findMany({
     select: {
@@ -57,10 +84,17 @@ const listarTodos = async () => {
       nome: true,
       email: true,
       papel: true,
+      modulos: {
+        select: {
+          ativo: true,
+          dataVinculo: true,
+          modulo: {
+            select: { id: true, nome: true },
+          },
+        },
+      },
     },
-    orderBy: {
-      nome: 'asc',
-    },
+    orderBy: { nome: 'asc' },
   });
   return usuarios;
 };

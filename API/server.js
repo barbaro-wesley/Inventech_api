@@ -41,7 +41,7 @@ const hcrMobiliaRoutes = require('./src/routes/hcrMobiliaRoutes');
 const capacitacao = require('./src/routes/capacitacao.routes');
 const funcionario = require('./src/routes/funcionario.routes');
 const tiposDocumentos = require('./src/routes/tipoDocumento.routes');
-
+const modulo = require('./src/routes/usuarioRoutes.js')
 
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
@@ -63,6 +63,8 @@ app.use('/api/incidentes', incidenteRoutes);
 app.use('/api/hcr-mobilia', hcrMobiliaRoutes);
 app.use('/api/capacitacao', capacitacao);
 app.use('/api/funcionarios', funcionario);
+app.use('/api/tiposdocumentos',tiposDocumentos)
+app.use('/api/modulos',modulo)
 
 
 const PORT = process.env.PORT ;

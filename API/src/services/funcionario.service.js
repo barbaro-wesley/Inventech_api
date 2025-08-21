@@ -1,5 +1,5 @@
-const prisma = require('../prisma/client.js');
-
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const getAllFuncionarios = async () => {
   return prisma.funcionario.findMany({
     orderBy: { nome: 'asc' }

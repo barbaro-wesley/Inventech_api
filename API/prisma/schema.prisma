@@ -32,15 +32,35 @@ model Localizacao {
 }
 
 model Usuario {
-  id           Int            @id @default(autoincrement())
+  id           Int             @id @default(autoincrement())
   nome         String
-  email        String         @unique
+  email        String          @unique
   senha        String
   papel        PapelUsuario
   tecnicoId    Int?
   OrdemServico OrdemServico[]
-  tecnico      Tecnico?       @relation(fields: [tecnicoId], references: [id])
+  tecnico      Tecnico?        @relation(fields: [tecnicoId], references: [id])
   movimentacoes StockMovement[]
+  modulos      UsuarioModulo[]
+}
+
+model Modulo {
+  id        Int             @id @default(autoincrement())
+  nome      String          @unique
+  descricao String?
+  usuarios  UsuarioModulo[]
+}
+model UsuarioModulo {
+  usuarioId  Int
+  moduloId   Int
+  dataVinculo DateTime       @default(now())
+  ativo      Boolean         @default(true)
+
+  usuario    Usuario         @relation(fields: [usuarioId], references: [id])
+  modulo     Modulo          @relation(fields: [moduloId], references: [id])
+
+  @@id([usuarioId, moduloId])   // chave composta para evitar duplicados
+  @@map("UsuarioModulo")        // nome real da tabela no banco
 }
 
 model GrupoManutencao {
@@ -347,7 +367,7 @@ model Funcionario {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  participacoes CapacitaçãoParticipante[]
+  participacoes CapacitacaoParticipante[]
 }
 
 model TipoDocumento {
@@ -357,10 +377,9 @@ model TipoDocumento {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  capacitacoes Capacitação[]
+  capacitacoes Capacitacao[]
 }
-
-model Capacitação {
+model Capacitacao {
   id               Int       @id @default(autoincrement())
   titulo           String
   data             DateTime
@@ -369,23 +388,23 @@ model Capacitação {
   tipoDocumentoId  Int
   arquivoPdf       String?
   arquivoAssinado  String?
-  status           String    @default("pendente") // pendente, em_assinatura, concluido
+  status           String    @default("pendente")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   tipoDocumento    TipoDocumento @relation(fields: [tipoDocumentoId], references: [id])
-  participantes    CapacitaçãoParticipante[]
+  participantes    CapacitacaoParticipante[]
 }
 
-model CapacitaçãoParticipante {
-  id               Int        @id @default(autoincrement())
+model CapacitacaoParticipante {
+  id               Int       @id @default(autoincrement())
   capacitacaoId    Int
   funcionarioId    Int
-  assinaturaStatus String     @default("pendente") // pendente, enviado, assinado
+  assinaturaStatus String    @default("pendente")
   assinaturaData   DateTime?
 
-  capacitacao      Capacitação  @relation(fields: [capacitacaoId], references: [id])
-  funcionario      Funcionario  @relation(fields: [funcionarioId], references: [id])
+  capacitacao      Capacitacao @relation(fields: [capacitacaoId], references: [id])
+  funcionario      Funcionario @relation(fields: [funcionarioId], references: [id])
 
   @@unique([capacitacaoId, funcionarioId])
 }
