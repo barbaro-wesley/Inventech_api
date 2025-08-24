@@ -75,6 +75,7 @@ model TipoEquipamento {
   id                     Int                      @id @default(autoincrement())
   nome                   String                   @unique
   grupoId                Int?
+  taxaDepreciacao        Float?                   // percentual padrão para o tipo (ex.: 0.1 = 10%)
   HcrAirConditioning     HcrAirConditioning[]
   HcrComputer            HcrComputer[]
   HcrEquipamentosMedicos HcrEquipamentosMedicos[]
@@ -207,8 +208,6 @@ model HcrEquipamentosMedicos {
   modelo            String?
   fabricante        String?
   identificacao     String?
-  
-  // Campos que antes eram exclusivos de outros tipos
   ip                String?     // computadores / impressoras
   sistemaOperacional String?    // computadores
   nControle         String?     // ar-condicionado

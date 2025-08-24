@@ -42,7 +42,7 @@ router.get(
   permitirSomente('admin','cadastro'),
   equipamentoController.listarPorTipo
 );
-router.get('/', permitirSomente('admin','cadastro'),equipamentoController.listar);
+router.get('/', permitirSomente('admin','cadastro','tecnico'),equipamentoController.listar);
 router.get('/:id',permitirSomente('admin','cadastro') ,equipamentoController.buscarPorId);
 router.put('/:id',upload.array('arquivos'),permitirSomente('admin', 'cadastro'),equipamentoController.atualizar);
 router.delete('/:id', permitirSomente('admin','cadastro'), equipamentoController.deletar);

@@ -1,9 +1,21 @@
 const prisma = require('../config/prismaClient');
-
-const criar = async (nome) => {
+const normalizarTaxa = (valor) => {
+  if (!valor) return null;
+  const num = parseFloat(valor);
+  if (isNaN(num)) return null;
+  return num > 1 ? num / 100 : num; // se > 1 assume que veio em %, divide por 100
+};
+const criar = async ({ nome, taxaDepreciacao, grupoId }) => {
   const existente = await prisma.tipoEquipamento.findUnique({ where: { nome } });
   if (existente) throw new Error('Tipo já existe');
-  return prisma.tipoEquipamento.create({ data: { nome } });
+
+  return prisma.tipoEquipamento.create({
+    data: {
+      nome,
+      taxaDepreciacao: normalizarTaxa(taxaDepreciacao),
+      grupoId: grupoId ? parseInt(grupoId, 10) : null,
+    },
+  });
 };
 
 const listarTodos = async () => {
@@ -13,19 +25,20 @@ const listarTodos = async () => {
   });
 };
 
-const atualizar = async (id, nome) => {
+const atualizar = async (id, { nome, taxaDepreciacao, grupoId }) => {
   return prisma.tipoEquipamento.update({
     where: { id },
-    data: { nome },
+    data: {
+      nome,
+      taxaDepreciacao: normalizarTaxa(taxaDepreciacao),
+      grupoId: grupoId ? parseInt(grupoId, 10) : null,
+    },
   });
 };
 
 const remover = async (id) => {
   const tipo = await prisma.tipoEquipamento.findUnique({ where: { id } });
   if (!tipo) throw new Error('Tipo não encontrado');
-
-  // (opcional) você pode verificar se algum equipamento está usando esse tipo
-
   await prisma.tipoEquipamento.delete({ where: { id } });
 };
 
