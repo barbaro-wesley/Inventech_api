@@ -42,7 +42,7 @@ const capacitacao = require('./src/routes/capacitacao.routes');
 const funcionario = require('./src/routes/funcionario.routes');
 const tiposDocumentos = require('./src/routes/tipoDocumento.routes');
 const modulo = require('./src/routes/usuarioRoutes.js')
-
+const reports = require('./src/routes/reports.routes');
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
@@ -65,7 +65,7 @@ app.use('/api/capacitacao', capacitacao);
 app.use('/api/funcionarios', funcionario);
 app.use('/api/tiposdocumentos',tiposDocumentos)
 app.use('/api/modulos',modulo)
-
+app.use('/api/reports',reports)
 
 const PORT = process.env.PORT ;
 const HOST = process.env.HOST;
