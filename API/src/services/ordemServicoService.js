@@ -16,25 +16,25 @@ class OrdemServicoService {
       include: {
         tipoEquipamento: true,
         tecnico: true,
-        solicitante: {
-          select: {
-            nome: true,
-          },
-        },
+        solicitante: { select: { nome: true } },
         Setor: true,
+        equipamento: { select: { nomeEquipamento: true, numeroSerie: true } }, // 👈 aqui
       },
     });
 
     if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
-      // Monta mensagem com setor, solicitante e data agendada opcional
       let msg = `📄 <b>Nova OS Atribuída</b>\n\n`;
       msg += `🔧 Técnico: ${novaOS.tecnico.nome}\n`;
       msg += `📌 Descrição: ${novaOS.descricao}\n`;
       msg += `📍 Setor: ${novaOS.Setor?.nome || 'Não informado'}\n`;
       msg += `🙋 Solicitante: ${novaOS.solicitante?.nome || 'Não informado'}\n`;
 
+      if (novaOS.equipamento) {
+        msg += `🖥️ Equipamento: ${novaOS.equipamento.nomeEquipamento || 'N/I'}\n`;
+        msg += `🔢 SN: ${novaOS.equipamento.numeroSerie || 'N/I'}\n`;
+      }
+
       if (novaOS.dataAgendada) {
-        // Formata a data para algo legível
         const dataFormatada = new Date(novaOS.dataAgendada).toLocaleString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
@@ -51,43 +51,37 @@ class OrdemServicoService {
     return novaOS;
   }
 
-async listar() {
-  const [preventivas, corretivas] = await Promise.all([
-    prisma.ordemServico.findMany({
-      where: { preventiva: true },
-      include: {
-        tipoEquipamento: true,
-        tecnico: true,
-        Setor: true,
-        solicitante: {
-          select: { nome: true },
+  async listar() {
+    const [preventivas, corretivas] = await Promise.all([
+      prisma.ordemServico.findMany({
+        where: { preventiva: true },
+        include: {
+          tipoEquipamento: true,
+          tecnico: true,
+          Setor: true,
+          solicitante: { select: { nome: true } },
+          equipamento: { select: { nomeEquipamento: true, numeroSerie: true } },
         },
-      },
-    }),
-    prisma.ordemServico.findMany({
-      where: { preventiva: false },
-      include: {
-        tipoEquipamento: true,
-        tecnico: true,
-        Setor: true,
-        solicitante: {
-          select: { nome: true },
+      }),
+      prisma.ordemServico.findMany({
+        where: { preventiva: false },
+        include: {
+          tipoEquipamento: true,
+          tecnico: true,
+          Setor: true,
+          solicitante: { select: { nome: true } },
+          equipamento: { select: { nomeEquipamento: true, numeroSerie: true } },
         },
-      },
-    }),
-  ]);
+      }),
+    ]);
 
-  const totalManutencao = [...preventivas, ...corretivas].reduce((acc, os) => {
-    const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
-    return acc + valor;
-  }, 0);
+    const totalManutencao = [...preventivas, ...corretivas].reduce((acc, os) => {
+      const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
+      return acc + valor;
+    }, 0);
 
-  return {
-    preventivas,
-    corretivas,
-    totalManutencao,
-  };
-}
+    return { preventivas, corretivas, totalManutencao };
+  }
 
   async buscarPorId(id) {
     return await prisma.ordemServico.findUnique({
@@ -95,12 +89,9 @@ async listar() {
       include: {
         tipoEquipamento: true,
         tecnico: true,
-        solicitante: {
-        select: {
-          nome: true
-        }
-      },
-        Setor: true
+        solicitante: { select: { nome: true } },
+        Setor: true,
+        equipamento: { select: { nomeEquipamento: true, numeroSerie: true } },
       },
     });
   }
@@ -119,42 +110,32 @@ async listar() {
   }
 
   async concluir(id, data) {
-  return await prisma.ordemServico.update({
-    where: { id },
-    data,
-    include: {
-      tipoEquipamento: true,
-      tecnico: true,
-      solicitante: {
-        select: {
-          nome: true
-        }
+    return await prisma.ordemServico.update({
+      where: { id },
+      data,
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        solicitante: { select: { nome: true } },
+        Setor: true,
+        equipamento: { select: { nomeEquipamento: true, numeroSerie: true } },
       },
-      Setor: true
-    },
-  });
-}
-async listarPorTecnico(tecnicoId) {
-  return await prisma.ordemServico.findMany({
-    where: {
-      tecnicoId: tecnicoId,
-      status: "ABERTA"
-    },
-    include: {
-      tipoEquipamento: true,
-      tecnico: true,
-      solicitante: {
-        select: {
-          nome: true
-        }
+    });
+  }
+
+  async listarPorTecnico(tecnicoId) {
+    return await prisma.ordemServico.findMany({
+      where: { tecnicoId: tecnicoId, status: "ABERTA" },
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        solicitante: { select: { nome: true } },
+        Setor: true,
+        equipamento: { select: { nomeEquipamento: true, numeroSerie: true } },
       },
-      Setor: true,
-    },
-    orderBy: {
-      criadoEm: 'desc', // opcional
-    }
-  });
-}
+      orderBy: { criadoEm: 'desc' },
+    });
+  }
 }
 
 module.exports = new OrdemServicoService();
