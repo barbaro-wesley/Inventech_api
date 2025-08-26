@@ -39,6 +39,11 @@ const upload = multer({ storage, fileFilter });
 
 router.use(autenticarUsuario);
 router.get('/tecnico', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnico);
+router.get('/tecnico/em-andamento', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoEmAndamento);
+router.get('/tecnico/concluidos', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoConcluida);
+router.get('/tecnico/cancelados', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoCancelada);
+
+
 
 router.post('/',autenticarUsuario, permitirSomente('admin','cadastro'),upload.array('arquivos', 5),ordemServicoController.criar);
 router.get('/', ordemServicoController.listar);
@@ -49,8 +54,10 @@ router.put(
   '/:id/concluir',
   autenticarUsuario,
   permitirSomente('admin', 'tecnico','cadastro'),
-  upload.array('arquivos',5), // isso aqui permite receber arquivos + campos textuais no body
+  upload.array('arquivos',5), 
   ordemServicoController.concluir
 );
+router.put("/:id/iniciar", autenticarUsuario,permitirSomente('admin', 'tecnico','cadastro'),ordemServicoController.iniciar);
+router.put("/:id/cancelar", autenticarUsuario,permitirSomente('admin', 'tecnico','cadastro'),ordemServicoController.cancelar);
 
 module.exports = router;

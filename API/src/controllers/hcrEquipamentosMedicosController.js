@@ -40,6 +40,26 @@ class HcrEquipamentosMedicosController {
     });
   }
 }
+async buscarPorNumeroPatrimonio(req, res) {
+    try {
+      const { numeroPatrimonio } = req.params;
+
+      if (!numeroPatrimonio) {
+        return res.status(400).json({ mensagem: 'Número de patrimônio é obrigatório.' });
+      }
+
+      const equipamentos = await service.buscarPorNumeroPatrimonio(numeroPatrimonio);
+
+      if (!equipamentos || equipamentos.length === 0) {
+        return res.status(404).json({ mensagem: 'Nenhum equipamento encontrado com esse patrimônio.' });
+      }
+
+      return res.status(200).json(equipamentos);
+    } catch (error) {
+      console.error('Erro ao buscar equipamento por patrimônio:', error);
+      return res.status(500).json({ mensagem: 'Erro interno do servidor.' });
+    }
+  }
 
   async buscarPorId(req, res) {
     try {

@@ -68,6 +68,26 @@ class HcrEquipamentosMedicosService {
       return eq;
     });
   }
+  async buscarPorNumeroPatrimonio(numeroPatrimonio) {
+  if (!numeroPatrimonio) return [];
+
+  const equipamentos = await prisma.hcrEquipamentosMedicos.findMany({
+    where: { numeroPatrimonio },
+    include: { setor: true, localizacao: true, tipoEquipamento: true, ordensServico: true },
+  });
+
+  // Calcular valorAtual para cada um
+  return equipamentos.map(eq => {
+    if (eq?.tipoEquipamento?.taxaDepreciacao && eq.valorCompra && eq.dataCompra) {
+      eq.valorAtual = this.calcularValorAtual(
+        eq.valorCompra,
+        eq.dataCompra,
+        eq.tipoEquipamento.taxaDepreciacao
+      );
+    }
+    return eq;
+  });
+}
 
   async buscarPorId(id) {
     const eq = await prisma.hcrEquipamentosMedicos.findUnique({

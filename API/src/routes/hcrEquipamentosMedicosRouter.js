@@ -42,6 +42,7 @@ router.get(
   permitirSomente('admin','cadastro'),
   equipamentoController.listarPorTipo
 );
+router.get('/equipamentos-medicos/patrimonio/:numeroPatrimonio', equipamentoController.buscarPorNumeroPatrimonio);
 router.get('/', permitirSomente('admin','cadastro','tecnico'),equipamentoController.listar);
 router.get('/:id',permitirSomente('admin','cadastro') ,equipamentoController.buscarPorId);
 router.put('/:id',upload.array('arquivos'),permitirSomente('admin', 'cadastro'),equipamentoController.atualizar);

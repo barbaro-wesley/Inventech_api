@@ -111,6 +111,8 @@ model OrdemServico {
   status            StatusOS        @default(ABERTA)
   criadoEm          DateTime        @default(now())
   finalizadoEm      DateTime?
+  iniciadaEm        DateTime?
+  canceladaEm       DateTime?
   valorManutencao   Decimal?
   resolucao         String?
   arquivos          String[]

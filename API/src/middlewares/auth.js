@@ -20,7 +20,7 @@ const autenticarUsuario = async (req, res, next) => {
         nome: true,
         email: true,
         papel: true,
-        tecnicoId: true, // ESSENCIAL
+        tecnicoId: true, 
       },
     });
 

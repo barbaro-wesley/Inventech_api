@@ -27,9 +27,12 @@ const relatorioEquipamentosPorSetor = async (setorIds = [], tipoIds = []) => {
       setor: setor.nome,
       tipos: Object.entries(porTipo).map(([tipo, lista]) => ({
         tipo,
-        equipamentos: lista.map(
-          (e) => e.nomeEquipamento || e.modelo || "Sem nome"
-        ),
+        equipamentos: lista.map((e) => ({
+          patrimonio: e.numeroPatrimonio || "-",
+          nome: e.nomeEquipamento || e.modelo || "Sem nome",
+          serie: e.numeroSerie || "-",
+          status: e.status || "-",
+        })),
         total: lista.length,
       })),
       totalSetor: equipamentos.length,
@@ -38,6 +41,17 @@ const relatorioEquipamentosPorSetor = async (setorIds = [], tipoIds = []) => {
 };
 
 
+const formatDate = (date) => {
+  if (!date) return null;
+  return new Date(date).toLocaleString("pt-BR", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const relatorioOsPorTecnico = async ({ tecnicoIds = [], dataInicio, dataFim, campoData = "criadoEm", statusArray = [] }) => {
   if (tecnicoIds.length === 0 || !dataInicio || !dataFim) return [];
@@ -61,7 +75,6 @@ const relatorioOsPorTecnico = async ({ tecnicoIds = [], dataInicio, dataFim, cam
     orderBy: { tecnicoId: "asc" },
   });
 
-  // Agrupa por técnico
   const agrupado = ordens.reduce((acc, os) => {
     const tId = os.tecnicoId || 0;
     if (!acc[tId]) {
@@ -78,7 +91,8 @@ const relatorioOsPorTecnico = async ({ tecnicoIds = [], dataInicio, dataFim, cam
       descricao: os.descricao,
       equipamento: os.equipamento?.nomeEquipamento || null,
       status: os.status,
-      finalizadoEm: os.finalizadoEm,
+      criadoEm: formatDate(os.criadoEm),        // agora formatado
+      finalizadoEm: formatDate(os.finalizadoEm),// agora formatado
       resolucao: os.resolucao,
     });
 
