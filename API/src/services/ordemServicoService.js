@@ -16,11 +16,7 @@ class OrdemServicoService {
       include: {
         tipoEquipamento: true,
         tecnico: true,
-        solicitante: {
-          select: {
-            nome: true,
-          },
-        },
+        solicitante: { select: { nome: true } },
         Setor: true,
         equipamento: {   
           select: {
@@ -89,6 +85,10 @@ class OrdemServicoService {
       }),
     ]);
 
+    const totalManutencao = [...preventivas, ...corretivas].reduce((acc, os) => {
+      const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
+      return acc + valor;
+    }, 0);
     const totalManutencao = [...preventivas, ...corretivas].reduce((acc, os) => {
       const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
       return acc + valor;
@@ -248,3 +248,4 @@ class OrdemServicoService {
 }
 
 module.exports = new OrdemServicoService();
+
