@@ -8,7 +8,7 @@ const permitirSomente = require('../middlewares/permissoes');
 router.use(autenticarUsuario);
 
 router.post('/', permitirSomente('admin','cadastro'),controller.criar);
-router.get('/',permitirSomente('admin','cadastro'), controller.listar);
+router.get('/',permitirSomente('admin','cadastro','visualizador'), controller.listar);
 router.put('/:id',permitirSomente('admin','cadastro'), controller.atualizar);
 router.delete('/:id', permitirSomente('admin'),controller.remover);
 

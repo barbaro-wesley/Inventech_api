@@ -45,9 +45,9 @@ router.get('/tecnico/cancelados', autenticarUsuario, permitirSomente('admin', 't
 
 
 
-router.post('/',autenticarUsuario, permitirSomente('admin','cadastro'),upload.array('arquivos', 5),ordemServicoController.criar);
+router.post('/',autenticarUsuario, permitirSomente('admin','cadastro','visualizador'),upload.array('arquivos', 5),ordemServicoController.criar);
 router.get('/', ordemServicoController.listar);
-router.get('/:id', permitirSomente('admin','cadastro','tecnico'),ordemServicoController.buscarPorId);
+router.get('/:id', permitirSomente('admin','cadastro','tecnico','visualizador'),ordemServicoController.buscarPorId);
 router.put('/:id', autenticarUsuario, permitirSomente('admin','cadastro'),ordemServicoController.atualizar);
 router.delete('/:id',autenticarUsuario, permitirSomente('admin'), ordemServicoController.deletar);
 router.put(

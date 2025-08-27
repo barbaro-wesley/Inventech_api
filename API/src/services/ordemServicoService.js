@@ -18,7 +18,7 @@ class OrdemServicoService {
         tecnico: true,
         solicitante: { select: { nome: true } },
         Setor: true,
-        equipamento: {   
+        equipamento: {
           select: {
             nomeEquipamento: true,
             numeroPatrimonio: true,
@@ -67,9 +67,15 @@ class OrdemServicoService {
           tipoEquipamento: true,
           tecnico: true,
           Setor: true,
-          solicitante: {
-            select: { nome: true },
-          },
+          solicitante: { select: { nome: true } },
+          equipamento: {
+            select: {
+              nomeEquipamento: true,
+              marca: true,
+              modelo: true,
+              numeroSerie: true,
+            }
+          }
         },
       }),
       prisma.ordemServico.findMany({
@@ -78,9 +84,15 @@ class OrdemServicoService {
           tipoEquipamento: true,
           tecnico: true,
           Setor: true,
-          solicitante: {
-            select: { nome: true },
-          },
+          solicitante: { select: { nome: true } },
+          equipamento: {
+            select: {
+              nomeEquipamento: true,
+              marca: true,
+              modelo: true,
+              numeroSerie: true,
+            }
+          }
         },
       }),
     ]);
@@ -125,7 +137,7 @@ class OrdemServicoService {
   async iniciar(id) {
     return await prisma.ordemServico.update({
       where: { id },
-      data: { 
+      data: {
         status: "EM_ANDAMENTO",
         iniciadaEm: new Date()   // <<< registra data de início
       },
@@ -134,22 +146,39 @@ class OrdemServicoService {
         tecnico: true,
         solicitante: { select: { nome: true } },
         Setor: true
+      },
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
       }
+
     });
   }
 
   async concluir(id) {
     return await prisma.ordemServico.update({
       where: { id },
-      data: { 
-        status: "CONCLUIDA", 
-        finalizadoEm: new Date() 
+      data: {
+        status: "CONCLUIDA",
+        finalizadoEm: new Date()
       },
       include: {
         tipoEquipamento: true,
         tecnico: true,
         solicitante: { select: { nome: true } },
         Setor: true
+      },
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
       }
     });
   }
@@ -157,7 +186,7 @@ class OrdemServicoService {
   async cancelar(id) {
     return await prisma.ordemServico.update({
       where: { id },
-      data: { 
+      data: {
         status: "CANCELADA",
         canceladaEm: new Date()   // <<< registra data de cancelamento
       },
@@ -166,6 +195,14 @@ class OrdemServicoService {
         tecnico: true,
         solicitante: { select: { nome: true } },
         Setor: true
+      },
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
       }
     });
   }
@@ -181,10 +218,19 @@ class OrdemServicoService {
         tecnico: true,
         solicitante: { select: { nome: true } },
         Setor: true,
+        equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
+      }
       },
       orderBy: {
         criadoEm: 'desc',
-      }
+      },
+      
     });
   }
 
@@ -199,6 +245,14 @@ class OrdemServicoService {
         tecnico: true,
         solicitante: { select: { nome: true } },
         Setor: true,
+        equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
+      }
       },
       orderBy: {
         criadoEm: 'desc',
@@ -217,6 +271,14 @@ class OrdemServicoService {
         tecnico: true,
         solicitante: { select: { nome: true } },
         Setor: true,
+        equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
+      }
       },
       orderBy: {
         criadoEm: 'desc',
@@ -235,6 +297,14 @@ class OrdemServicoService {
         tecnico: true,
         solicitante: { select: { nome: true } },
         Setor: true,
+        equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
+      }
       },
       orderBy: {
         criadoEm: 'desc',

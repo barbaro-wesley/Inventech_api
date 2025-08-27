@@ -33,18 +33,18 @@ const upload = multer({ storage, fileFilter });
 router.use(autenticarUsuario);
 router.post(
   '/',
-  permitirSomente('admin','cadastro'),
+  permitirSomente('admin','cadastro','visualizador'),
   upload.array('arquivos', 5),
   equipamentoController.criar
 );
 router.get(
   '/tipo/:tipoEquipamentoId',
-  permitirSomente('admin','cadastro'),
+  permitirSomente('admin','cadastro','visualizador'),
   equipamentoController.listarPorTipo
 );
 router.get('/equipamentos-medicos/patrimonio/:numeroPatrimonio', equipamentoController.buscarPorNumeroPatrimonio);
-router.get('/', permitirSomente('admin','cadastro','tecnico'),equipamentoController.listar);
-router.get('/:id',permitirSomente('admin','cadastro') ,equipamentoController.buscarPorId);
+router.get('/', permitirSomente('admin','cadastro','tecnico','visualizador'),equipamentoController.listar);
+router.get('/:id',permitirSomente('admin','cadastro','visualizador') ,equipamentoController.buscarPorId);
 router.put('/:id',upload.array('arquivos'),permitirSomente('admin', 'cadastro'),equipamentoController.atualizar);
 router.delete('/:id', permitirSomente('admin','cadastro'), equipamentoController.deletar);
 
