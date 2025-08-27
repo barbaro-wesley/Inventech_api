@@ -6,6 +6,6 @@ const permitirSomente = require('../middlewares/permissoes');
 
 // Apenas usuários logados podem acessar
 router.use(autenticarUsuario);
-router.post('/', permitirSomente('admin'),setorController.criar);
+router.post('/', permitirSomente('admin','cadastro'),setorController.criar);
 router.get('/', setorController.listar);
 module.exports = router;
