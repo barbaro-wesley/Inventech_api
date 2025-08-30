@@ -43,7 +43,7 @@ router.get(
   equipamentoController.listarPorTipo
 );
 router.get('/equipamentos-medicos/patrimonio/:numeroPatrimonio', equipamentoController.buscarPorNumeroPatrimonio);
-router.get('/', permitirSomente('admin','cadastro','tecnico','visualizador','tecnico'),equipamentoController.listar);
+router.get('/', permitirSomente('admin','cadastro','tecnico','visualizador'),equipamentoController.listar);
 router.get('/:id',permitirSomente('admin','cadastro','visualizador','tecnico') ,equipamentoController.buscarPorId);
 router.put('/:id',upload.array('arquivos'),permitirSomente('admin', 'cadastro'),equipamentoController.atualizar);
 router.delete('/:id', permitirSomente('admin','cadastro'), equipamentoController.deletar);
