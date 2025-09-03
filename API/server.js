@@ -43,6 +43,10 @@ const funcionario = require('./src/routes/funcionario.routes');
 const tiposDocumentos = require('./src/routes/tipoDocumento.routes');
 const modulo = require('./src/routes/usuarioRoutes.js')
 const reports = require('./src/routes/reports.routes');
+const productCategory = require("./src/routes/productCategoryRoutes")
+const product = require("./src/routes/productRoutes")
+const stockMovement = require("./src/routes/stockMovementRoutes")
+const software = require("./src/routes/gestaoSoftwareRoutes")
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
@@ -66,6 +70,10 @@ app.use('/api/funcionarios', funcionario);
 app.use('/api/tiposdocumentos',tiposDocumentos)
 app.use('/api/modulos',modulo)
 app.use('/api/reports',reports)
+app.use('/api/categories',productCategory)
+app.use('/api/products',product)
+app.use('/api/stock-movements',stockMovement)
+app.use('/api/gestao-software',software)
 
 const PORT = process.env.PORT ;
 const HOST = process.env.HOST;

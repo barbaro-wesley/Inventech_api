@@ -239,6 +239,7 @@ model HcrEquipamentosMedicos {
   localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
   tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
   ordensServico     OrdemServico[]   @relation("EquipamentoOrdens")
+  gestaoSoftware    GestaoSoftware?
 }
 
 enum PapelUsuario {
@@ -408,4 +409,23 @@ model CapacitacaoParticipante {
   funcionario      Funcionario @relation(fields: [funcionarioId], references: [id])
 
   @@unique([capacitacaoId, funcionarioId])
+}
+
+model GestaoSoftware {
+  id               Int                     @id @default(autoincrement())
+
+  equipamentoId    Int                     @unique // 1 equipamento -> 1 gestão de software
+  equipamento      HcrEquipamentosMedicos  @relation(fields: [equipamentoId], references: [id])
+
+  software         String
+  versao           String
+  dataInstalacao   DateTime
+  responsavel      String
+  licencaSerial    String
+  statusLicenca    String
+  dataExpiracao    DateTime
+  motivoInstalacao String
+  observacoes      String?
+  criadoEm         DateTime                @default(now())
+  atualizadoEm     DateTime                @updatedAt
 }
