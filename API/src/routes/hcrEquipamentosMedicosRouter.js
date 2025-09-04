@@ -33,7 +33,7 @@ const upload = multer({ storage, fileFilter });
 router.use(autenticarUsuario);
 router.post(
   '/',
-  permitirSomente('admin','cadastro','visualizador'),
+  permitirSomente('admin','cadastro','visualizador','tecnico'),
   upload.array('arquivos', 5),
   equipamentoController.criar
 );
