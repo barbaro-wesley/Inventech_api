@@ -1,5 +1,4 @@
 const express = require('express');
-const cors = require('cors');
 require('dotenv').config();
 const helmet = require('helmet');
 const app = express();
@@ -9,14 +8,6 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500 
 });
-const corsOptions = {
-  origin: function (origin, callback) {
-    callback(null, origin || '*'); 
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-};
-app.use(cors(corsOptions));
 app.use(cookieParser()); 
 app.use(helmet());
 app.use(express.json());
