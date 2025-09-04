@@ -7,7 +7,7 @@ const permitirSomente = require('../middlewares/permissoes');
 // Somente admin pode gerenciar técnicos
 router.use(autenticarUsuario);
 
-router.post('/', permitirSomente('admin','cadastro'),controller.criar);
+router.post('/', permitirSomente('admin','cadastro','tecnico'),controller.criar);
 router.get('/',permitirSomente('admin','cadastro','visualizador','tecnico'), controller.listar);
 router.put('/:id',permitirSomente('admin','cadastro'), controller.atualizar);
 router.delete('/:id', permitirSomente('admin'),controller.remover);
