@@ -49,7 +49,113 @@ const criarUsuario = async (dados) => {
   const { senha: _, ...usuarioSemSenha } = novoUsuario;
   return usuarioSemSenha;
 };
+const atualizarUsuario = async (usuarioId, dados) => {
+  const { nome, email, papel, tecnicoId, modulos } = dados;
 
+  // Verificar se o usuário existe
+  const usuarioExistente = await prisma.usuario.findUnique({
+    where: { id: usuarioId },
+    include: {
+      modulos: { include: { modulo: true } }
+    }
+  });
+
+  if (!usuarioExistente) {
+    throw new Error('Usuário não encontrado');
+  }
+
+  // Verificar se o email já está em uso por outro usuário
+  if (email && email !== usuarioExistente.email) {
+    const emailEmUso = await prisma.usuario.findUnique({
+      where: { email }
+    });
+    
+    if (emailEmUso) {
+      throw new Error('E-mail já está sendo usado por outro usuário');
+    }
+  }
+
+  // Preparar dados para atualização
+  const dadosAtualizacao = {};
+
+  if (nome !== undefined) dadosAtualizacao.nome = nome;
+  if (email !== undefined) dadosAtualizacao.email = email;
+  if (papel !== undefined) dadosAtualizacao.papel = papel;
+  if (tecnicoId !== undefined) {
+    dadosAtualizacao.tecnicoId = tecnicoId ? parseInt(tecnicoId) : null;
+  }
+
+  // Atualizar usuário
+  let usuarioAtualizado = await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: dadosAtualizacao,
+    include: {
+      modulos: { include: { modulo: true } },
+      tecnico: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          matricula: true,
+          ativo: true,
+          grupo: {
+            select: {
+              id: true,
+              nome: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Atualizar módulos se fornecidos
+  if (modulos !== undefined) {
+    // Remover todos os módulos atuais
+    await prisma.usuarioModulo.deleteMany({
+      where: { usuarioId: usuarioId }
+    });
+
+    // Adicionar os novos módulos
+    if (modulos.length > 0) {
+      await prisma.usuarioModulo.createMany({
+        data: modulos.map(moduloId => ({
+          usuarioId: usuarioId,
+          moduloId: moduloId
+        }))
+      });
+    }
+
+    // Buscar o usuário atualizado com os novos módulos
+    usuarioAtualizado = await prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      include: {
+        modulos: { include: { modulo: true } },
+        tecnico: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            telefone: true,
+            matricula: true,
+            ativo: true,
+            grupo: {
+              select: {
+                id: true,
+                nome: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Remover senha do retorno
+  const { senha: _, ...usuarioSemSenha } = usuarioAtualizado;
+  return usuarioSemSenha;
+};
 const buscarPorId = async (id) => {
   const usuario = await prisma.usuario.findUnique({
     where: { id },
@@ -299,4 +405,6 @@ module.exports = {
   listarTecnicosDisponiveis,
   atualizarSenha,      // Nova função
   redefinirSenha,      // Nova função
+  atualizarUsuario,
+
 };

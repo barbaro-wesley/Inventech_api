@@ -139,6 +139,49 @@ const redefinirSenha = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+const atualizarUsuario = async (req, res) => {
+  try {
+    const { usuarioId } = req.params;
+    const dados = req.body;
+
+    // Validações básicas
+    if (!usuarioId || isNaN(parseInt(usuarioId))) {
+      return res.status(400).json({
+        error: 'ID do usuário é obrigatório e deve ser um número válido'
+      });
+    }
+
+    // Validar email se fornecido
+    if (dados.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email)) {
+      return res.status(400).json({
+        error: 'Formato de email inválido'
+      });
+    }
+
+    // Validar papel se fornecido
+    if (dados.papel && !['admin', 'usuario'].includes(dados.papel)) {
+      return res.status(400).json({
+        error: 'Papel deve ser "admin" ou "usuario"'
+      });
+    }
+
+    // Validar módulos se fornecidos
+    if (dados.modulos && !Array.isArray(dados.modulos)) {
+      return res.status(400).json({
+        error: 'Módulos deve ser um array de IDs'
+      });
+    }
+
+    const usuarioAtualizado = await usuarioService.atualizarUsuario(
+      parseInt(usuarioId),
+      dados
+    );
+
+    res.json(usuarioAtualizado);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
 
 module.exports = {
@@ -152,4 +195,5 @@ module.exports = {
   removerModulo,
   atualizarSenha,      // Nova função
   redefinirSenha,      // Nova função
+  atualizarUsuario
 };

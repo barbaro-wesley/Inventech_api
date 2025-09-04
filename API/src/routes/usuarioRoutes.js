@@ -22,6 +22,11 @@ router.get('/me', autenticarUsuario, usuarioController.perfil);
 
 // Apenas admins podem ver todos os usuários
 router.get('/', autenticarUsuario, permitirSomente('admin'), usuarioController.listarUsuarios);
+router.put('/:usuarioId', 
+  autenticarUsuario, 
+  permitirSomente('admin'), 
+  usuarioController.atualizarUsuario
+);
 router.put('/:usuarioId/redefinir-senha', 
   autenticarUsuario, 
   permitirSomente('admin'), 
