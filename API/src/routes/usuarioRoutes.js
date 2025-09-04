@@ -15,11 +15,16 @@ router.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ mensagem: 'Logout realizado com sucesso' });
 });
+router.get('/disponiveis',autenticarUsuario, permitirSomente('admin'),usuarioController.listarTecnicosDisponiveis)
 
 // Apenas usuários logados
 router.get('/me', autenticarUsuario, usuarioController.perfil);
 
 // Apenas admins podem ver todos os usuários
 router.get('/', autenticarUsuario, permitirSomente('admin'), usuarioController.listarUsuarios);
-
+router.put('/:usuarioId/redefinir-senha', 
+  autenticarUsuario, 
+  permitirSomente('admin'), 
+  usuarioController.redefinirSenha
+);
 module.exports = router;

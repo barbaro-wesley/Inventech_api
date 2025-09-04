@@ -26,7 +26,23 @@ const criarUsuario = async (dados) => {
         : undefined,
     },
     include: {
-      modulos: { include: { modulo: true } }, // 👈 já traz os módulos
+      modulos: { include: { modulo: true } },
+      tecnico: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          matricula: true,
+          ativo: true,
+          grupo: {
+            select: {
+              id: true,
+              nome: true
+            }
+          }
+        }
+      }
     },
   });
 
@@ -42,6 +58,7 @@ const buscarPorId = async (id) => {
       nome: true,
       email: true,
       papel: true,
+      tecnicoId: true,
       modulos: {
         select: {
           ativo: true,
@@ -51,6 +68,22 @@ const buscarPorId = async (id) => {
           },
         },
       },
+      tecnico: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          matricula: true,
+          ativo: true,
+          grupo: {
+            select: {
+              id: true,
+              nome: true
+            }
+          }
+        }
+      }
     },
   });
   return usuario;
@@ -61,6 +94,22 @@ const login = async ({ email, senha }) => {
     where: { email },
     include: {
       modulos: { include: { modulo: true } },
+      tecnico: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          matricula: true,
+          ativo: true,
+          grupo: {
+            select: {
+              id: true,
+              nome: true
+            }
+          }
+        }
+      }
     },
   });
   if (!usuario) throw new Error('Usuário não encontrado');
@@ -84,6 +133,7 @@ const listarTodos = async () => {
       nome: true,
       email: true,
       papel: true,
+      tecnicoId: true,
       modulos: {
         select: {
           ativo: true,
@@ -93,10 +143,151 @@ const listarTodos = async () => {
           },
         },
       },
+      tecnico: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          matricula: true,
+          ativo: true,
+          grupo: {
+            select: {
+              id: true,
+              nome: true
+            }
+          }
+        }
+      }
     },
     orderBy: { nome: 'asc' },
   });
   return usuarios;
+};
+const atualizarSenha = async (usuarioId, { senhaAtual, novaSenha }) => {
+  // Buscar o usuário com a senha para validação
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: usuarioId }
+  });
+  
+  if (!usuario) {
+    throw new Error('Usuário não encontrado');
+  }
+
+  // Verificar se a senha atual está correta
+  const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
+  if (!senhaValida) {
+    throw new Error('Senha atual incorreta');
+  }
+
+  // Criptografar a nova senha
+  const novaSenhaCriptografada = await bcrypt.hash(novaSenha, 10);
+
+  // Atualizar a senha no banco
+  await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: { senha: novaSenhaCriptografada }
+  });
+
+  return { mensagem: 'Senha atualizada com sucesso' };
+};
+
+// Função para redefinir senha (para admin resetar senha de qualquer usuário)
+const redefinirSenha = async (usuarioId, { novaSenha }) => {
+  // Verificar se o usuário existe
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: usuarioId },
+    select: { id: true, nome: true, email: true }
+  });
+  
+  if (!usuario) {
+    throw new Error('Usuário não encontrado');
+  }
+
+  // Criptografar a nova senha
+  const novaSenhaCriptografada = await bcrypt.hash(novaSenha, 10);
+
+  // Atualizar a senha no banco
+  await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: { senha: novaSenhaCriptografada }
+  });
+
+  return { 
+    mensagem: 'Senha redefinida com sucesso',
+    usuario: usuario.nome,
+    email: usuario.email
+  };
+};
+// Função adicional para buscar apenas usuários que são técnicos
+const listarUsuariosTecnicos = async () => {
+  const usuariosTecnicos = await prisma.usuario.findMany({
+    where: {
+      tecnicoId: { not: null }
+    },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      papel: true,
+      tecnicoId: true,
+      modulos: {
+        select: {
+          ativo: true,
+          dataVinculo: true,
+          modulo: {
+            select: { id: true, nome: true },
+          },
+        },
+      },
+      tecnico: {
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          matricula: true,
+          ativo: true,
+          grupo: {
+            select: {
+              id: true,
+              nome: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: { nome: 'asc' },
+  });
+  return usuariosTecnicos;
+};
+
+// Função para buscar técnicos disponíveis (não vinculados a usuários)
+const listarTecnicosDisponiveis = async () => {
+  const tecnicosDisponiveis = await prisma.tecnico.findMany({
+    where: {
+      Usuario: {
+        none: {} // Técnicos que não têm usuários associados
+      },
+      ativo: true
+    },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      telefone: true,
+      matricula: true,
+      ativo: true,
+      grupo: {
+        select: {
+          id: true,
+          nome: true
+        }
+      }
+    },
+    orderBy: { nome: 'asc' }
+  });
+  return tecnicosDisponiveis;
 };
 
 module.exports = {
@@ -104,4 +295,8 @@ module.exports = {
   login,
   buscarPorId,
   listarTodos,
+  listarUsuariosTecnicos,
+  listarTecnicosDisponiveis,
+  atualizarSenha,      // Nova função
+  redefinirSenha,      // Nova função
 };

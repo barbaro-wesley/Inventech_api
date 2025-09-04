@@ -44,6 +44,26 @@ const listarUsuarios = async (req, res) => {
   }
 };
 
+// Nova rota para listar apenas usuários que são técnicos
+const listarUsuariosTecnicos = async (req, res) => {
+  try {
+    const usuariosTecnicos = await usuarioService.listarUsuariosTecnicos();
+    res.json(usuariosTecnicos);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar usuários técnicos' });
+  }
+};
+
+// Nova rota para listar técnicos disponíveis (sem usuário associado)
+const listarTecnicosDisponiveis = async (req, res) => {
+  try {
+    const tecnicosDisponiveis = await usuarioService.listarTecnicosDisponiveis();
+    res.json(tecnicosDisponiveis);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar técnicos disponíveis' });
+  }
+};
+
 const vincularModulo = async (req, res) => {
   try {
     const { usuarioId, moduloId } = req.body;
@@ -63,12 +83,73 @@ const removerModulo = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+const atualizarSenha = async (req, res) => {
+  try {
+    const { senhaAtual, novaSenha } = req.body;
+
+    // Validações básicas
+    if (!senhaAtual || !novaSenha) {
+      return res.status(400).json({
+        error: 'Senha atual e nova senha são obrigatórias'
+      });
+    }
+
+    if (novaSenha.length < 6) {
+      return res.status(400).json({
+        error: 'Nova senha deve ter pelo menos 6 caracteres'
+      });
+    }
+
+    const resultado = await usuarioService.atualizarSenha(req.usuario.id, {
+      senhaAtual,
+      novaSenha
+    });
+
+    res.json(resultado);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Controller para admin redefinir senha de qualquer usuário
+const redefinirSenha = async (req, res) => {
+  try {
+    const { usuarioId } = req.params;
+    const { novaSenha } = req.body;
+
+    // Validações básicas
+    if (!novaSenha) {
+      return res.status(400).json({
+        error: 'Nova senha é obrigatória'
+      });
+    }
+
+    if (novaSenha.length < 6) {
+      return res.status(400).json({
+        error: 'Nova senha deve ter pelo menos 6 caracteres'
+      });
+    }
+
+    const resultado = await usuarioService.redefinirSenha(parseInt(usuarioId), {
+      novaSenha
+    });
+
+    res.json(resultado);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 
 module.exports = {
   criarUsuario,
   login,
   perfil,
   listarUsuarios,
+  listarUsuariosTecnicos,
+  listarTecnicosDisponiveis,
   vincularModulo,
   removerModulo,
+  atualizarSenha,      // Nova função
+  redefinirSenha,      // Nova função
 };
