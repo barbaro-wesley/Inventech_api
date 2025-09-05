@@ -109,6 +109,7 @@ model OrdemServico {
   tecnicoId         Int?
   solicitanteId     Int
   status            StatusOS        @default(ABERTA)
+  prioridade        Prioridade      @default(MEDIO) // NOVO CAMPO
   criadoEm          DateTime        @default(now())
   finalizadoEm      DateTime?
   iniciadaEm        DateTime?
@@ -117,9 +118,9 @@ model OrdemServico {
   resolucao         String?
   arquivos          String[]
   preventiva        Boolean         
-  dataAgendada      DateTime?       // Data para manutenção preventiva
+  dataAgendada      DateTime?       
   recorrencia       Recorrencia?    @default(NENHUMA)
-  intervaloDias     Int?            // Se recorrencia = PERSONALIZADA
+  intervaloDias     Int?            
   setorId           Int?
   Setor             Setor?          @relation(fields: [setorId], references: [id])
   solicitante       Usuario         @relation(fields: [solicitanteId], references: [id])

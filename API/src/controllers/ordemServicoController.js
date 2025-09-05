@@ -8,6 +8,8 @@ const ordemServicoController = {
     const dataAgendada = req.body.dataAgendada ? new Date(req.body.dataAgendada) : null;
     const recorrencia = req.body.recorrencia || 'NENHUMA';
     const intervaloDias = req.body.intervaloDias ? Number(req.body.intervaloDias) : null;
+    const prioridade = req.body.prioridade || 'MEDIO'; // Valor padrão MEDIO
+    const quantidadeOcorrencias = req.body.quantidadeOcorrencias ? Number(req.body.quantidadeOcorrencias) : 12; // Padrão 12 ocorrências
 
     const data = {
       descricao: req.body.descricao,
@@ -22,13 +24,18 @@ const ordemServicoController = {
       dataAgendada,
       recorrencia,
       intervaloDias,
+      prioridade,
+      quantidadeOcorrencias, // Adiciona quantidade de ocorrências
     };
 
     try {
-      const os = await ordemServicoService.criar(data);
-      res.status(201).json(os);
+      const resultado = await ordemServicoService.criar(data);
+      res.status(201).json(resultado);
     } catch (error) {
-      res.status(400).json({ error: 'Erro ao criar Ordem de Serviço', detalhes: error.message });
+      res.status(400).json({ 
+        error: 'Erro ao criar Ordem de Serviço', 
+        detalhes: error.message 
+      });
     }
   },
 
@@ -107,6 +114,10 @@ const ordemServicoController = {
   async atualizar(req, res) {
     try {
       const { id } = req.params;
+      // Se prioridade estiver sendo atualizada, incluir na atualização
+      if (req.body.prioridade) {
+        req.body.prioridade = req.body.prioridade;
+      }
       const os = await ordemServicoService.atualizar(Number(id), req.body);
       res.status(200).json(os);
     } catch (error) {
@@ -166,6 +177,23 @@ const ordemServicoController = {
       res.status(400).json({
         error: 'Erro ao concluir a OS',
         detalhes: error.message,
+      });
+    }
+  },
+
+  // Novo método para criar OSs recorrentes futuras (pode ser chamado manualmente ou por cron job)
+  async criarOSRecorrentesFuturas(req, res) {
+    try {
+      const novasOSCriadas = await ordemServicoService.criarOSRecorrentesFuturas();
+      res.status(200).json({
+        message: `${novasOSCriadas.length} OSs recorrentes criadas com sucesso`,
+        ossCriadas: novasOSCriadas.length,
+        oss: novasOSCriadas
+      });
+    } catch (error) {
+      res.status(400).json({
+        error: 'Erro ao criar OSs recorrentes futuras',
+        detalhes: error.message
       });
     }
   }
