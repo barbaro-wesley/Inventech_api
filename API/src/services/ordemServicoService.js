@@ -8,7 +8,7 @@ class OrdemServicoService {
   getPrioridadeEmoji(prioridade) {
     const emojis = {
       BAIXO: '🟢',
-      MEDIO: '🟡', 
+      MEDIO: '🟡',
       ALTO: '🟠',
       URGENTE: '🔴'
     };
@@ -20,7 +20,7 @@ class OrdemServicoService {
     const textos = {
       BAIXO: 'Baixa',
       MEDIO: 'Média',
-      ALTO: 'Alta', 
+      ALTO: 'Alta',
       URGENTE: 'Urgente'
     };
     return textos[prioridade] || 'Média';
@@ -28,8 +28,13 @@ class OrdemServicoService {
 
   // Função para calcular próxima data baseada na recorrência
   calcularProximaData(dataBase, recorrencia, intervaloDias = null) {
+    // Se não há recorrência, retorna null
+    if (!recorrencia || recorrencia === 'NENHUMA' || recorrencia === 'SEM_RECORRENCIA') {
+      return null;
+    }
+
     const novaData = new Date(dataBase);
-    
+
     switch (recorrencia) {
       case 'DIARIA':
         novaData.setDate(novaData.getDate() + 1);
@@ -56,22 +61,23 @@ class OrdemServicoService {
       default:
         return null;
     }
-    
+
     return novaData;
   }
 
   // Função para gerar múltiplas datas baseadas na recorrência
   gerarDatasRecorrencia(dataInicial, recorrencia, intervaloDias = null, quantidadeOcorrencias = 12) {
-    if (recorrencia === 'NENHUMA') {
+    // Se não há recorrência, retorna apenas a data inicial
+    if (!recorrencia || recorrencia === 'NENHUMA' || recorrencia === 'SEM_RECORRENCIA') {
       return [new Date(dataInicial)];
     }
 
     const datas = [];
     let dataAtual = new Date(dataInicial);
-    
+
     // Adiciona a primeira data
     datas.push(new Date(dataAtual));
-    
+
     // Gera as próximas ocorrências
     for (let i = 1; i < quantidadeOcorrencias; i++) {
       dataAtual = this.calcularProximaData(dataAtual, recorrencia, intervaloDias);
@@ -81,27 +87,35 @@ class OrdemServicoService {
         break;
       }
     }
-    
+
     return datas;
   }
 
   async criar(data) {
     const {
-      preventiva,
+      preventiva = false,
       dataAgendada,
-      recorrencia = 'NENHUMA',
+      recorrencia = 'NENHUMA', // Padrão: sem recorrência
       intervaloDias,
-      quantidadeOcorrencias = 12, // Padrão: criar 12 ocorrências futuras
+      quantidadeOcorrencias = 12,
       ...restData
     } = data;
 
+    // Normaliza valores de recorrência vazios para 'NENHUMA'
+    const recorrenciaNormalizada = !recorrencia ||
+      recorrencia === '' ||
+      recorrencia === null ||
+      recorrencia === undefined
+      ? 'NENHUMA'
+      : recorrencia;
+
     // Se não é preventiva ou não tem recorrência, cria apenas uma OS
-    if (!preventiva || recorrencia === 'NENHUMA') {
+    if (!preventiva || recorrenciaNormalizada === 'NENHUMA' || recorrenciaNormalizada === 'SEM_RECORRENCIA') {
       return this.criarOSUnica({
         ...data,
         preventiva,
         dataAgendada: dataAgendada ?? null,
-        recorrencia,
+        recorrencia: recorrenciaNormalizada,
         intervaloDias: intervaloDias ?? null,
       });
     }
@@ -113,7 +127,7 @@ class OrdemServicoService {
 
     const datasRecorrencia = this.gerarDatasRecorrencia(
       dataAgendada,
-      recorrencia,
+      recorrenciaNormalizada,
       intervaloDias,
       quantidadeOcorrencias
     );
@@ -126,11 +140,11 @@ class OrdemServicoService {
         ...restData,
         preventiva: true,
         dataAgendada: dataOS,
-        recorrencia,
+        recorrencia: recorrenciaNormalizada,
         intervaloDias: intervaloDias ?? null,
         // Adiciona um sufixo na descrição para identificar a sequência
-        descricao: index === 0 
-          ? data.descricao 
+        descricao: index === 0
+          ? data.descricao
           : `${data.descricao} (${index + 1}ª ocorrência)`
       };
 
@@ -150,45 +164,56 @@ class OrdemServicoService {
   }
 
   async criarOSUnica(data, enviarNotificacao = true) {
-    const novaOS = await prisma.ordemServico.create({
-      data: {
-        ...data,
-        preventiva: data.preventiva,
-        dataAgendada: data.dataAgendada ?? null,
-        recorrencia: data.recorrencia ?? 'NENHUMA',
-        intervaloDias: data.intervaloDias ?? null,
-        arquivos: data.arquivos || [],
-        prioridade: data.prioridade || 'MEDIO',
-      },
-      include: {
-        tipoEquipamento: true,
-        tecnico: true,
-        solicitante: { select: { nome: true } },
-        Setor: true,
-        equipamento: {
-          select: {
-            nomeEquipamento: true,
-            numeroPatrimonio: true,
-            numeroSerie: true,
-          }
+  // Normaliza a recorrência antes de salvar
+  const recorrenciaNormalizada = !data.recorrencia || 
+                                 data.recorrencia === '' || 
+                                 data.recorrencia === null || 
+                                 data.recorrencia === undefined 
+                                 ? 'NENHUMA' 
+                                 : data.recorrencia;
+
+  // Remove quantidadeOcorrencias dos dados que vão para o banco
+  const { quantidadeOcorrencias, ...dadosParaSalvar } = data;
+
+  const novaOS = await prisma.ordemServico.create({
+    data: {
+      ...dadosParaSalvar,
+      preventiva: data.preventiva || false,
+      dataAgendada: data.dataAgendada ?? null,
+      recorrencia: recorrenciaNormalizada,
+      intervaloDias: data.intervaloDias ?? null,
+      arquivos: data.arquivos || [],
+      prioridade: data.prioridade || 'MEDIO',
+    },
+    include: {
+      tipoEquipamento: true,
+      tecnico: true,
+      solicitante: { select: { nome: true } },
+      Setor: true,
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          numeroPatrimonio: true,
+          numeroSerie: true,
         }
-      },
-    });
+      }
+    },
+  });
 
-    // Só envia notificação se solicitado (para evitar spam nas recorrências)
-    if (enviarNotificacao) {
-      await this.enviarNotificacoes(novaOS);
-    }
-
-    return novaOS;
+  // Só envia notificação se solicitado (para evitar spam nas recorrências)
+  if (enviarNotificacao) {
+    await this.enviarNotificacoes(novaOS);
   }
+
+  return novaOS;
+}
 
   async enviarNotificacoes(novaOS) {
     // Notificação no Telegram
     if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
       const prioridadeEmoji = this.getPrioridadeEmoji(novaOS.prioridade);
       const prioridadeTexto = this.getPrioridadeTexto(novaOS.prioridade);
-      
+
       let msg = `📄 <b>Nova OS Atribuída</b>\n\n`;
       msg += `🔧 Técnico: ${novaOS.tecnico.nome}\n`;
       msg += `${prioridadeEmoji} Prioridade: <b>${prioridadeTexto}</b>\n`;
@@ -213,7 +238,7 @@ class OrdemServicoService {
         msg += `\n📅 Data Agendada: ${dataFormatada}\n`;
       }
 
-      if (novaOS.preventiva && novaOS.recorrencia !== 'NENHUMA') {
+      if (novaOS.preventiva && novaOS.recorrencia !== 'NENHUMA' && novaOS.recorrencia !== 'SEM_RECORRENCIA') {
         msg += `🔄 Recorrência: ${this.getTextoRecorrencia(novaOS.recorrencia, novaOS.intervaloDias)}\n`;
       }
 
@@ -223,7 +248,7 @@ class OrdemServicoService {
     // Notificação por Email
     if (novaOS.tecnico && novaOS.tecnico.email) {
       const htmlTemplate = this.gerarTemplateEmail(novaOS);
-      
+
       const emailData = {
         to: novaOS.tecnico.email,
         subject: `Nova Ordem de Serviço Atribuída - OS #${novaOS.id} [${this.getPrioridadeTexto(novaOS.prioridade)}]`,
@@ -239,10 +264,11 @@ class OrdemServicoService {
     }
   }
 
-  // Função auxiliar para converter enum em texto legível
+  // Função auxiliar para converter enum em texto legível - ATUALIZADA
   getTextoRecorrencia(recorrencia, intervaloDias = null) {
     const textos = {
       NENHUMA: 'Sem recorrência',
+      SEM_RECORRENCIA: 'Sem recorrência', // Adicionado suporte ao novo valor
       DIARIA: 'Diária',
       SEMANAL: 'Semanal',
       QUINZENAL: 'Quinzenal',
@@ -250,21 +276,21 @@ class OrdemServicoService {
       ANUAL: 'Anual',
       PERSONALIZADA: intervaloDias ? `A cada ${intervaloDias} dias` : 'Personalizada'
     };
-    return textos[recorrencia] || 'Não definida';
+    return textos[recorrencia] || 'Sem recorrência'; // Padrão alterado para 'Sem recorrência'
   }
 
   gerarTemplateEmail(novaOS) {
     const prioridadeEmoji = this.getPrioridadeEmoji(novaOS.prioridade);
     const prioridadeTexto = this.getPrioridadeTexto(novaOS.prioridade);
-    
+
     // Define cores baseadas na prioridade
     const corPrioridade = {
       BAIXO: '#10b981',
-      MEDIO: '#f59e0b', 
+      MEDIO: '#f59e0b',
       ALTO: '#f97316',
       URGENTE: '#ef4444'
     };
-    
+
     const cor = corPrioridade[novaOS.prioridade] || '#f59e0b';
 
     return `
@@ -302,7 +328,7 @@ class OrdemServicoService {
             <div style="display:inline-block; background-color:${cor}; color:#ffffff; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; margin-bottom:15px;">
               ${prioridadeEmoji} Prioridade: ${prioridadeTexto}
             </div>
-            ${novaOS.preventiva && novaOS.recorrencia !== 'NENHUMA' ? `
+            ${novaOS.preventiva && novaOS.recorrencia !== 'NENHUMA' && novaOS.recorrencia !== 'SEM_RECORRENCIA' ? `
             <div style="display:inline-block; background-color:#6366f1; color:#ffffff; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; margin-bottom:15px; margin-left:10px;">
               🔄 ${this.getTextoRecorrencia(novaOS.recorrencia, novaOS.intervaloDias)}
             </div>` : ''}
@@ -387,12 +413,12 @@ class OrdemServicoService {
                 </h3>
                 <p style="color:#1e293b; font-size:16px; font-weight:500; margin:0;">
                   ${new Date(novaOS.dataAgendada).toLocaleString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}
                 </p>
               </div>
             </div>` : ''}
@@ -439,7 +465,8 @@ class OrdemServicoService {
       where: {
         preventiva: true,
         recorrencia: {
-          not: 'NENHUMA'
+          not: 'NENHUMA',
+          notIn: ['NENHUMA', 'SEM_RECORRENCIA'] // Exclui ambos os valores
         },
         status: 'CONCLUIDA', // Só cria novas para OSs já concluídas
       },
@@ -457,8 +484,8 @@ class OrdemServicoService {
     for (const os of osRecorrentes) {
       // Verifica se já existe uma próxima OS para este equipamento
       const proximaDataAgendada = this.calcularProximaData(
-        os.dataAgendada, 
-        os.recorrencia, 
+        os.dataAgendada,
+        os.recorrencia,
         os.intervaloDias
       );
 
