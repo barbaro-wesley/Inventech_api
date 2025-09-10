@@ -28,42 +28,48 @@ class OrdemServicoService {
 
   // Função para calcular próxima data baseada na recorrência
   calcularProximaData(dataBase, recorrencia, intervaloDias = null) {
-    // Se não há recorrência, retorna null
-    if (!recorrencia || recorrencia === 'NENHUMA' || recorrencia === 'SEM_RECORRENCIA') {
-      return null;
-    }
-
-    const novaData = new Date(dataBase);
-
-    switch (recorrencia) {
-      case 'DIARIA':
-        novaData.setDate(novaData.getDate() + 1);
-        break;
-      case 'SEMANAL':
-        novaData.setDate(novaData.getDate() + 7);
-        break;
-      case 'QUINZENAL':
-        novaData.setDate(novaData.getDate() + 15);
-        break;
-      case 'MENSAL':
-        novaData.setMonth(novaData.getMonth() + 1);
-        break;
-      case 'ANUAL':
-        novaData.setFullYear(novaData.getFullYear() + 1);
-        break;
-      case 'PERSONALIZADA':
-        if (intervaloDias && intervaloDias > 0) {
-          novaData.setDate(novaData.getDate() + intervaloDias);
-        } else {
-          throw new Error('Intervalo de dias é obrigatório para recorrência personalizada');
-        }
-        break;
-      default:
-        return null;
-    }
-
-    return novaData;
+  // Se não há recorrência, retorna null
+  if (!recorrencia || recorrencia === 'NENHUMA' || recorrencia === 'SEM_RECORRENCIA') {
+    return null;
   }
+
+  const novaData = new Date(dataBase);
+
+  switch (recorrencia) {
+    case 'DIARIA':
+      novaData.setDate(novaData.getDate() + 1);
+      break;
+    case 'SEMANAL':
+      novaData.setDate(novaData.getDate() + 7);
+      break;
+    case 'QUINZENAL':
+      novaData.setDate(novaData.getDate() + 15);
+      break;
+    case 'MENSAL':
+      novaData.setMonth(novaData.getMonth() + 1);
+      break;
+    case 'TRIMESTRAL':
+      novaData.setMonth(novaData.getMonth() + 3);
+      break;
+    case 'SEMESTRAL':
+      novaData.setMonth(novaData.getMonth() + 6);
+      break;
+    case 'ANUAL':
+      novaData.setFullYear(novaData.getFullYear() + 1);
+      break;
+    case 'PERSONALIZADA':
+      if (intervaloDias && intervaloDias > 0) {
+        novaData.setDate(novaData.getDate() + intervaloDias);
+      } else {
+        throw new Error('Intervalo de dias é obrigatório para recorrência personalizada');
+      }
+      break;
+    default:
+      return null;
+  }
+
+  return novaData;
+}
 
   // Função para gerar múltiplas datas baseadas na recorrência
   gerarDatasRecorrencia(dataInicial, recorrencia, intervaloDias = null, quantidadeOcorrencias = 12) {
@@ -265,20 +271,21 @@ class OrdemServicoService {
   }
 
   // Função auxiliar para converter enum em texto legível - ATUALIZADA
-  getTextoRecorrencia(recorrencia, intervaloDias = null) {
-    const textos = {
-      NENHUMA: 'Sem recorrência',
-      SEM_RECORRENCIA: 'Sem recorrência', // Adicionado suporte ao novo valor
-      DIARIA: 'Diária',
-      SEMANAL: 'Semanal',
-      QUINZENAL: 'Quinzenal',
-      MENSAL: 'Mensal',
-      ANUAL: 'Anual',
-      PERSONALIZADA: intervaloDias ? `A cada ${intervaloDias} dias` : 'Personalizada'
-    };
-    return textos[recorrencia] || 'Sem recorrência'; // Padrão alterado para 'Sem recorrência'
-  }
-
+getTextoRecorrencia(recorrencia, intervaloDias = null) {
+  const textos = {
+    NENHUMA: 'Sem recorrência',
+    SEM_RECORRENCIA: 'Sem recorrência',
+    DIARIA: 'Diária',
+    SEMANAL: 'Semanal',
+    QUINZENAL: 'Quinzenal',
+    MENSAL: 'Mensal',
+    TRIMESTRAL: 'Trimestral',
+    SEMESTRAL: 'Semestral',
+    ANUAL: 'Anual',
+    PERSONALIZADA: intervaloDias ? `A cada ${intervaloDias} dias` : 'Personalizada'
+  };
+  return textos[recorrencia] || 'Sem recorrência';
+}
   gerarTemplateEmail(novaOS) {
     const prioridadeEmoji = this.getPrioridadeEmoji(novaOS.prioridade);
     const prioridadeTexto = this.getPrioridadeTexto(novaOS.prioridade);

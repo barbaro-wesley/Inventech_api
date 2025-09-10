@@ -21,7 +21,7 @@ model Setor {
 
 model Localizacao {
   id                     Int                      @id @default(autoincrement())
-  nome                   String                   
+  nome                   String
   setorId                Int?
   HcrAirConditioning     HcrAirConditioning[]
   HcrComputer            HcrComputer[]
@@ -32,16 +32,16 @@ model Localizacao {
 }
 
 model Usuario {
-  id           Int             @id @default(autoincrement())
-  nome         String
-  email        String          @unique
-  senha        String
-  papel        PapelUsuario
-  tecnicoId    Int?
-  OrdemServico OrdemServico[]
-  tecnico      Tecnico?        @relation(fields: [tecnicoId], references: [id])
+  id            Int             @id @default(autoincrement())
+  nome          String
+  email         String          @unique
+  senha         String
+  papel         PapelUsuario
+  tecnicoId     Int?
+  OrdemServico  OrdemServico[]
   movimentacoes StockMovement[]
-  modulos      UsuarioModulo[]
+  tecnico       Tecnico?        @relation(fields: [tecnicoId], references: [id])
+  modulos       UsuarioModulo[]
 }
 
 model Modulo {
@@ -50,17 +50,17 @@ model Modulo {
   descricao String?
   usuarios  UsuarioModulo[]
 }
+
 model UsuarioModulo {
-  usuarioId  Int
-  moduloId   Int
-  dataVinculo DateTime       @default(now())
-  ativo      Boolean         @default(true)
+  usuarioId   Int
+  moduloId    Int
+  dataVinculo DateTime @default(now())
+  ativo       Boolean  @default(true)
+  modulo      Modulo   @relation(fields: [moduloId], references: [id])
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
 
-  usuario    Usuario         @relation(fields: [usuarioId], references: [id])
-  modulo     Modulo          @relation(fields: [moduloId], references: [id])
-
-  @@id([usuarioId, moduloId])   // chave composta para evitar duplicados
-  @@map("UsuarioModulo")        // nome real da tabela no banco
+  @@id([usuarioId, moduloId])
+  @@map("UsuarioModulo")
 }
 
 model GrupoManutencao {
@@ -75,7 +75,7 @@ model TipoEquipamento {
   id                     Int                      @id @default(autoincrement())
   nome                   String                   @unique
   grupoId                Int?
-  taxaDepreciacao        Float?                   // percentual padrão para o tipo (ex.: 0.1 = 10%)
+  taxaDepreciacao        Float?
   HcrAirConditioning     HcrAirConditioning[]
   HcrComputer            HcrComputer[]
   HcrEquipamentosMedicos HcrEquipamentosMedicos[]
@@ -102,31 +102,31 @@ model Tecnico {
 }
 
 model OrdemServico {
-  id                Int             @id @default(autoincrement())
+  id                Int                    @id @default(autoincrement())
   descricao         String
   tipoEquipamentoId Int
   equipamentoId     Int
   tecnicoId         Int?
   solicitanteId     Int
-  status            StatusOS        @default(ABERTA)
-  prioridade        Prioridade      @default(MEDIO) // NOVO CAMPO
-  criadoEm          DateTime        @default(now())
+  status            StatusOS               @default(ABERTA)
+  criadoEm          DateTime               @default(now())
   finalizadoEm      DateTime?
-  iniciadaEm        DateTime?
-  canceladaEm       DateTime?
-  valorManutencao   Decimal?
   resolucao         String?
   arquivos          String[]
-  preventiva        Boolean         
-  dataAgendada      DateTime?       
-  recorrencia       Recorrencia?    @default(NENHUMA)
-  intervaloDias     Int?            
+  preventiva        Boolean
   setorId           Int?
-  Setor             Setor?          @relation(fields: [setorId], references: [id])
-  solicitante       Usuario         @relation(fields: [solicitanteId], references: [id])
-  tecnico           Tecnico?        @relation(fields: [tecnicoId], references: [id])
-  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+  valorManutencao   Decimal?
+  dataAgendada      DateTime?
+  intervaloDias     Int?
+  recorrencia       Recorrencia?           @default(NENHUMA)
+  canceladaEm       DateTime?
+  iniciadaEm        DateTime?
+  prioridade        Prioridade             @default(MEDIO)
   equipamento       HcrEquipamentosMedicos @relation("EquipamentoOrdens", fields: [equipamentoId], references: [id])
+  Setor             Setor?                 @relation(fields: [setorId], references: [id])
+  solicitante       Usuario                @relation(fields: [solicitanteId], references: [id])
+  tecnico           Tecnico?               @relation(fields: [tecnicoId], references: [id])
+  tipoEquipamento   TipoEquipamento        @relation(fields: [tipoEquipamentoId], references: [id])
 }
 
 model HcrComputer {
@@ -169,15 +169,15 @@ model HcrAirConditioning {
   BTUS              String
   numeroSerie       String?
   obs               String?
+  dataCompra        DateTime?
+  inicioGarantia    DateTime?
+  notaFiscal        String?
+  terminoGarantia   DateTime?
+  valorCompra       Float?
+  arquivos          String[]         @default([])
   localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
   setor             Setor?           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
-  dataCompra        DateTime?
-  inicioGarantia    DateTime?
-  terminoGarantia   DateTime?
-  notaFiscal        String?
-  valorCompra       Float?
-  arquivos         String[]  @default([])
 }
 
 model HcrMobilia {
@@ -186,61 +186,194 @@ model HcrMobilia {
   nome              String
   estado            String
   obs               String?
-  valorCompra       Float?
-  valorAtual        Float?
-  taxaDepreciacao   Float?          
-  dataCompra        DateTime?
-  inicioGarantia    DateTime?
-  terminoGarantia   DateTime?
-  notaFiscal        String?
   tipoEquipamentoId Int
   localizacaoId     Int
   setorId           Int
+  dataCompra        DateTime?
+  inicioGarantia    DateTime?
+  notaFiscal        String?
+  taxaDepreciacao   Float?
+  terminoGarantia   DateTime?
+  valorCompra       Float?
+  valorAtual        Float?
   localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
   setor             Setor           @relation(fields: [setorId], references: [id])
   tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
 }
 
 model HcrEquipamentosMedicos {
-  id                Int       @id @default(autoincrement())
-  numeroPatrimonio  String?
-  numeroSerie       String?
-  numeroAnvisa      String?
-  nomeEquipamento   String?
-  marca             String?
-  modelo            String?
-  fabricante        String?
-  identificacao     String?
-  ip                String?     // computadores / impressoras
-  sistemaOperacional String?    // computadores
-  nControle         String?     // ar-condicionado
-  BTUS              String?     // ar-condicionado
-  estado            String?     // mobiliário
-  taxaDepreciacao   Float?      // mobiliário
-  valorAtual        Float?      // mobiliário
+  id                 Int              @id @default(autoincrement())
+  numeroPatrimonio   String?
+  numeroSerie        String?
+  numeroAnvisa       String?
+  nomeEquipamento    String?
+  modelo             String?
+  valorCompra        Float?
+  dataCompra         DateTime?
+  inicioGarantia     DateTime?
+  terminoGarantia    DateTime?
+  notaFiscal         String?
+  obs                String?
+  setorId            Int?
+  localizacaoId      Int?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime?        @updatedAt
+  tipoEquipamentoId  Int?
+  fabricante         String?
+  identificacao      String?
+  arquivos           String[]         @default([])
+  BTUS               String?
+  estado             String?
+  ip                 String?
+  marca              String?
+  nControle          String?
+  sistemaOperacional String?
+  taxaDepreciacao    Float?
+  valorAtual         Float?
+  gestaoSoftware     GestaoSoftware?
+  localizacao        Localizacao?     @relation(fields: [localizacaoId], references: [id])
+  setor              Setor?           @relation(fields: [setorId], references: [id])
+  tipoEquipamento    TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
+  ordensServico      OrdemServico[]   @relation("EquipamentoOrdens")
+}
 
-  valorCompra       Float?
-  dataCompra        DateTime?
-  inicioGarantia    DateTime?
-  terminoGarantia   DateTime?
-  notaFiscal        String?
-  obs               String?
+model Chamado {
+  id              Int        @id @default(autoincrement())
+  numero          Int        @unique
+  descricao       String
+  status          String     @default("Aberto")
+  dataCriacao     DateTime   @default(now())
+  dataFinalizacao DateTime?
+  prioridade      Prioridade @default(MEDIO)
+  SistemaId       Int?
+  Sistema         Sistema?   @relation(fields: [SistemaId], references: [id])
+}
 
-  setorId           Int?
-  localizacaoId     Int?
-  tipoEquipamentoId Int?
+model Sistema {
+  id       Int       @id @default(autoincrement())
+  nome     String    @unique
+  chamados Chamado[]
+}
 
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime? @updatedAt
+model Sobreaviso {
+  id           Int      @id @default(autoincrement())
+  data         DateTime
+  horaInicio   DateTime
+  horaFim      DateTime
+  motivo       String
+  aSerFeito    String
+  observacoes  String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  colaborador  Int
+}
 
-  arquivos          String[]   @default([])
+model Incidente {
+  id           Int      @id @default(autoincrement())
+  data         DateTime
+  motivo       String
+  quemRelatou  String
+  local        String
+  descricao    String
+  oQueFoiFeito String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
 
-  // Relações
-  setor             Setor?           @relation(fields: [setorId], references: [id])
-  localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
-  tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
-  ordensServico     OrdemServico[]   @relation("EquipamentoOrdens")
-  gestaoSoftware    GestaoSoftware?
+model ProductCategory {
+  id       Int       @id @default(autoincrement())
+  nome     String    @unique
+  produtos Product[]
+}
+
+model Product {
+  id            Int             @id @default(autoincrement())
+  nome          String
+  descricao     String?
+  categoriaId   Int
+  quantidade    Int             @default(0)
+  quantidadeMin Int             @default(0)
+  categoria     ProductCategory @relation(fields: [categoriaId], references: [id])
+  movimentacoes StockMovement[]
+}
+
+model StockMovement {
+  id         Int           @id @default(autoincrement())
+  tipo       TipoMovimento
+  produtoId  Int
+  quantidade Int
+  motivo     String?
+  data       DateTime      @default(now())
+  usuarioId  Int
+  produto    Product       @relation(fields: [produtoId], references: [id])
+  usuario    Usuario       @relation(fields: [usuarioId], references: [id])
+}
+
+model Funcionario {
+  id            Int                       @id @default(autoincrement())
+  nome          String
+  cpf           String                    @unique
+  cargo         String?
+  setor         String?
+  email         String                    @unique
+  telefone      String?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  participacoes CapacitacaoParticipante[]
+}
+
+model TipoDocumento {
+  id           Int           @id @default(autoincrement())
+  nome         String        @unique
+  descricao    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  capacitacoes Capacitacao[]
+}
+
+model Capacitacao {
+  id              Int                       @id @default(autoincrement())
+  titulo          String
+  data            DateTime
+  local           String?
+  instrutor       String?
+  tipoDocumentoId Int
+  arquivoPdf      String?
+  arquivoAssinado String?
+  status          String                    @default("pendente")
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  tipoDocumento   TipoDocumento             @relation(fields: [tipoDocumentoId], references: [id])
+  participantes   CapacitacaoParticipante[]
+}
+
+model CapacitacaoParticipante {
+  id               Int         @id @default(autoincrement())
+  capacitacaoId    Int
+  funcionarioId    Int
+  assinaturaStatus String      @default("pendente")
+  assinaturaData   DateTime?
+  capacitacao      Capacitacao @relation(fields: [capacitacaoId], references: [id])
+  funcionario      Funcionario @relation(fields: [funcionarioId], references: [id])
+
+  @@unique([capacitacaoId, funcionarioId])
+}
+
+model GestaoSoftware {
+  id               Int                    @id @default(autoincrement())
+  equipamentoId    Int                    @unique
+  software         String
+  versao           String
+  dataInstalacao   DateTime
+  responsavel      String
+  licencaSerial    String
+  statusLicenca    String
+  dataExpiracao    DateTime
+  motivoInstalacao String
+  observacoes      String?
+  criadoEm         DateTime               @default(now())
+  atualizadoEm     DateTime               @updatedAt
+  equipamento      HcrEquipamentosMedicos @relation(fields: [equipamentoId], references: [id])
 }
 
 enum PapelUsuario {
@@ -257,6 +390,7 @@ enum StatusOS {
   CONCLUIDA
   CANCELADA
 }
+
 enum Prioridade {
   BAIXO
   MEDIO
@@ -270,163 +404,20 @@ enum StatusChamado {
   FECHADO
   CANCELADO
 }
+
 enum Recorrencia {
-  NENHUMA      // para corretivas
+  NENHUMA       // para corretivas
   DIARIA
   SEMANAL
   QUINZENAL
   MENSAL
+  TRIMESTRAL
+  SEMESTRAL
   ANUAL
   PERSONALIZADA // caso queira usar dias específicos (ex: 15 dias)
 }
 
-model Chamado {
-  id              Int        @id @default(autoincrement())
-  numero          Int        @unique
-  descricao       String
-  status          String     @default("Aberto")
-  dataCriacao     DateTime   @default(now())
-  dataFinalizacao DateTime?
-  prioridade      Prioridade @default(MEDIO)
-  SistemaId       Int?
-  Sistema         Sistema?   @relation(fields: [SistemaId], references: [id])
-}
-
-model Sistema {
-  id      Int      @id @default(autoincrement())
-  nome    String   @unique
-  chamados Chamado[]
-}
-
-model Sobreaviso {
-  id               Int      @id @default(autoincrement())
-  data            DateTime
-  horaInicio      DateTime
-  horaFim         DateTime
-  motivo          String
-  aSerFeito       String
-  colaborador     Int
-  observacoes     String?
-  criadoEm        DateTime @default(now())
-  atualizadoEm    DateTime @updatedAt
-}
-
-model Incidente {
-  id             Int      @id @default(autoincrement())
-  data           DateTime
-  motivo         String
-  quemRelatou    String
-  local          String
-  descricao      String
-  oQueFoiFeito   String?    // Campo opcional
-  criadoEm       DateTime   @default(now())
-  atualizadoEm   DateTime   @updatedAt
-}
-
-
-model ProductCategory {
-  id       Int       @id @default(autoincrement())
-  nome     String    @unique
-  produtos Product[]
-}
-
-model Product {
-  id              Int              @id @default(autoincrement())
-  nome            String
-  descricao       String?
-  categoriaId     Int
-  categoria       ProductCategory  @relation(fields: [categoriaId], references: [id])
-  quantidade      Int              @default(0)
-  quantidadeMin   Int              @default(0)
-  movimentacoes   StockMovement[]
-}
-
-model StockMovement {
-  id          Int       @id @default(autoincrement())
-  tipo        TipoMovimento
-  produtoId   Int
-  produto     Product   @relation(fields: [produtoId], references: [id])
-  quantidade  Int
-  motivo      String?
-  data        DateTime  @default(now())
-  usuarioId   Int
-  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
-}
-
-
 enum TipoMovimento {
   ENTRADA
   SAIDA
-}
-
-model Funcionario {
-  id        Int       @id @default(autoincrement())
-  nome      String
-  cpf       String    @unique
-  cargo     String?
-  setor     String?
-  email     String    @unique
-  telefone  String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  participacoes CapacitacaoParticipante[]
-}
-
-model TipoDocumento {
-  id        Int       @id @default(autoincrement())
-  nome      String    @unique
-  descricao String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  capacitacoes Capacitacao[]
-}
-model Capacitacao {
-  id               Int       @id @default(autoincrement())
-  titulo           String
-  data             DateTime
-  local            String?
-  instrutor        String?
-  tipoDocumentoId  Int
-  arquivoPdf       String?
-  arquivoAssinado  String?
-  status           String    @default("pendente")
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  tipoDocumento    TipoDocumento @relation(fields: [tipoDocumentoId], references: [id])
-  participantes    CapacitacaoParticipante[]
-}
-
-model CapacitacaoParticipante {
-  id               Int       @id @default(autoincrement())
-  capacitacaoId    Int
-  funcionarioId    Int
-  assinaturaStatus String    @default("pendente")
-  assinaturaData   DateTime?
-
-  capacitacao      Capacitacao @relation(fields: [capacitacaoId], references: [id])
-  funcionario      Funcionario @relation(fields: [funcionarioId], references: [id])
-
-  @@unique([capacitacaoId, funcionarioId])
-}
-
-model GestaoSoftware {
-  id               Int                     @id @default(autoincrement())
-
-  equipamentoId    Int                     @unique // 1 equipamento -> 1 gestão de software
-  equipamento      HcrEquipamentosMedicos  @relation(fields: [equipamentoId], references: [id])
-
-  software         String
-  versao           String
-  dataInstalacao   DateTime
-  responsavel      String
-  licencaSerial    String
-  statusLicenca    String
-  dataExpiracao    DateTime
-  motivoInstalacao String
-  observacoes      String?
-  criadoEm         DateTime                @default(now())
-  atualizadoEm     DateTime                @updatedAt
 }

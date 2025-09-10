@@ -587,6 +587,580 @@ const relatorioGruposManutencao = async ({ dataInicio, dataFim }) => {
   });
 };
 
+
+const formatDateOnly = (date) => {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString("pt-BR", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+// Função para calcular dias até a manutenção
+const getDiasAteManutencao = (dataAgendada) => {
+  if (!dataAgendada) return null;
+  
+  const hoje = new Date();
+  const agendada = new Date(dataAgendada);
+  
+  hoje.setHours(0, 0, 0, 0);
+  agendada.setHours(0, 0, 0, 0);
+  
+  const diffTime = agendada - hoje;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+// Função para obter texto dos dias
+const getTextoDias = (dias) => {
+  if (dias === null) return 'Sem data';
+  if (dias < 0) return `${Math.abs(dias)} dias atrás`;
+  if (dias === 0) return 'Hoje';
+  return `${dias} dias`;
+};
+
+// Função para verificar se está atrasada
+const isAtrasada = (dataAgendada, status) => {
+  if (!dataAgendada || status === 'CONCLUIDA' || status === 'CANCELADA') return false;
+  const dias = getDiasAteManutencao(dataAgendada);
+  return dias < 0;
+};
+
+// Função para verificar se está próxima do vencimento
+const isProximaVencimento = (dataAgendada, status, diasLimite = 7) => {
+  if (!dataAgendada || status === 'CONCLUIDA' || status === 'CANCELADA') return false;
+  const dias = getDiasAteManutencao(dataAgendada);
+  return dias >= 0 && dias <= diasLimite;
+};
+
+// Função para obter texto da recorrência
+const getTextoRecorrencia = (recorrencia, intervaloDias = null) => {
+  const textos = {
+    NENHUMA: 'Sem recorrência',
+    SEM_RECORRENCIA: 'Sem recorrência',
+    DIARIA: 'Diária',
+    SEMANAL: 'Semanal',
+    QUINZENAL: 'Quinzenal',
+    MENSAL: 'Mensal',
+    TRIMESTRAL: 'Trimestral',
+    SEMESTRAL: 'Semestral',
+    ANUAL: 'Anual',
+    PERSONALIZADA: intervaloDias ? `A cada ${intervaloDias} dias` : 'Personalizada'
+  };
+  return textos[recorrencia] || 'Sem recorrência';
+};
+
+// RELATÓRIO PRINCIPAL DE MANUTENÇÕES PREVENTIVAS
+const relatorioManutencoesPreventivas = async ({ 
+  dataInicio, 
+  dataFim, 
+  setorIds = [], 
+  tecnicoIds = [], 
+  statusArray = [], 
+  prioridadeArray = [], 
+  recorrenciaArray = [],
+  incluirDetalhes = true,
+  apenasAtrasadas = false,
+  apenasProximasVencimento = false,
+  diasProximoVencimento = 7
+}) => {
+  
+  const enumStatus = ["ABERTA", "EM_ANDAMENTO", "CONCLUIDA", "CANCELADA"];
+  const enumPrioridade = ["BAIXO", "MEDIO", "ALTO", "URGENTE"];
+  const enumRecorrencia = ["NENHUMA", "DIARIA", "SEMANAL", "QUINZENAL", "MENSAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL", "PERSONALIZADA"];
+  
+  const statusFiltros = statusArray.filter(s => enumStatus.includes(s));
+  const prioridadeFiltros = prioridadeArray.filter(p => enumPrioridade.includes(p));
+  const recorrenciaFiltros = recorrenciaArray.filter(r => enumRecorrencia.includes(r));
+
+  const where = {
+    preventiva: true,
+    ...(dataInicio && dataFim && {
+      dataAgendada: { gte: new Date(dataInicio), lte: new Date(dataFim) }
+    }),
+    ...(setorIds.length > 0 && { setorId: { in: setorIds } }),
+    ...(tecnicoIds.length > 0 && { tecnicoId: { in: tecnicoIds } }),
+    ...(statusFiltros.length > 0 && { status: { in: statusFiltros } }),
+    ...(prioridadeFiltros.length > 0 && { prioridade: { in: prioridadeFiltros } }),
+    ...(recorrenciaFiltros.length > 0 && { recorrencia: { in: recorrenciaFiltros } }),
+  };
+
+  const ordensPreventivas = await prisma.ordemServico.findMany({
+    where,
+    include: {
+      tipoEquipamento: true,
+      tecnico: { select: { id: true, nome: true, email: true, telefone: true } },
+      solicitante: { select: { id: true, nome: true, email: true } },
+      Setor: { select: { id: true, nome: true } },
+      equipamento: {
+        select: {
+          id: true,
+          nomeEquipamento: true,
+          numeroPatrimonio: true,
+          numeroSerie: true,
+          marca: true,
+          modelo: true,
+          fabricante: true,
+        }
+      }
+    },
+    orderBy: [
+      { dataAgendada: 'asc' },
+      { prioridade: 'desc' },
+      { criadoEm: 'desc' }
+    ]
+  });
+
+  // Enriquecer dados com informações calculadas
+  let dadosEnriquecidos = ordensPreventivas.map(os => ({
+    ...os,
+    diasAteManutencao: getDiasAteManutencao(os.dataAgendada),
+    textoDias: getTextoDias(getDiasAteManutencao(os.dataAgendada)),
+    isAtrasada: isAtrasada(os.dataAgendada, os.status),
+    isProximaVencimento: isProximaVencimento(os.dataAgendada, os.status, diasProximoVencimento),
+    textoRecorrencia: getTextoRecorrencia(os.recorrencia, os.intervaloDias),
+    criadoEmFormatado: formatDate(os.criadoEm),
+    dataAgendadaFormatada: formatDateOnly(os.dataAgendada),
+    finalizadoEmFormatado: formatDate(os.finalizadoEm),
+    iniciadaEmFormatado: formatDate(os.iniciadaEm),
+    canceladaEmFormatado: formatDate(os.canceladaEm),
+  }));
+
+  // Aplicar filtros específicos
+  if (apenasAtrasadas) {
+    dadosEnriquecidos = dadosEnriquecidos.filter(os => os.isAtrasada);
+  }
+
+  if (apenasProximasVencimento) {
+    dadosEnriquecidos = dadosEnriquecidos.filter(os => os.isProximaVencimento);
+  }
+
+  // Calcular estatísticas
+  const total = dadosEnriquecidos.length;
+  const abertas = dadosEnriquecidos.filter(os => os.status === 'ABERTA').length;
+  const emAndamento = dadosEnriquecidos.filter(os => os.status === 'EM_ANDAMENTO').length;
+  const concluidas = dadosEnriquecidos.filter(os => os.status === 'CONCLUIDA').length;
+  const canceladas = dadosEnriquecidos.filter(os => os.status === 'CANCELADA').length;
+  const atrasadas = dadosEnriquecidos.filter(os => os.isAtrasada).length;
+  const proximasVencimento = dadosEnriquecidos.filter(os => os.isProximaVencimento).length;
+
+  // Estatísticas financeiras
+  const valorTotal = dadosEnriquecidos.reduce((acc, os) => acc + (parseFloat(os.valorManutencao) || 0), 0);
+  const valorExecutado = dadosEnriquecidos
+    .filter(os => os.status === 'CONCLUIDA')
+    .reduce((acc, os) => acc + (parseFloat(os.valorManutencao) || 0), 0);
+  const valorPlanejado = dadosEnriquecidos
+    .filter(os => os.status !== 'CONCLUIDA' && os.status !== 'CANCELADA')
+    .reduce((acc, os) => acc + (parseFloat(os.valorManutencao) || 0), 0);
+  const valorMedio = total > 0 ? valorTotal / total : 0;
+
+  // Análise por prioridade
+  const porPrioridade = enumPrioridade.reduce((acc, prioridade) => {
+    acc[prioridade] = dadosEnriquecidos.filter(os => os.prioridade === prioridade).length;
+    return acc;
+  }, {});
+
+  // Análise por recorrência
+  const porRecorrencia = dadosEnriquecidos.reduce((acc, os) => {
+    const recorrencia = os.recorrencia || 'NENHUMA';
+    acc[recorrencia] = (acc[recorrencia] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Análise por setor
+  const porSetor = dadosEnriquecidos.reduce((acc, os) => {
+    const setor = os.Setor?.nome || 'Sem setor';
+    if (!acc[setor]) acc[setor] = { total: 0, atrasadas: 0, proximas: 0 };
+    acc[setor].total++;
+    if (os.isAtrasada) acc[setor].atrasadas++;
+    if (os.isProximaVencimento) acc[setor].proximas++;
+    return acc;
+  }, {});
+
+  // Análise por técnico
+  const porTecnico = dadosEnriquecidos.reduce((acc, os) => {
+    const tecnico = os.tecnico?.nome || 'Não atribuído';
+    if (!acc[tecnico]) acc[tecnico] = { 
+      total: 0, 
+      concluidas: 0, 
+      atrasadas: 0, 
+      tecnicoId: os.tecnico?.id || null 
+    };
+    acc[tecnico].total++;
+    if (os.status === 'CONCLUIDA') acc[tecnico].concluidas++;
+    if (os.isAtrasada) acc[tecnico].atrasadas++;
+    return acc;
+  }, {});
+
+  const resultado = {
+    periodo: dataInicio && dataFim ? {
+      inicio: formatDateOnly(dataInicio),
+      fim: formatDateOnly(dataFim),
+    } : null,
+    resumoGeral: {
+      total,
+      abertas,
+      emAndamento,
+      concluidas,
+      canceladas,
+      atrasadas,
+      proximasVencimento,
+      percentualConclusao: total > 0 ? Math.round((concluidas / total) * 10000) / 100 : 0,
+    },
+    resumoFinanceiro: {
+      valorTotal: Math.round(valorTotal * 100) / 100,
+      valorExecutado: Math.round(valorExecutado * 100) / 100,
+      valorPlanejado: Math.round(valorPlanejado * 100) / 100,
+      valorMedio: Math.round(valorMedio * 100) / 100,
+    },
+    analisePorPrioridade: Object.entries(porPrioridade).map(([prioridade, quantidade]) => ({
+      prioridade,
+      quantidade,
+      percentual: total > 0 ? Math.round((quantidade / total) * 10000) / 100 : 0,
+    })),
+    analisePorRecorrencia: Object.entries(porRecorrencia).map(([recorrencia, quantidade]) => ({
+      recorrencia,
+      textoRecorrencia: getTextoRecorrencia(recorrencia),
+      quantidade,
+      percentual: total > 0 ? Math.round((quantidade / total) * 10000) / 100 : 0,
+    })),
+    analisePorSetor: Object.entries(porSetor).map(([setor, dados]) => ({
+      setor,
+      total: dados.total,
+      atrasadas: dados.atrasadas,
+      proximasVencimento: dados.proximas,
+      percentualAtrasadas: dados.total > 0 ? Math.round((dados.atrasadas / dados.total) * 10000) / 100 : 0,
+    })),
+    analisePorTecnico: Object.entries(porTecnico).map(([nome, dados]) => ({
+      tecnico: nome,
+      tecnicoId: dados.tecnicoId,
+      total: dados.total,
+      concluidas: dados.concluidas,
+      atrasadas: dados.atrasadas,
+      taxaSucesso: dados.total > 0 ? Math.round((dados.concluidas / dados.total) * 10000) / 100 : 0,
+    })),
+  };
+
+  // Incluir detalhes se solicitado
+  if (incluirDetalhes) {
+    resultado.manutencoes = dadosEnriquecidos;
+  }
+
+  return resultado;
+};
+
+// RELATÓRIO DE PRÓXIMAS MANUTENÇÕES
+const relatorioProximasManutencoes = async ({ 
+  diasLimite = 7, 
+  setorIds = [], 
+  tecnicoIds = [],
+  prioridadeArray = []
+}) => {
+  const dataLimite = new Date();
+  dataLimite.setDate(dataLimite.getDate() + diasLimite);
+
+  const enumPrioridade = ["BAIXO", "MEDIO", "ALTO", "URGENTE"];
+  const prioridadeFiltros = prioridadeArray.filter(p => enumPrioridade.includes(p));
+
+  const where = {
+    preventiva: true,
+    status: { in: ['ABERTA', 'EM_ANDAMENTO'] },
+    dataAgendada: {
+      gte: new Date(),
+      lte: dataLimite
+    },
+    ...(setorIds.length > 0 && { setorId: { in: setorIds } }),
+    ...(tecnicoIds.length > 0 && { tecnicoId: { in: tecnicoIds } }),
+    ...(prioridadeFiltros.length > 0 && { prioridade: { in: prioridadeFiltros } }),
+  };
+
+  const proximasManutencoes = await prisma.ordemServico.findMany({
+    where,
+    include: {
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          numeroPatrimonio: true,
+          numeroSerie: true
+        }
+      },
+      Setor: { select: { nome: true } },
+      tecnico: { select: { nome: true, email: true } },
+      tipoEquipamento: { select: { nome: true } }
+    },
+    orderBy: [
+      { dataAgendada: 'asc' },
+      { prioridade: 'desc' }
+    ]
+  });
+
+  return proximasManutencoes.map(os => ({
+    ...os,
+    diasAteManutencao: getDiasAteManutencao(os.dataAgendada),
+    textoDias: getTextoDias(getDiasAteManutencao(os.dataAgendada)),
+    dataAgendadaFormatada: formatDate(os.dataAgendada),
+    textoRecorrencia: getTextoRecorrencia(os.recorrencia, os.intervaloDias),
+  }));
+};
+
+// RELATÓRIO DE MANUTENÇÕES ATRASADAS
+const relatorioManutencoesAtrasadas = async ({ 
+  setorIds = [], 
+  tecnicoIds = [],
+  prioridadeArray = []
+}) => {
+  const hoje = new Date();
+  hoje.setHours(23, 59, 59, 999);
+
+  const enumPrioridade = ["BAIXO", "MEDIO", "ALTO", "URGENTE"];
+  const prioridadeFiltros = prioridadeArray.filter(p => enumPrioridade.includes(p));
+
+  const where = {
+    preventiva: true,
+    status: { in: ['ABERTA', 'EM_ANDAMENTO'] },
+    dataAgendada: { lt: hoje },
+    ...(setorIds.length > 0 && { setorId: { in: setorIds } }),
+    ...(tecnicoIds.length > 0 && { tecnicoId: { in: tecnicoIds } }),
+    ...(prioridadeFiltros.length > 0 && { prioridade: { in: prioridadeFiltros } }),
+  };
+
+  const manutencoesAtrasadas = await prisma.ordemServico.findMany({
+    where,
+    include: {
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          numeroPatrimonio: true,
+          numeroSerie: true
+        }
+      },
+      Setor: { select: { nome: true } },
+      tecnico: { select: { nome: true, email: true, telefone: true } },
+      tipoEquipamento: { select: { nome: true } }
+    },
+    orderBy: [
+      { dataAgendada: 'asc' },
+      { prioridade: 'desc' }
+    ]
+  });
+
+  return manutencoesAtrasadas.map(os => ({
+    ...os,
+    diasAtraso: Math.abs(getDiasAteManutencao(os.dataAgendada)),
+    dataAgendadaFormatada: formatDate(os.dataAgendada),
+    criadoEmFormatado: formatDate(os.criadoEm),
+    textoRecorrencia: getTextoRecorrencia(os.recorrencia, os.intervaloDias),
+  }));
+};
+
+// RELATÓRIO DE EFICIÊNCIA DE MANUTENÇÕES PREVENTIVAS
+const relatorioEficienciaPreventivas = async ({ 
+  dataInicio, 
+  dataFim, 
+  setorIds = [], 
+  tecnicoIds = [] 
+}) => {
+  if (!dataInicio || !dataFim) return null;
+
+  const where = {
+    preventiva: true,
+    criadoEm: { gte: new Date(dataInicio), lte: new Date(dataFim) },
+    ...(setorIds.length > 0 && { setorId: { in: setorIds } }),
+    ...(tecnicoIds.length > 0 && { tecnicoId: { in: tecnicoIds } }),
+  };
+
+  const manutencoes = await prisma.ordemServico.findMany({
+    where,
+    include: {
+      equipamento: {
+        include: {
+          tipoEquipamento: true,
+          setor: true
+        }
+      },
+      tecnico: true
+    }
+  });
+
+  // Análise de pontualidade
+  const pontuais = manutencoes.filter(os => {
+    if (!os.dataAgendada || !os.iniciadaEm) return false;
+    const agendada = new Date(os.dataAgendada);
+    const iniciada = new Date(os.iniciadaEm);
+    return iniciada <= agendada;
+  });
+
+  const atrasadas = manutencoes.filter(os => {
+    if (!os.dataAgendada) return false;
+    if (os.status === 'CONCLUIDA' || os.status === 'CANCELADA') return false;
+    return getDiasAteManutencao(os.dataAgendada) < 0;
+  });
+
+  // Tempo médio de execução
+  const comTempoExecucao = manutencoes.filter(os => os.iniciadaEm && os.finalizadoEm);
+  const tempoMedioExecucao = comTempoExecucao.length > 0 
+    ? comTempoExecucao.reduce((total, os) => {
+        const inicio = new Date(os.iniciadaEm);
+        const fim = new Date(os.finalizadoEm);
+        return total + ((fim - inicio) / (1000 * 60 * 60));
+      }, 0) / comTempoExecucao.length
+    : 0;
+
+  // Análise por equipamento
+  const porEquipamento = {};
+  manutencoes.forEach(os => {
+    const key = `${os.equipamento?.numeroPatrimonio || 'S/N'} - ${os.equipamento?.nomeEquipamento || 'N/A'}`;
+    if (!porEquipamento[key]) {
+      porEquipamento[key] = {
+        equipamento: key,
+        total: 0,
+        concluidas: 0,
+        atrasadas: 0,
+        custoTotal: 0
+      };
+    }
+    porEquipamento[key].total++;
+    if (os.status === 'CONCLUIDA') porEquipamento[key].concluidas++;
+    if (isAtrasada(os.dataAgendada, os.status)) porEquipamento[key].atrasadas++;
+    if (os.valorManutencao) porEquipamento[key].custoTotal += parseFloat(os.valorManutencao);
+  });
+
+  return {
+    periodo: {
+      inicio: formatDateOnly(dataInicio),
+      fim: formatDateOnly(dataFim)
+    },
+    resumoGeral: {
+      totalManutencoes: manutencoes.length,
+      pontuais: pontuais.length,
+      atrasadas: atrasadas.length,
+      percentualPontualidade: manutencoes.length > 0 
+        ? Math.round((pontuais.length / manutencoes.length) * 10000) / 100 
+        : 0,
+      tempoMedioExecucaoHoras: Math.round(tempoMedioExecucao * 100) / 100,
+      custoTotal: Math.round(manutencoes.reduce((total, os) => 
+        total + (parseFloat(os.valorManutencao) || 0), 0) * 100) / 100,
+    },
+    analisePorEquipamento: Object.values(porEquipamento).map(dados => ({
+      ...dados,
+      custoTotal: Math.round(dados.custoTotal * 100) / 100,
+      eficiencia: dados.total > 0 
+        ? Math.round((dados.concluidas / dados.total) * 10000) / 100 
+        : 0
+    })).sort((a, b) => b.total - a.total)
+  };
+};
+
+// RELATÓRIO DE HISTÓRICO DE RECORRÊNCIAS
+const relatorioHistoricoRecorrencias = async ({ 
+  equipamentoIds = [], 
+  setorIds = [], 
+  mesesHistorico = 12 
+}) => {
+  const dataInicio = new Date();
+  dataInicio.setMonth(dataInicio.getMonth() - mesesHistorico);
+
+  const where = {
+    preventiva: true,
+    recorrencia: { not: 'NENHUMA' },
+    criadoEm: { gte: dataInicio },
+    ...(equipamentoIds.length > 0 && { equipamentoId: { in: equipamentoIds } }),
+    ...(setorIds.length > 0 && { setorId: { in: setorIds } }),
+  };
+
+  const manutencoes = await prisma.ordemServico.findMany({
+    where,
+    include: {
+      equipamento: {
+        select: {
+          id: true,
+          nomeEquipamento: true,
+          numeroPatrimonio: true,
+          numeroSerie: true
+        }
+      },
+      Setor: { select: { nome: true } },
+      tecnico: { select: { nome: true } }
+    },
+    orderBy: { dataAgendada: 'desc' }
+  });
+
+  // Agrupar por equipamento
+  const porEquipamento = {};
+  manutencoes.forEach(os => {
+    const equipamentoId = os.equipamentoId;
+    if (!porEquipamento[equipamentoId]) {
+      porEquipamento[equipamentoId] = {
+        equipamento: os.equipamento,
+        setor: os.Setor?.nome,
+        recorrencia: os.recorrencia,
+        textoRecorrencia: getTextoRecorrencia(os.recorrencia, os.intervaloDias),
+        intervaloDias: os.intervaloDias,
+        manutencoes: []
+      };
+    }
+    porEquipamento[equipamentoId].manutencoes.push({
+      id: os.id,
+      dataAgendada: formatDate(os.dataAgendada),
+      dataExecucao: formatDate(os.finalizadoEm),
+      status: os.status,
+      tecnico: os.tecnico?.nome,
+      valorManutencao: os.valorManutencao ? parseFloat(os.valorManutencao) : null
+    });
+  });
+
+  return Object.values(porEquipamento).map(dados => ({
+    ...dados,
+    totalManutencoes: dados.manutencoes.length,
+    ultimaManutencao: dados.manutencoes[0]?.dataAgendada,
+    proximaManutencaoEstimada: dados.manutencoes[0]?.dataAgendada 
+      ? calcularProximaData(dados.manutencoes[0].dataAgendada, dados.recorrencia, dados.intervaloDias)
+      : null
+  }));
+};
+
+// Função auxiliar para calcular próxima data
+const calcularProximaData = (dataBase, recorrencia, intervaloDias = null) => {
+  if (!dataBase || !recorrencia || recorrencia === 'NENHUMA') return null;
+
+  const novaData = new Date(dataBase);
+
+  switch (recorrencia) {
+    case 'DIARIA':
+      novaData.setDate(novaData.getDate() + 1);
+      break;
+    case 'SEMANAL':
+      novaData.setDate(novaData.getDate() + 7);
+      break;
+    case 'QUINZENAL':
+      novaData.setDate(novaData.getDate() + 15);
+      break;
+    case 'MENSAL':
+      novaData.setMonth(novaData.getMonth() + 1);
+      break;
+    case 'TRIMESTRAL':
+      novaData.setMonth(novaData.getMonth() + 3);
+      break;
+    case 'SEMESTRAL':
+      novaData.setMonth(novaData.getMonth() + 6);
+      break;
+    case 'ANUAL':
+      novaData.setFullYear(novaData.getFullYear() + 1);
+      break;
+    case 'PERSONALIZADA':
+      if (intervaloDias && intervaloDias > 0) {
+        novaData.setDate(novaData.getDate() + intervaloDias);
+      }
+      break;
+    default:
+      return null;
+  }
+
+  return formatDate(novaData);
+};
+
 module.exports = {
   relatorioEquipamentosPorSetor,
   relatorioOsPorTecnico,
@@ -595,4 +1169,9 @@ module.exports = {
   relatorioManutencaoPreventiva,
   relatorioTendenciasTemporais,
   relatorioGruposManutencao,
+  relatorioHistoricoRecorrencias,
+  relatorioManutencoesPreventivas,
+  relatorioProximasManutencoes,
+  relatorioManutencoesAtrasadas,
+  relatorioEficienciaPreventivas,
 };
