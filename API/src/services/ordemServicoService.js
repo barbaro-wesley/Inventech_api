@@ -28,48 +28,48 @@ class OrdemServicoService {
 
   // Função para calcular próxima data baseada na recorrência
   calcularProximaData(dataBase, recorrencia, intervaloDias = null) {
-  // Se não há recorrência, retorna null
-  if (!recorrencia || recorrencia === 'NENHUMA' || recorrencia === 'SEM_RECORRENCIA') {
-    return null;
-  }
-
-  const novaData = new Date(dataBase);
-
-  switch (recorrencia) {
-    case 'DIARIA':
-      novaData.setDate(novaData.getDate() + 1);
-      break;
-    case 'SEMANAL':
-      novaData.setDate(novaData.getDate() + 7);
-      break;
-    case 'QUINZENAL':
-      novaData.setDate(novaData.getDate() + 15);
-      break;
-    case 'MENSAL':
-      novaData.setMonth(novaData.getMonth() + 1);
-      break;
-    case 'TRIMESTRAL':
-      novaData.setMonth(novaData.getMonth() + 3);
-      break;
-    case 'SEMESTRAL':
-      novaData.setMonth(novaData.getMonth() + 6);
-      break;
-    case 'ANUAL':
-      novaData.setFullYear(novaData.getFullYear() + 1);
-      break;
-    case 'PERSONALIZADA':
-      if (intervaloDias && intervaloDias > 0) {
-        novaData.setDate(novaData.getDate() + intervaloDias);
-      } else {
-        throw new Error('Intervalo de dias é obrigatório para recorrência personalizada');
-      }
-      break;
-    default:
+    // Se não há recorrência, retorna null
+    if (!recorrencia || recorrencia === 'NENHUMA' || recorrencia === 'SEM_RECORRENCIA') {
       return null;
-  }
+    }
 
-  return novaData;
-}
+    const novaData = new Date(dataBase);
+
+    switch (recorrencia) {
+      case 'DIARIA':
+        novaData.setDate(novaData.getDate() + 1);
+        break;
+      case 'SEMANAL':
+        novaData.setDate(novaData.getDate() + 7);
+        break;
+      case 'QUINZENAL':
+        novaData.setDate(novaData.getDate() + 15);
+        break;
+      case 'MENSAL':
+        novaData.setMonth(novaData.getMonth() + 1);
+        break;
+      case 'TRIMESTRAL':
+        novaData.setMonth(novaData.getMonth() + 3);
+        break;
+      case 'SEMESTRAL':
+        novaData.setMonth(novaData.getMonth() + 6);
+        break;
+      case 'ANUAL':
+        novaData.setFullYear(novaData.getFullYear() + 1);
+        break;
+      case 'PERSONALIZADA':
+        if (intervaloDias && intervaloDias > 0) {
+          novaData.setDate(novaData.getDate() + intervaloDias);
+        } else {
+          throw new Error('Intervalo de dias é obrigatório para recorrência personalizada');
+        }
+        break;
+      default:
+        return null;
+    }
+
+    return novaData;
+  }
 
   // Função para gerar múltiplas datas baseadas na recorrência
   gerarDatasRecorrencia(dataInicial, recorrencia, intervaloDias = null, quantidadeOcorrencias = 12) {
@@ -170,49 +170,49 @@ class OrdemServicoService {
   }
 
   async criarOSUnica(data, enviarNotificacao = true) {
-  // Normaliza a recorrência antes de salvar
-  const recorrenciaNormalizada = !data.recorrencia || 
-                                 data.recorrencia === '' || 
-                                 data.recorrencia === null || 
-                                 data.recorrencia === undefined 
-                                 ? 'NENHUMA' 
-                                 : data.recorrencia;
+    // Normaliza a recorrência antes de salvar
+    const recorrenciaNormalizada = !data.recorrencia ||
+      data.recorrencia === '' ||
+      data.recorrencia === null ||
+      data.recorrencia === undefined
+      ? 'NENHUMA'
+      : data.recorrencia;
 
-  // Remove quantidadeOcorrencias dos dados que vão para o banco
-  const { quantidadeOcorrencias, ...dadosParaSalvar } = data;
+    // Remove quantidadeOcorrencias dos dados que vão para o banco
+    const { quantidadeOcorrencias, ...dadosParaSalvar } = data;
 
-  const novaOS = await prisma.ordemServico.create({
-    data: {
-      ...dadosParaSalvar,
-      preventiva: data.preventiva || false,
-      dataAgendada: data.dataAgendada ?? null,
-      recorrencia: recorrenciaNormalizada,
-      intervaloDias: data.intervaloDias ?? null,
-      arquivos: data.arquivos || [],
-      prioridade: data.prioridade || 'MEDIO',
-    },
-    include: {
-      tipoEquipamento: true,
-      tecnico: true,
-      solicitante: { select: { nome: true } },
-      Setor: true,
-      equipamento: {
-        select: {
-          nomeEquipamento: true,
-          numeroPatrimonio: true,
-          numeroSerie: true,
+    const novaOS = await prisma.ordemServico.create({
+      data: {
+        ...dadosParaSalvar,
+        preventiva: data.preventiva || false,
+        dataAgendada: data.dataAgendada ?? null,
+        recorrencia: recorrenciaNormalizada,
+        intervaloDias: data.intervaloDias ?? null,
+        arquivos: data.arquivos || [],
+        prioridade: data.prioridade || 'MEDIO',
+      },
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        solicitante: { select: { nome: true } },
+        Setor: true,
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            numeroPatrimonio: true,
+            numeroSerie: true,
+          }
         }
-      }
-    },
-  });
+      },
+    });
 
-  // Só envia notificação se solicitado (para evitar spam nas recorrências)
-  if (enviarNotificacao) {
-    await this.enviarNotificacoes(novaOS);
+    // Só envia notificação se solicitado (para evitar spam nas recorrências)
+    if (enviarNotificacao) {
+      await this.enviarNotificacoes(novaOS);
+    }
+
+    return novaOS;
   }
-
-  return novaOS;
-}
 
   async enviarNotificacoes(novaOS) {
     // Notificação no Telegram
@@ -271,21 +271,21 @@ class OrdemServicoService {
   }
 
   // Função auxiliar para converter enum em texto legível - ATUALIZADA
-getTextoRecorrencia(recorrencia, intervaloDias = null) {
-  const textos = {
-    NENHUMA: 'Sem recorrência',
-    SEM_RECORRENCIA: 'Sem recorrência',
-    DIARIA: 'Diária',
-    SEMANAL: 'Semanal',
-    QUINZENAL: 'Quinzenal',
-    MENSAL: 'Mensal',
-    TRIMESTRAL: 'Trimestral',
-    SEMESTRAL: 'Semestral',
-    ANUAL: 'Anual',
-    PERSONALIZADA: intervaloDias ? `A cada ${intervaloDias} dias` : 'Personalizada'
-  };
-  return textos[recorrencia] || 'Sem recorrência';
-}
+  getTextoRecorrencia(recorrencia, intervaloDias = null) {
+    const textos = {
+      NENHUMA: 'Sem recorrência',
+      SEM_RECORRENCIA: 'Sem recorrência',
+      DIARIA: 'Diária',
+      SEMANAL: 'Semanal',
+      QUINZENAL: 'Quinzenal',
+      MENSAL: 'Mensal',
+      TRIMESTRAL: 'Trimestral',
+      SEMESTRAL: 'Semestral',
+      ANUAL: 'Anual',
+      PERSONALIZADA: intervaloDias ? `A cada ${intervaloDias} dias` : 'Personalizada'
+    };
+    return textos[recorrencia] || 'Sem recorrência';
+  }
   gerarTemplateEmail(novaOS) {
     const prioridadeEmoji = this.getPrioridadeEmoji(novaOS.prioridade);
     const prioridadeTexto = this.getPrioridadeTexto(novaOS.prioridade);
@@ -699,44 +699,77 @@ getTextoRecorrencia(recorrencia, intervaloDias = null) {
   }
 
   async listarPorTecnico(tecnicoId) {
-    return await prisma.ordemServico.findMany({
-      where: {
-        tecnicoId: tecnicoId,
-        status: "ABERTA"
-      },
-      include: {
-        tipoEquipamento: true,
-        tecnico: true,
-        solicitante: { select: { nome: true } },
-        Setor: true,
-        equipamento: {
-          select: {
-            nomeEquipamento: true,
-            marca: true,
-            modelo: true,
-            numeroSerie: true,
-          }
+  const ordens = await prisma.ordemServico.findMany({
+    where: {
+      tecnicoId: tecnicoId,
+      status: "ABERTA"
+    },
+    select: {
+      id: true,
+      descricao: true,
+      preventiva: true,
+      prioridade: true,
+      status: true,
+      criadoEm: true,
+      iniciadaEm: true,
+      finalizadoEm: true,
+      canceladaEm: true,
+      dataAgendada: true, // incluir
+      tipoEquipamento: true,
+      tecnico: true,
+      solicitante: { select: { nome: true } },
+      Setor: true,
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
         }
-      },
-      // Ordenar por prioridade primeiro, depois por data
-      orderBy: [
-        {
-          prioridade: 'desc', // URGENTE -> ALTO -> MEDIO -> BAIXO
-        },
-        {
-          criadoEm: 'desc',
-        }
-      ],
-    });
-  }
+      }
+    },
+    orderBy: [
+      { dataAgendada: 'asc' },
+      { criadoEm: 'desc' }
+    ]
+  });
 
+  // 🔹 Converte as datas
+  return ordens.map(os => ({
+    ...os,
+    criadoEm: os.criadoEm
+      ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    iniciadaEm: os.iniciadaEm
+      ? os.iniciadaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    finalizadoEm: os.finalizadoEm
+      ? os.finalizadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    canceladaEm: os.canceladaEm
+      ? os.canceladaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    dataAgendada: os.dataAgendada
+      ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null
+  }));
+}
   async listarPorTecnicoEmAndamento(tecnicoId) {
     return await prisma.ordemServico.findMany({
       where: {
         tecnicoId: tecnicoId,
         status: "EM_ANDAMENTO"
       },
-      include: {
+      select: {
+        id: true,
+        descricao: true,
+        preventiva: true,
+        prioridade: true,
+        status: true,
+        criadoEm: true,
+        iniciadaEm: true,
+        finalizadoEm: true,
+        canceladaEm: true,
         tipoEquipamento: true,
         tecnico: true,
         solicitante: { select: { nome: true } },
@@ -752,10 +785,10 @@ getTextoRecorrencia(recorrencia, intervaloDias = null) {
       },
       orderBy: [
         {
-          prioridade: 'desc',
+          dataAgendada: 'asc' // Mais próximas primeiro (futuro mais próximo)
         },
         {
-          criadoEm: 'desc',
+          criadoEm: 'desc' // Caso não tenham dataAgendada, por criação
         }
       ]
     });
@@ -767,7 +800,16 @@ getTextoRecorrencia(recorrencia, intervaloDias = null) {
         tecnicoId: tecnicoId,
         status: "CONCLUIDA"
       },
-      include: {
+      select: {
+        id: true,
+        descricao: true,
+        preventiva: true, // MUDANÇA: trocar tipoManutencao por preventiva
+        prioridade: true,
+        status: true,
+        criadoEm: true,
+        iniciadaEm: true,
+        finalizadoEm: true,
+        canceladaEm: true,
         tipoEquipamento: true,
         tecnico: true,
         solicitante: { select: { nome: true } },
@@ -781,24 +823,27 @@ getTextoRecorrencia(recorrencia, intervaloDias = null) {
           }
         }
       },
-      orderBy: [
-        {
-          prioridade: 'desc',
-        },
-        {
-          criadoEm: 'desc',
-        }
-      ]
+      orderBy: {
+        finalizadoEm: 'desc' // ou canceladaEm para canceladas
+      }
     });
   }
-
   async listarPorTecnicoCancelada(tecnicoId) {
     return await prisma.ordemServico.findMany({
       where: {
         tecnicoId: tecnicoId,
         status: "CANCELADA"
       },
-      include: {
+      select: {
+        id: true,
+        descricao: true,
+        preventiva: true, // CORREÇÃO: usar preventiva ao invés de tipoManutencao
+        prioridade: true,
+        status: true,
+        criadoEm: true,
+        iniciadaEm: true,
+        finalizadoEm: true,
+        canceladaEm: true,
         tipoEquipamento: true,
         tecnico: true,
         solicitante: { select: { nome: true } },
@@ -812,14 +857,9 @@ getTextoRecorrencia(recorrencia, intervaloDias = null) {
           }
         }
       },
-      orderBy: [
-        {
-          prioridade: 'desc',
-        },
-        {
-          criadoEm: 'desc',
-        }
-      ]
+      orderBy: {
+        finalizadoEm: 'desc' // ou canceladaEm para canceladas
+      }
     });
   }
 }
