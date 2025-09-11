@@ -862,6 +862,43 @@ class OrdemServicoService {
       }
     });
   }
+async listarPreventivasPorTecnico(tecnicoId) {
+  const ordens = await prisma.ordemServico.findMany({
+    where: {
+      tecnicoId,
+      status: "ABERTA",
+      preventiva: true,
+      NOT: { dataAgendada: null }
+    },
+    select: {
+      id: true,
+      descricao: true,
+      preventiva: true,
+      prioridade: true,
+      status: true,
+      criadoEm: true,
+      dataAgendada: true,
+      tecnico: true,
+      tipoEquipamento: true,
+      equipamento: true,
+    },
+    orderBy: [
+      { dataAgendada: 'asc' },
+      { criadoEm: 'desc' }
+    ]
+  });
+
+  return ordens.map(os => ({
+    ...os,
+    criadoEm: os.criadoEm
+      ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    dataAgendada: os.dataAgendada
+      ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null
+  }));
+}
+
 }
 
 module.exports = new OrdemServicoService();

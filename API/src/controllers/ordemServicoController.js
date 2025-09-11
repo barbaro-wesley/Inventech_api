@@ -60,6 +60,22 @@ const ordemServicoController = {
       res.status(400).json({ error: 'Erro ao listar OS do técnico', detalhes: error.message });
     }
   },
+  async listarPreventivasPorTecnico(req, res) {
+  try {
+    const tecnicoId = req.usuario.tecnicoId;
+    if (!tecnicoId) {
+      return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
+    }
+
+    const osList = await ordemServicoService.listarPreventivasPorTecnico(tecnicoId);
+    res.status(200).json(osList);
+  } catch (error) {
+    res.status(400).json({ 
+      error: 'Erro ao listar OS preventivas do técnico', 
+      detalhes: error.message 
+    });
+  }
+},
 
   async listarPorTecnicoEmAndamento(req, res) {
     try {

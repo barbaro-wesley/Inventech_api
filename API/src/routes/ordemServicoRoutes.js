@@ -39,6 +39,7 @@ const upload = multer({ storage, fileFilter });
 
 router.use(autenticarUsuario);
 router.get('/tecnico', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnico);
+router.get('/ordens/preventivas', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPreventivasPorTecnico);
 router.get('/tecnico/em-andamento', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoEmAndamento);
 router.get('/tecnico/concluidos', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoConcluida);
 router.get('/tecnico/cancelados', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoCancelada);
