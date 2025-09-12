@@ -8,4 +8,6 @@ const permitirSomente = require('../middlewares/permissoes');
 router.use(autenticarUsuario);
 router.post('/', permitirSomente('admin','cadastro'),setorController.criar);
 router.get('/', setorController.listar);
+router.put('/:id',permitirSomente('admin','cadastro'), setorController.editar);
+router.delete('/:id',permitirSomente('admin','cadastro'), setorController.excluir);
 module.exports = router;
