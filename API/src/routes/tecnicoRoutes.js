@@ -11,5 +11,6 @@ router.post('/', permitirSomente('admin','cadastro','tecnico'),controller.criar)
 router.get('/',permitirSomente('admin','cadastro','visualizador','tecnico'), controller.listar);
 router.put('/:id',permitirSomente('admin','cadastro'), controller.atualizar);
 router.delete('/:id', permitirSomente('admin'),controller.remover);
-
+router.get('/TecnicoEquipamentos', controller.listarEquipamentos); 
+router.get('/tipos-equipamentos', autenticarUsuario, controller.listarTiposEquipamento);
 module.exports = router;
