@@ -66,6 +66,186 @@ const listarTiposEquipamento = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+const gerarRelatorioTecnico = async (req, res) => {
+  try {
+    const { dataInicio, dataFim, status, prioridade } = req.query;
+    const tecnicoId = req.usuario?.tecnicoId; // Corrigido de req.user para req.usuario
+
+    if (!tecnicoId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Usuário não é um técnico' 
+      });
+    }
+
+    if (!dataInicio || !dataFim) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Data de início e fim são obrigatórias' 
+      });
+    }
+
+    // Tratar arrays de query parameters
+    const statusArray = status ? (Array.isArray(status) ? status : status.split(',')) : undefined;
+    const prioridadeArray = prioridade ? (Array.isArray(prioridade) ? prioridade : prioridade.split(',')) : undefined;
+
+    const filtros = { dataInicio, dataFim, status: statusArray, prioridade: prioridadeArray };
+    // Usar tecnicoService em vez de relatorioService para consistência
+    const resultado = await tecnicoService.gerarRelatorioTecnico(tecnicoId, filtros);
+
+    res.json({
+      success: true,
+      data: resultado,
+      tecnico: {
+        id: tecnicoId,
+        nome: req.usuario.nome,
+        email: req.usuario.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+const gerarRelatorioResumo = async (req, res) => {
+  try {
+    const { dataInicio, dataFim, status, prioridade } = req.query;
+    const tecnicoId = req.usuario?.tecnicoId; // Corrigido de req.user para req.usuario
+
+    if (!tecnicoId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Usuário não é um técnico' 
+      });
+    }
+
+    if (!dataInicio || !dataFim) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Data de início e fim são obrigatórias' 
+      });
+    }
+
+    const statusArray = status ? (Array.isArray(status) ? status : status.split(',')) : undefined;
+    const prioridadeArray = prioridade ? (Array.isArray(prioridade) ? prioridade : prioridade.split(',')) : undefined;
+
+    const filtros = { dataInicio, dataFim, status: statusArray, prioridade: prioridadeArray };
+    // Usar tecnicoService em vez de relatorioService para consistência
+    const resultado = await tecnicoService.gerarRelatorioResumo(tecnicoId, filtros);
+
+    res.json({
+      success: true,
+      data: resultado,
+      tecnico: {
+        id: tecnicoId,
+        nome: req.usuario.nome,
+        email: req.usuario.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao gerar relatório resumo:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+const gerarRelatorioProdutividade = async (req, res) => {
+  try {
+    const { dataInicio, dataFim } = req.query;
+    const tecnicoId = req.usuario?.tecnicoId; // Corrigido de req.user para req.usuario
+
+    if (!tecnicoId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Usuário não é um técnico' 
+      });
+    }
+
+    if (!dataInicio || !dataFim) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Data de início e fim são obrigatórias' 
+      });
+    }
+
+    const filtros = { dataInicio, dataFim };
+    // Usar tecnicoService em vez de relatorioService para consistência
+    const resultado = await tecnicoService.gerarRelatorioProdutividade(tecnicoId, filtros);
+
+    res.json({
+      success: true,
+      data: resultado,
+      tecnico: {
+        id: tecnicoId,
+        nome: req.usuario.nome,
+        email: req.usuario.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao gerar relatório produtividade:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+const listarOSPorPeriodo = async (req, res) => {
+  try {
+    const { dataInicio, dataFim, status, prioridade } = req.query;
+    const tecnicoId = req.usuario?.tecnicoId; // Corrigido de req.user para req.usuario
+
+    if (!tecnicoId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Usuário não é um técnico' 
+      });
+    }
+
+    if (!dataInicio || !dataFim) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Data de início e fim são obrigatórias' 
+      });
+    }
+
+    const statusArray = status ? (Array.isArray(status) ? status : status.split(',')) : undefined;
+    const prioridadeArray = prioridade ? (Array.isArray(prioridade) ? prioridade : prioridade.split(',')) : undefined;
+
+    const filtros = { dataInicio, dataFim, status: statusArray, prioridade: prioridadeArray };
+    // Usar tecnicoService em vez de relatorioService para consistência
+    const ordens = await tecnicoService.listarOSPorPeriodo(tecnicoId, filtros);
+
+    res.json({
+      success: true,
+      data: {
+        message: 'Ordens listadas com sucesso',
+        total: ordens.length,
+        ordens
+      },
+      tecnico: {
+        id: tecnicoId,
+        nome: req.usuario.nome,
+        email: req.usuario.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro ao listar OS por período:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
 
 module.exports = {
   criar,
@@ -73,5 +253,9 @@ module.exports = {
   atualizar,
   remover,
   listarEquipamentos,
-  listarTiposEquipamento
+  listarTiposEquipamento,
+   gerarRelatorioTecnico,
+  gerarRelatorioResumo,
+  gerarRelatorioProdutividade,
+  listarOSPorPeriodo
 };
