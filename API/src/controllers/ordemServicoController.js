@@ -76,8 +76,62 @@ const ordemServicoController = {
     });
   }
 },
+async listarMinhasOS (req, res)  {
+  try {
+    // Pega o ID do usuário logado do middleware de autenticação
+    const solicitanteId = req.usuario.id;
+    
+    // Extrai os filtros da query string
+    const { status, dataInicio, dataFim, preventiva } = req.query;
 
-  async listarPorTecnicoEmAndamento(req, res) {
+    // Validação básica dos filtros
+    const filtros = {};
+
+    if (status) {
+      const statusValidos = ['ABERTA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA', 'TODAS'];
+      if (statusValidos.includes(status)) {
+        filtros.status = status;
+      }
+    }
+
+    if (dataInicio) {
+      // Validar formato da data (YYYY-MM-DD)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dataInicio)) {
+        filtros.dataInicio = dataInicio;
+      }
+    }
+
+    if (dataFim) {
+      // Validar formato da data (YYYY-MM-DD)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dataFim)) {
+        filtros.dataFim = dataFim;
+      }
+    }
+
+    if (preventiva !== undefined) {
+      filtros.preventiva = preventiva;
+    }
+
+    // Chama o service
+    const resultado = await ordemServicoService.listarPorSolicitante(solicitanteId, filtros);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Ordens de serviço listadas com sucesso',
+      data: resultado
+    });
+
+  } catch (error) {
+    console.error('Erro ao listar ordens de serviço do solicitante:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  }
+}
+
+  ,async listarPorTecnicoEmAndamento(req, res) {
     try {
       const tecnicoId = req.usuario.tecnicoId;
       if (!tecnicoId) {

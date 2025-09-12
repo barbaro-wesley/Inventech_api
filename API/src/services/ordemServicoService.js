@@ -899,6 +899,154 @@ async listarPreventivasPorTecnico(tecnicoId) {
   }));
 }
 
+async listarPorSolicitante(solicitanteId, filtros = {}) {
+  const { status, dataInicio, dataFim, preventiva } = filtros;
+
+  // Construir filtros dinâmicos
+  const whereClause = {
+    solicitanteId: solicitanteId
+  };
+
+  // Filtro por status
+  if (status && status !== 'TODAS') {
+    whereClause.status = status;
+  }
+
+  // Filtro por tipo (preventiva/corretiva)
+  if (preventiva !== undefined && preventiva !== null && preventiva !== '') {
+    whereClause.preventiva = preventiva === 'true' || preventiva === true;
+  }
+
+  // Filtro por data de criação
+  if (dataInicio || dataFim) {
+    whereClause.criadoEm = {};
+    
+    if (dataInicio) {
+      // Início do dia
+      const inicio = new Date(dataInicio);
+      inicio.setHours(0, 0, 0, 0);
+      whereClause.criadoEm.gte = inicio;
+    }
+    
+    if (dataFim) {
+      // Final do dia
+      const fim = new Date(dataFim);
+      fim.setHours(23, 59, 59, 999);
+      whereClause.criadoEm.lte = fim;
+    }
+  }
+
+  const ordens = await prisma.ordemServico.findMany({
+    where: whereClause,
+    select: {
+      id: true,
+      descricao: true,
+      preventiva: true,
+      prioridade: true,
+      status: true,
+      criadoEm: true,
+      iniciadaEm: true,
+      finalizadoEm: true,
+      canceladaEm: true,
+      dataAgendada: true,
+      valorManutencao: true,
+      resolucao: true,
+      tipoEquipamento: {
+        select: {
+          id: true,
+          nome: true
+        }
+      },
+      tecnico: {
+        select: {
+          id: true,
+          nome: true
+        }
+      },
+      solicitante: { 
+        select: { 
+          nome: true 
+        } 
+      },
+      Setor: {
+        select: {
+          id: true,
+          nome: true
+        }
+      },
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+          numeroPatrimonio: true
+        }
+      }
+    },
+    orderBy: [
+      {
+        // Ordenar por status - ABERTA e EM_ANDAMENTO primeiro
+        status: 'asc'
+      },
+      {
+        // Depois por prioridade (URGENTE primeiro)
+        prioridade: 'desc'
+      },
+      {
+        // Por último, por data de criação (mais recente primeiro)
+        criadoEm: 'desc'
+      }
+    ]
+  });
+
+  // Converter datas para formato brasileiro
+  const ordensFormatadas = ordens.map(os => ({
+    ...os,
+    criadoEm: os.criadoEm
+      ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    iniciadaEm: os.iniciadaEm
+      ? os.iniciadaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    finalizadoEm: os.finalizadoEm
+      ? os.finalizadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    canceladaEm: os.canceladaEm
+      ? os.canceladaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    dataAgendada: os.dataAgendada
+      ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : null,
+    valorManutencao: os.valorManutencao ? Number(os.valorManutencao) : null
+  }));
+
+  // Calcular estatísticas
+  const estatisticas = {
+    total: ordensFormatadas.length,
+    abertas: ordensFormatadas.filter(os => os.status === 'ABERTA').length,
+    emAndamento: ordensFormatadas.filter(os => os.status === 'EM_ANDAMENTO').length,
+    concluidas: ordensFormatadas.filter(os => os.status === 'CONCLUIDA').length,
+    canceladas: ordensFormatadas.filter(os => os.status === 'CANCELADA').length,
+    preventivas: ordensFormatadas.filter(os => os.preventiva === true).length,
+    corretivas: ordensFormatadas.filter(os => os.preventiva === false).length,
+    valorTotal: ordensFormatadas.reduce((acc, os) => {
+      return acc + (os.valorManutencao || 0);
+    }, 0)
+  };
+
+  return {
+    ordens: ordensFormatadas,
+    estatisticas,
+    filtrosAplicados: {
+      status: status || 'TODAS',
+      dataInicio: dataInicio || null,
+      dataFim: dataFim || null,
+      preventiva: preventiva !== undefined ? preventiva : null
+    }
+  };
+}
+
 }
 
 module.exports = new OrdemServicoService();

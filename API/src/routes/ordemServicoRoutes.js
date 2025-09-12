@@ -43,7 +43,7 @@ router.get('/ordens/preventivas', autenticarUsuario, permitirSomente('admin', 't
 router.get('/tecnico/em-andamento', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoEmAndamento);
 router.get('/tecnico/concluidos', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoConcluida);
 router.get('/tecnico/cancelados', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnicoCancelada);
-
+router.get('/minhas-os', autenticarUsuario, ordemServicoController.listarMinhasOS);
 
 
 router.post('/',autenticarUsuario, permitirSomente('admin','cadastro','visualizador','tecnico'),upload.array('arquivos', 5),ordemServicoController.criar);
