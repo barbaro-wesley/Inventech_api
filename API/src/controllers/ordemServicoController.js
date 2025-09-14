@@ -49,17 +49,36 @@ const ordemServicoController = {
   },
 
   async listarPorTecnico(req, res) {
-    try {
-      const tecnicoId = req.usuario.tecnicoId;
-      if (!tecnicoId) {
-        return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
-      }
-      const osList = await ordemServicoService.listarPorTecnico(tecnicoId);
-      res.status(200).json(osList);
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao listar OS do técnico', detalhes: error.message });
+  try {
+    const tecnicoId = req.usuario.tecnicoId;
+    if (!tecnicoId) {
+      return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
     }
-  },
+
+    // Pega todos os filtros da query string
+    const { status, preventiva, prioridade, dataInicio, dataFim } = req.query;
+    
+    const filtros = {
+      status,
+      preventiva,
+      prioridade,
+      dataInicio,
+      dataFim
+    };
+
+    // Remove filtros vazios/undefined
+    Object.keys(filtros).forEach(key => {
+      if (filtros[key] === undefined || filtros[key] === '') {
+        delete filtros[key];
+      }
+    });
+    
+    const osList = await ordemServicoService.listarPorTecnico(tecnicoId, filtros);
+    res.status(200).json(osList);
+  } catch (error) {
+    res.status(400).json({ error: 'Erro ao listar OS do técnico', detalhes: error.message });
+  }
+},
   async listarPreventivasPorTecnico(req, res) {
   try {
     const tecnicoId = req.usuario.tecnicoId;
@@ -131,44 +150,7 @@ async listarMinhasOS (req, res)  {
   }
 }
 
-  ,async listarPorTecnicoEmAndamento(req, res) {
-    try {
-      const tecnicoId = req.usuario.tecnicoId;
-      if (!tecnicoId) {
-        return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
-      }
-      const osList = await ordemServicoService.listarPorTecnicoEmAndamento(tecnicoId);
-      res.status(200).json(osList);
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao listar OS em andamento do técnico', detalhes: error.message });
-    }
-  },
-
-  async listarPorTecnicoConcluida(req, res) {
-    try {
-      const tecnicoId = req.usuario.tecnicoId;
-      if (!tecnicoId) {
-        return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
-      }
-      const osList = await ordemServicoService.listarPorTecnicoConcluida(tecnicoId);
-      res.status(200).json(osList);
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao listar OS concluídas do técnico', detalhes: error.message });
-    }
-  },
-
-  async listarPorTecnicoCancelada(req, res) {
-    try {
-      const tecnicoId = req.usuario.tecnicoId;
-      if (!tecnicoId) {
-        return res.status(403).json({ error: 'Usuário não está vinculado a um técnico.' });
-      }
-      const osList = await ordemServicoService.listarPorTecnicoCancelada(tecnicoId);
-      res.status(200).json(osList);
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao listar OS canceladas do técnico', detalhes: error.message });
-    }
-  },
+  ,
 
   async buscarPorId(req, res) {
     try {

@@ -698,12 +698,60 @@ class OrdemServicoService {
     });
   }
 
-  async listarPorTecnico(tecnicoId) {
+  // ===== SERVICE =====
+async listarPorTecnico(tecnicoId, filtros = {}) {
+  const whereCondition = {
+    tecnicoId: tecnicoId
+  };
+
+  // Filtro por status
+  if (filtros.status) {
+    whereCondition.status = filtros.status;
+  }
+
+  // Filtro por tipo de manutenção (preventiva/corretiva)
+  if (filtros.preventiva !== undefined) {
+    whereCondition.preventiva = filtros.preventiva === 'true' || filtros.preventiva === true;
+  }
+
+  // Filtro por prioridade
+  if (filtros.prioridade) {
+    whereCondition.prioridade = filtros.prioridade;
+  }
+
+  // Filtros de data
+  if (filtros.dataInicio || filtros.dataFim) {
+    const campoData = filtros.status === 'CONCLUIDA' ? 'finalizadoEm' : 
+                     filtros.status === 'CANCELADA' ? 'canceladaEm' :
+                     filtros.status === 'EM_ANDAMENTO' ? 'iniciadaEm' : 'criadoEm';
+
+    whereCondition[campoData] = {};
+
+    if (filtros.dataInicio) {
+      whereCondition[campoData].gte = new Date(filtros.dataInicio);
+    }
+    
+    if (filtros.dataFim) {
+      // Adiciona 23:59:59 para incluir todo o dia final
+      const dataFim = new Date(filtros.dataFim);
+      dataFim.setHours(23, 59, 59, 999);
+      whereCondition[campoData].lte = dataFim;
+    }
+  }
+
+  // Define ordenação baseada no status
+  let orderBy;
+  if (filtros.status === 'CONCLUIDA' || filtros.status === 'CANCELADA') {
+    orderBy = { finalizadoEm: 'desc' };
+  } else {
+    orderBy = [
+      { dataAgendada: 'asc' },
+      { criadoEm: 'desc' }
+    ];
+  }
+
   const ordens = await prisma.ordemServico.findMany({
-    where: {
-      tecnicoId: tecnicoId,
-      status: "ABERTA"
-    },
+    where: whereCondition,
     select: {
       id: true,
       descricao: true,
@@ -714,7 +762,7 @@ class OrdemServicoService {
       iniciadaEm: true,
       finalizadoEm: true,
       canceladaEm: true,
-      dataAgendada: true, // incluir
+      dataAgendada: true,
       tipoEquipamento: true,
       tecnico: true,
       solicitante: { select: { nome: true } },
@@ -728,140 +776,34 @@ class OrdemServicoService {
         }
       }
     },
-    orderBy: [
-      { dataAgendada: 'asc' },
-      { criadoEm: 'desc' }
-    ]
+    orderBy: orderBy
   });
 
-  // 🔹 Converte as datas
-  return ordens.map(os => ({
-    ...os,
-    criadoEm: os.criadoEm
-      ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    iniciadaEm: os.iniciadaEm
-      ? os.iniciadaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    finalizadoEm: os.finalizadoEm
-      ? os.finalizadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    canceladaEm: os.canceladaEm
-      ? os.canceladaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    dataAgendada: os.dataAgendada
-      ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null
-  }));
-}
-  async listarPorTecnicoEmAndamento(tecnicoId) {
-    return await prisma.ordemServico.findMany({
-      where: {
-        tecnicoId: tecnicoId,
-        status: "EM_ANDAMENTO"
-      },
-      select: {
-        id: true,
-        descricao: true,
-        preventiva: true,
-        prioridade: true,
-        status: true,
-        criadoEm: true,
-        iniciadaEm: true,
-        finalizadoEm: true,
-        canceladaEm: true,
-        tipoEquipamento: true,
-        tecnico: true,
-        solicitante: { select: { nome: true } },
-        Setor: true,
-        equipamento: {
-          select: {
-            nomeEquipamento: true,
-            marca: true,
-            modelo: true,
-            numeroSerie: true,
-          }
-        }
-      },
-      orderBy: [
-        {
-          dataAgendada: 'asc' // Mais próximas primeiro (futuro mais próximo)
-        },
-        {
-          criadoEm: 'desc' // Caso não tenham dataAgendada, por criação
-        }
-      ]
-    });
+  // Converte as datas apenas para status ABERTA ou quando não há filtro
+  if (filtros.status === 'ABERTA' || !filtros.status) {
+    return ordens.map(os => ({
+      ...os,
+      criadoEm: os.criadoEm
+        ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null,
+      iniciadaEm: os.iniciadaEm
+        ? os.iniciadaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null,
+      finalizadoEm: os.finalizadoEm
+        ? os.finalizadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null,
+      canceladaEm: os.canceladaEm
+        ? os.canceladaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null,
+      dataAgendada: os.dataAgendada
+        ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null
+    }));
   }
 
-  async listarPorTecnicoConcluida(tecnicoId) {
-    return await prisma.ordemServico.findMany({
-      where: {
-        tecnicoId: tecnicoId,
-        status: "CONCLUIDA"
-      },
-      select: {
-        id: true,
-        descricao: true,
-        preventiva: true, // MUDANÇA: trocar tipoManutencao por preventiva
-        prioridade: true,
-        status: true,
-        criadoEm: true,
-        iniciadaEm: true,
-        finalizadoEm: true,
-        canceladaEm: true,
-        tipoEquipamento: true,
-        tecnico: true,
-        solicitante: { select: { nome: true } },
-        Setor: true,
-        equipamento: {
-          select: {
-            nomeEquipamento: true,
-            marca: true,
-            modelo: true,
-            numeroSerie: true,
-          }
-        }
-      },
-      orderBy: {
-        finalizadoEm: 'desc' // ou canceladaEm para canceladas
-      }
-    });
-  }
-  async listarPorTecnicoCancelada(tecnicoId) {
-    return await prisma.ordemServico.findMany({
-      where: {
-        tecnicoId: tecnicoId,
-        status: "CANCELADA"
-      },
-      select: {
-        id: true,
-        descricao: true,
-        preventiva: true, // CORREÇÃO: usar preventiva ao invés de tipoManutencao
-        prioridade: true,
-        status: true,
-        criadoEm: true,
-        iniciadaEm: true,
-        finalizadoEm: true,
-        canceladaEm: true,
-        tipoEquipamento: true,
-        tecnico: true,
-        solicitante: { select: { nome: true } },
-        Setor: true,
-        equipamento: {
-          select: {
-            nomeEquipamento: true,
-            marca: true,
-            modelo: true,
-            numeroSerie: true,
-          }
-        }
-      },
-      orderBy: {
-        finalizadoEm: 'desc' // ou canceladaEm para canceladas
-      }
-    });
-  }
+  return ordens;
+}
+
 async listarPreventivasPorTecnico(tecnicoId) {
   const ordens = await prisma.ordemServico.findMany({
     where: {
