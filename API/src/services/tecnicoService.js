@@ -147,9 +147,11 @@ const gerarRelatorioTecnico = async (tecnicoId, filtros) => {
     whereClause.status = { in: filtros.status };
   }
 
-  if (filtros.prioridade && filtros.prioridade.length > 0) {
-    whereClause.prioridade = { in: filtros.prioridade };
-  }
+ if (filtros.prioridade && filtros.prioridade.length > 0) {
+  whereClause.prioridade = { 
+    in: filtros.prioridade.map(p => p.trim().toUpperCase()) // normaliza
+  };
+}
 
   const ordens = await prisma.ordemServico.findMany({
     where: whereClause,
