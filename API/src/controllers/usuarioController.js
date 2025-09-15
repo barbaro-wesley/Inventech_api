@@ -139,6 +139,7 @@ const redefinirSenha = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
 const atualizarUsuario = async (req, res) => {
   try {
     const { usuarioId } = req.params;
@@ -147,41 +148,113 @@ const atualizarUsuario = async (req, res) => {
     // Validações básicas
     if (!usuarioId || isNaN(parseInt(usuarioId))) {
       return res.status(400).json({
+        success: false,
         error: 'ID do usuário é obrigatório e deve ser um número válido'
+      });
+    }
+
+    // Validar se há dados para atualizar
+    if (!dados || Object.keys(dados).length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum dado fornecido para atualização'
       });
     }
 
     // Validar email se fornecido
     if (dados.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email)) {
       return res.status(400).json({
+        success: false,
         error: 'Formato de email inválido'
       });
     }
 
     // Validar papel se fornecido
-    if (dados.papel && !['admin', 'usuario'].includes(dados.papel)) {
+    const papeisValidos = ['admin', 'cadastro', 'tecnico', 'visualizador', 'usuario_comum'];
+    if (dados.papel && !papeisValidos.includes(dados.papel)) {
+      console.log('❌ ERRO: Papel inválido:', dados.papel);
       return res.status(400).json({
-        error: 'Papel deve ser "admin" ou "usuario"'
+        success: false,
+        error: `Papel deve ser um dos seguintes: ${papeisValidos.join(', ')}`
       });
     }
+    if (dados.papel) console.log('✅ Papel válido:', dados.papel);
 
     // Validar módulos se fornecidos
-    if (dados.modulos && !Array.isArray(dados.modulos)) {
-      return res.status(400).json({
-        error: 'Módulos deve ser um array de IDs'
-      });
+    if (dados.modulos !== undefined) {
+      if (!Array.isArray(dados.modulos)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Módulos deve ser um array de IDs'
+        });
+      }
+      
+      // Validar se todos os IDs são números válidos
+      const modulosInvalidos = dados.modulos.filter(id => 
+        id !== null && (isNaN(parseInt(id)) || parseInt(id) <= 0)
+      );
+      
+      if (modulosInvalidos.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Todos os IDs de módulos devem ser números válidos'
+        });
+      }
     }
 
+    // Validar nome se fornecido
+    if (dados.nome !== undefined && (!dados.nome || dados.nome.trim().length < 2)) {
+      console.log('❌ ERRO: Nome inválido:', dados.nome);
+      return res.status(400).json({
+        success: false,
+        error: 'Nome deve ter pelo menos 2 caracteres'
+      });
+    }
+    if (dados.nome) console.log('✅ Nome válido:', dados.nome);
+    // Chamar o service para atualizar
     const usuarioAtualizado = await usuarioService.atualizarUsuario(
       parseInt(usuarioId),
       dados
     );
 
-    res.json(usuarioAtualizado);
+    return res.status(200).json({
+      success: true,
+      message: 'Usuário atualizado com sucesso',
+      data: usuarioAtualizado
+    });
+
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Erro ao atualizar usuário:', error);
+    
+    // Tratar erros específicos do Prisma
+    if (error.code === 'P2002') {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Email já está sendo usado por outro usuário' 
+      });
+    }
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Usuário não encontrado' 
+      });
+    }
+
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Referência inválida (técnico ou módulo não encontrado)' 
+      });
+    }
+
+    return res.status(500).json({ 
+      success: false,
+      error: error.message || 'Erro interno do servidor' 
+    });
   }
 };
+
 
 
 module.exports = {

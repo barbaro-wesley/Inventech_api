@@ -52,84 +52,92 @@ const criarUsuario = async (dados) => {
 const atualizarUsuario = async (usuarioId, dados) => {
   const { nome, email, papel, tecnicoId, modulos } = dados;
 
-  // Verificar se o usuário existe
-  const usuarioExistente = await prisma.usuario.findUnique({
-    where: { id: usuarioId },
-    include: {
-      modulos: { include: { modulo: true } }
-    }
-  });
-
-  if (!usuarioExistente) {
-    throw new Error('Usuário não encontrado');
+  // Converter usuarioId para número se necessário
+  const id = parseInt(usuarioId);
+  if (isNaN(id)) {
+    throw new Error('ID do usuário deve ser um número válido');
   }
 
-  // Verificar se o email já está em uso por outro usuário
-  if (email && email !== usuarioExistente.email) {
-    const emailEmUso = await prisma.usuario.findUnique({
-      where: { email }
+  // Usar transação para garantir consistência
+  return await prisma.$transaction(async (tx) => {
+    // Verificar se o usuário existe
+    const usuarioExistente = await tx.usuario.findUnique({
+      where: { id },
+      include: {
+        modulos: { include: { modulo: true } }
+      }
     });
-    
-    if (emailEmUso) {
-      throw new Error('E-mail já está sendo usado por outro usuário');
+
+    if (!usuarioExistente) {
+      throw new Error('Usuário não encontrado');
     }
-  }
 
-  // Preparar dados para atualização
-  const dadosAtualizacao = {};
-
-  if (nome !== undefined) dadosAtualizacao.nome = nome;
-  if (email !== undefined) dadosAtualizacao.email = email;
-  if (papel !== undefined) dadosAtualizacao.papel = papel;
-  if (tecnicoId !== undefined) {
-    dadosAtualizacao.tecnicoId = tecnicoId ? parseInt(tecnicoId) : null;
-  }
-
-  // Atualizar usuário
-  let usuarioAtualizado = await prisma.usuario.update({
-    where: { id: usuarioId },
-    data: dadosAtualizacao,
-    include: {
-      modulos: { include: { modulo: true } },
-      tecnico: {
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-          telefone: true,
-          matricula: true,
-          ativo: true,
-          grupo: {
-            select: {
-              id: true,
-              nome: true
-            }
-          }
-        }
+    // Verificar se o email já está em uso por outro usuário
+    if (email && email !== usuarioExistente.email) {
+      const emailEmUso = await tx.usuario.findUnique({
+        where: { email: email.trim().toLowerCase() }
+      });
+      
+      if (emailEmUso) {
+        throw new Error('E-mail já está sendo usado por outro usuário');
       }
     }
-  });
 
-  // Atualizar módulos se fornecidos
-  if (modulos !== undefined) {
-    // Remover todos os módulos atuais
-    await prisma.usuarioModulo.deleteMany({
-      where: { usuarioId: usuarioId }
-    });
-
-    // Adicionar os novos módulos
-    if (modulos.length > 0) {
-      await prisma.usuarioModulo.createMany({
-        data: modulos.map(moduloId => ({
-          usuarioId: usuarioId,
-          moduloId: moduloId
-        }))
+    // Validar se os módulos existem (se fornecidos)
+    if (modulos && Array.isArray(modulos) && modulos.length > 0) {
+      const modulosExistentes = await tx.modulo.findMany({
+        where: {
+          id: { in: modulos.map(m => parseInt(m)) }
+        }
       });
+
+      if (modulosExistentes.length !== modulos.length) {
+        throw new Error('Um ou mais módulos não foram encontrados');
+      }
     }
 
-    // Buscar o usuário atualizado com os novos módulos
-    usuarioAtualizado = await prisma.usuario.findUnique({
-      where: { id: usuarioId },
+    // Preparar dados para atualização
+    const dadosAtualizacao = {};
+
+    if (nome !== undefined && nome !== null) {
+      dadosAtualizacao.nome = nome.trim();
+    }
+    
+    if (email !== undefined && email !== null) {
+      dadosAtualizacao.email = email.trim().toLowerCase();
+    }
+    
+    if (papel !== undefined && papel !== null) {
+      dadosAtualizacao.papel = papel;
+    }
+    
+    // Tratar tecnicoId com cuidado
+    if (tecnicoId !== undefined) {
+      if (tecnicoId === null || tecnicoId === '' || tecnicoId === 0) {
+        dadosAtualizacao.tecnicoId = null;
+      } else {
+        const tecnicoIdNum = parseInt(tecnicoId);
+        if (isNaN(tecnicoIdNum)) {
+          throw new Error('ID do técnico deve ser um número válido');
+        }
+        
+        // Verificar se o técnico existe
+        const tecnicoExiste = await tx.tecnico.findUnique({
+          where: { id: tecnicoIdNum }
+        });
+        
+        if (!tecnicoExiste) {
+          throw new Error('Técnico não encontrado');
+        }
+        
+        dadosAtualizacao.tecnicoId = tecnicoIdNum;
+      }
+    }
+
+    // Atualizar usuário
+    let usuarioAtualizado = await tx.usuario.update({
+      where: { id },
+      data: dadosAtualizacao,
       include: {
         modulos: { include: { modulo: true } },
         tecnico: {
@@ -150,11 +158,59 @@ const atualizarUsuario = async (usuarioId, dados) => {
         }
       }
     });
-  }
 
-  // Remover senha do retorno
-  const { senha: _, ...usuarioSemSenha } = usuarioAtualizado;
-  return usuarioSemSenha;
+    // Atualizar módulos se fornecidos
+    if (modulos !== undefined) {
+      // Remover todos os módulos atuais
+      await tx.usuarioModulo.deleteMany({
+        where: { usuarioId: id }
+      });
+
+      // Adicionar os novos módulos
+      if (Array.isArray(modulos) && modulos.length > 0) {
+        const modulosParaCriar = modulos
+          .filter(moduloId => moduloId !== null && moduloId !== undefined)
+          .map(moduloId => ({
+            usuarioId: id,
+            moduloId: parseInt(moduloId)
+          }));
+
+        if (modulosParaCriar.length > 0) {
+          await tx.usuarioModulo.createMany({
+            data: modulosParaCriar
+          });
+        }
+      }
+
+      // Buscar o usuário atualizado com os novos módulos
+      usuarioAtualizado = await tx.usuario.findUnique({
+        where: { id },
+        include: {
+          modulos: { include: { modulo: true } },
+          tecnico: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+              telefone: true,
+              matricula: true,
+              ativo: true,
+              grupo: {
+                select: {
+                  id: true,
+                  nome: true
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Remover senha do retorno
+    const { senha: _, ...usuarioSemSenha } = usuarioAtualizado;
+    return usuarioSemSenha;
+  });
 };
 const buscarPorId = async (id) => {
   const usuario = await prisma.usuario.findUnique({

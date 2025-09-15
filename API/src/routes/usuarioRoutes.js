@@ -3,7 +3,7 @@ const router = express.Router();
 const usuarioController = require('../controllers/usuarioController');
 const autenticarUsuario = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
-
+const verificarAdmin = require("../middlewares/auth")
 router.post(
   '/cadastro',
   autenticarUsuario,             
@@ -23,9 +23,9 @@ router.get('/me', autenticarUsuario, usuarioController.perfil);
 // Apenas admins podem ver todos os usuários
 router.get('/', autenticarUsuario, permitirSomente('admin'), usuarioController.listarUsuarios);
 router.put('/:usuarioId', 
-  autenticarUsuario, 
-  permitirSomente('admin'), 
-  usuarioController.atualizarUsuario
+  autenticarUsuario,    // 1º: Verificar se está logado
+  verificarAdmin,       // 2º: Verificar se é admin
+  usuarioController.atualizarUsuario  // 3º: Executar a atualização
 );
 router.put('/:usuarioId/redefinir-senha', 
   autenticarUsuario, 
