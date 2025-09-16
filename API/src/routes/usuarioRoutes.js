@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const usuarioController = require('../controllers/usuarioController');
-const autenticarUsuario = require('../middlewares/auth');
+const {autenticarUsuario} = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
-const verificarAdmin = require("../middlewares/auth")
+const {verificarAdmin} = require("../middlewares/auth")
 router.post(
   '/cadastro',
   autenticarUsuario,             
@@ -32,4 +32,9 @@ router.put('/:usuarioId/redefinir-senha',
   permitirSomente('admin'), 
   usuarioController.redefinirSenha
 );
+router.post(
+  "/vincular-modulo", usuarioController.vincularModulo
+);
+
+
 module.exports = router;

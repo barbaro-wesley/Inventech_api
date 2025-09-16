@@ -5,7 +5,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const autenticarUsuario = require('../middlewares/auth');
+const {autenticarUsuario} = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 const equipamentoController = require('../controllers/hcrEquipamentosMedicosController');
 

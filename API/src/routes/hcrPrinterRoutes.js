@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const printerController = require('../controllers/hcrPrinterController');
 const permitirSomente = require('../middlewares/permissoes');
-const autenticarUsuario = require('../middlewares/auth');
+const {autenticarUsuario} = require('../middlewares/auth');
 
 router.use(autenticarUsuario);
 router.get('/', permitirSomente('admin'),printerController.getAll);

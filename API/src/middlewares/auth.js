@@ -63,5 +63,31 @@ const verificarAdmin = (req, res, next) => {
     });
   }
 };
+const verificarModulo = (moduloNome) => {
+  return async (req, res, next) => {
+    try {
+      const usuarioId = req.usuario.id;
 
-module.exports = autenticarUsuario, verificarAdmin;
+      const acesso = await prisma.usuarioModulo.findFirst({
+        where: {
+          usuarioId,
+          ativo: true,
+          modulo: { nome: moduloNome },
+        },
+      });
+
+      if (!acesso) {
+        return res.status(403).json({ error: `Sem acesso ao módulo: ${moduloNome}` });
+      }
+
+      next();
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao validar módulo" });
+    }
+  };
+};
+module.exports = {
+  autenticarUsuario,
+  verificarAdmin,
+  verificarModulo
+};

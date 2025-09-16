@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moduloController = require('../controllers/moduloController');
+
 router.post('/', moduloController.criarModulo);
 
 router.get('/', moduloController.listarModulos);

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const sobreavisoController = require('../controllers/sobreavisoController');
-const autenticarUsuario = require("../middlewares/auth");
+const {autenticarUsuario} = require("../middlewares/auth");
 const permitirSomente = require('../middlewares/permissoes');
 
 router.use(autenticarUsuario); 

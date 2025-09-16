@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/hcrComputerController');
-const autenticarUsuario = require('../middlewares/auth');
+const {autenticarUsuario} = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 router.use(autenticarUsuario);
 router.get('/',permitirSomente('admin'), controller.listar);

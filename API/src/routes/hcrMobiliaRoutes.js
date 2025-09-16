@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const hcrMobiliaController = require('../controllers/hcrMobiliaController');
-const autenticarUsuario = require('../middlewares/auth');
+const {autenticarUsuario} = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 router.use(autenticarUsuario);
 router.post('/', permitirSomente('admin','cadastro'),hcrMobiliaController.criar);

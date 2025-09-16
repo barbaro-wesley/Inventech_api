@@ -212,6 +212,30 @@ const atualizarUsuario = async (usuarioId, dados) => {
     return usuarioSemSenha;
   });
 };
+const vincularModulo = async (usuarioId, moduloId) => {
+  // Verifica se o vínculo já existe
+  const existente = await prisma.usuarioModulo.findUnique({
+    where: {
+      usuarioId_moduloId: { usuarioId: Number(usuarioId), moduloId: Number(moduloId) },
+    },
+  });
+
+  if (existente) {
+    throw new Error("Usuário já vinculado a este módulo");
+  }
+
+  // Cria o vínculo
+  const vinculo = await prisma.usuarioModulo.create({
+    data: {
+      usuarioId: Number(usuarioId),
+      moduloId: Number(moduloId),
+      ativo: true,
+    },
+  });
+
+  return vinculo;
+};
+
 const buscarPorId = async (id) => {
   const usuario = await prisma.usuario.findUnique({
     where: { id },
@@ -265,15 +289,13 @@ const login = async ({ email, senha }) => {
           matricula: true,
           ativo: true,
           grupo: {
-            select: {
-              id: true,
-              nome: true
-            }
+            select: { id: true, nome: true }
           }
         }
       }
     },
   });
+
   if (!usuario) throw new Error('Usuário não encontrado');
 
   const senhaValida = await bcrypt.compare(senha, usuario.senha);
@@ -285,8 +307,9 @@ const login = async ({ email, senha }) => {
     { expiresIn: '1d' }
   );
 
-  return token;
+  return { token, usuario };
 };
+
 
 const listarTodos = async () => {
   const usuarios = await prisma.usuario.findMany({
@@ -462,5 +485,6 @@ module.exports = {
   atualizarSenha,      // Nova função
   redefinirSenha,      // Nova função
   atualizarUsuario,
+  vincularModulo
 
 };

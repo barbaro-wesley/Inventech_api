@@ -1,4 +1,5 @@
 const usuarioService = require('../services/usuarioService');
+const { prisma } = require('@prisma/client');
 
 const criarUsuario = async (req, res) => {
   try {
@@ -11,20 +12,34 @@ const criarUsuario = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const token = await usuarioService.login(req.body);
+    const { token, usuario } = await usuarioService.login(req.body);
 
+    // cookie HttpOnly
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
-      maxAge: 24 * 60 * 60 * 1000, // 1 dia
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.json({ mensagem: 'Login realizado com sucesso', token });
+    // retorna dados do usuário
+    res.json({
+      mensagem: 'Login realizado com sucesso',
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        papel: usuario.papel,
+        modulos: usuario.modulos.map(m => m.modulo.nome),
+      }
+    });
+
   } catch (error) {
     res.status(401).json({ error: error.message });
   }
 };
+
+
 
 const perfil = async (req, res) => {
   try {
@@ -188,12 +203,12 @@ const atualizarUsuario = async (req, res) => {
           error: 'Módulos deve ser um array de IDs'
         });
       }
-      
+
       // Validar se todos os IDs são números válidos
-      const modulosInvalidos = dados.modulos.filter(id => 
+      const modulosInvalidos = dados.modulos.filter(id =>
         id !== null && (isNaN(parseInt(id)) || parseInt(id) <= 0)
       );
-      
+
       if (modulosInvalidos.length > 0) {
         return res.status(400).json({
           success: false,
@@ -225,32 +240,32 @@ const atualizarUsuario = async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
-    
+
     // Tratar erros específicos do Prisma
     if (error.code === 'P2002') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Email já está sendo usado por outro usuário' 
+        error: 'Email já está sendo usado por outro usuário'
       });
     }
-    
+
     if (error.code === 'P2025') {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        error: 'Usuário não encontrado' 
+        error: 'Usuário não encontrado'
       });
     }
 
     if (error.code === 'P2003') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Referência inválida (técnico ou módulo não encontrado)' 
+        error: 'Referência inválida (técnico ou módulo não encontrado)'
       });
     }
 
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      error: error.message || 'Erro interno do servidor' 
+      error: error.message || 'Erro interno do servidor'
     });
   }
 };

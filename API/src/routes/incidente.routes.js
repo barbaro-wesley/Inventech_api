@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const incidenteController = require('../controllers/incidenteController');
-const autenticarUsuario = require('../middlewares/auth');
+const {autenticarUsuario} = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 
 // Apenas usuários logados podem acessar

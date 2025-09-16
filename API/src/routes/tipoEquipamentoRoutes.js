@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/tipoEquipamentoController');
-const autenticarUsuario = require('../middlewares/auth');
+const {autenticarUsuario} = require('../middlewares/auth');
 const permitirSomente = require('../middlewares/permissoes');
 
 // Protege todas as rotas
