@@ -185,7 +185,7 @@ const atualizarUsuario = async (req, res) => {
     }
 
     // Validar papel se fornecido
-    const papeisValidos = ['admin', 'cadastro', 'tecnico', 'visualizador', 'usuario_comum'];
+    const papeisValidos = ['admin', 'cadastro', 'tecnico', 'visualizador', 'usuario_comum','CEP'];
     if (dados.papel && !papeisValidos.includes(dados.papel)) {
       console.log('❌ ERRO: Papel inválido:', dados.papel);
       return res.status(400).json({

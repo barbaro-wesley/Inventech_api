@@ -382,6 +382,7 @@ enum PapelUsuario {
   tecnico
   visualizador
   usuario_comum
+  CEP
 }
 
 enum StatusOS {
