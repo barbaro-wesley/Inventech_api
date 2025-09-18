@@ -1,0 +1,29 @@
+/* src/styles/Home.css */
+.home-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: #d6d7d8;
+}
+
+.home-content {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.home-content h1 {
+  font-size: 2rem;
+  color: #0a157a;
+  margin-bottom: 1rem;
+}
+
+.home-content p {
+  font-size: 1.1rem;
+  color: #333;
+}

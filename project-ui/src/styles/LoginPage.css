@@ -1,0 +1,103 @@
+.login-page {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  /*overflow: hidden;*/
+  flex-direction: row;
+}
+
+/* Painel esquerdo */
+.left-panel {
+  flex: 1;
+  padding: 3rem 2rem;
+  background-color: #f7f7f7;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.left-panel .logo {
+  max-width: 280px;
+  margin-bottom: 2rem;
+}
+
+.left-panel h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(to right, hsl(215, 85%, 25%), hsl(215, 85%, 45%), hsl(25, 95%, 55%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.left-panel p {
+  font-size: 1.1rem;
+  color: #555;
+}
+
+/* Painel direito com o formulário */
+.right-panel {
+  flex: 1;
+  background-color: #e3f2fd;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.form-wrapper {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Telas até 768px: empilha */
+@media (max-width: 768px) {
+  .login-page {
+    flex-direction: column;
+  }
+
+  .left-panel,
+  .right-panel {
+    width: 100%;
+    height: auto;
+    padding: 2rem 1rem;
+  }
+
+  .left-panel h1 {
+    font-size: 2rem;
+  }
+
+  .form-wrapper {
+    max-width: 100%;
+  }
+}
+
+/* Telas muito pequenas (celulares < 480px) */
+@media (max-width: 480px) {
+  .left-panel {
+    padding: 1.5rem 1rem;
+  }
+
+  .left-panel .logo {
+    max-width: 100px;
+  }
+
+  .left-panel h1 {
+    font-size: 1.6rem;
+  }
+
+  .left-panel p {
+    font-size: 1rem;
+  }
+
+  .right-panel {
+    padding: 1.5rem 1rem;
+  }
+
+  .form-wrapper {
+    padding: 0.5rem;
+  }
+}

@@ -1,0 +1,98 @@
+/* src/styles/SobreAvisoPage.css */
+.sobreaviso-page {
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+
+.sobreaviso-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: rgb(10, 21, 122);
+}
+
+.sobreaviso-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-add {
+  background-color: rgb(255, 255, 140);
+  color: black;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add:hover {
+  background-color: rgb(255, 255, 100);
+}
+
+.btn-filter {
+  background-color: rgb(10, 21, 122);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-filter:hover {
+  background-color: rgb(15, 30, 150);
+}
+
+.sobreaviso-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  color: black;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sobreaviso-table th,
+.sobreaviso-table td {
+  padding: 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  word-break: break-word; /* Break long words */
+  white-space: normal; /* Allow text to wrap */
+  max-width: 200px; /* Limit column width for readability */
+}
+
+.sobreaviso-table th {
+  background-color: #f4f4f4;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.pagination-controls button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #aaa;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pagination-controls button:disabled {
+  background-color: #ddd;
+  cursor: not-allowed;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: #888;
+}

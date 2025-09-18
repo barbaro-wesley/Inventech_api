@@ -5,3 +5,6 @@ node_modules
 /generated/prisma
 prisma/migrations/
 /uploads
+
+docs/
+project-ui/

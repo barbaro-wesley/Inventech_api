@@ -1,0 +1,77 @@
+/* src/styles/PcPage.css */
+.pc-page {
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+
+.pc-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: rgb(10, 21, 122);
+}
+
+.pc-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-add {
+  background-color: rgb(255, 255, 140);
+  color: black;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add:hover {
+  background-color: rgb(255, 255, 100);
+}
+
+.btn-filter {
+  background-color: rgb(10, 21, 122);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-filter:hover {
+  background-color: rgb(15, 30, 150);
+}
+
+.pc-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  color: black;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pc-table th, .pc-table td {
+  padding: 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.pc-table th {
+  background-color: #f4f4f4;
+}
+.btn-edit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1976d2;
+  font-size: 1.2rem;
+}
+.btn-edit:hover {
+  color: #0d47a1;
+}
