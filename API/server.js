@@ -44,6 +44,7 @@ const productCategory = require("./src/routes/productCategoryRoutes")
 const product = require("./src/routes/productRoutes")
 const stockMovement = require("./src/routes/stockMovementRoutes")
 const software = require("./src/routes/gestaoSoftwareRoutes")
+const cailun = require("./src/routes/cailunRoutes.js")
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/tipos-equipamento', tipoEquipamentoRoutes);
 app.use('/api/grupos-manutencao', grupoRoutes);
@@ -67,6 +68,7 @@ app.use('/api/categories',productCategory)
 app.use('/api/products',product)
 app.use('/api/stock-movements',stockMovement)
 app.use('/api/gestao-software',software)
+app.use('/api/cailun',cailun)
 
 const PORT = process.env.PORT ;
 const HOST = process.env.HOST;
