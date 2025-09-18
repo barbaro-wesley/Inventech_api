@@ -394,8 +394,9 @@ async function createSignatory(signatoryData) {
 }
 
 
+
+
 module.exports = {
-  // Funções de autenticação
   loginCailun,
   testToken,
   getValidToken,

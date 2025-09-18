@@ -422,3 +422,29 @@ enum TipoMovimento {
   ENTRADA
   SAIDA
 }
+
+model Signatory {
+  id                      Int      @id @default(autoincrement())
+  cailunId               Int      @unique // ID do signatário na API do Cailun
+  organizationAccountId  Int
+  email                  String
+  personsId              Int?
+  
+  // Contact Book
+  favorite               Int      @default(0)
+  
+  // Person
+  personName             String?
+  
+  // Authentication Last
+  authAdditional         String?
+  authRequired           Int      @default(0)
+  authRequiredTypeId     Int?
+  authRequiredTypeLabel  String?
+  authAdditionals        String?
+  
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  
+  @@map("signatories")
+}
