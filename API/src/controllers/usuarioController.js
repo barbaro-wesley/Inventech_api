@@ -168,23 +168,18 @@ const atualizarUsuario = async (req, res) => {
       });
     }
 
-    // Validar se há dados para atualizar
     if (!dados || Object.keys(dados).length === 0) {
       return res.status(400).json({
         success: false,
         error: 'Nenhum dado fornecido para atualização'
       });
     }
-
-    // Validar email se fornecido
     if (dados.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email)) {
       return res.status(400).json({
         success: false,
         error: 'Formato de email inválido'
       });
     }
-
-    // Validar papel se fornecido
     const papeisValidos = ['admin', 'cadastro', 'tecnico', 'visualizador', 'usuario_comum','CEP'];
     if (dados.papel && !papeisValidos.includes(dados.papel)) {
       console.log('❌ ERRO: Papel inválido:', dados.papel);
@@ -216,8 +211,6 @@ const atualizarUsuario = async (req, res) => {
         });
       }
     }
-
-    // Validar nome se fornecido
     if (dados.nome !== undefined && (!dados.nome || dados.nome.trim().length < 2)) {
       console.log('❌ ERRO: Nome inválido:', dados.nome);
       return res.status(400).json({
