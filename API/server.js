@@ -61,7 +61,7 @@ app.use("/api/sobreaviso",sobreavisoRoutes)
 app.use('/api/incidentes', incidenteRoutes);
 app.use('/api/capacitacao', capacitacao);
 app.use('/api/funcionarios', funcionario);
-app.use('/api/tiposdocumentos',tiposDocumentos)
+app.use('/api/tipos-documento',tiposDocumentos)
 app.use('/api/modulos',modulo)
 app.use('/api/reports',reports)
 app.use('/api/categories',productCategory)

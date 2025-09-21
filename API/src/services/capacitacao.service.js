@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const nodemailer = require('nodemailer');
+const emailUtils = require('../utils/email_utility');
 
 // Configuração do transporter (SMTP)
 const transporter = nodemailer.createTransport({
@@ -69,14 +70,13 @@ const createCapacitacao = async (data) => {
 
   // Envio de e-mails (opcional)
   await Promise.all(
-    capacitacao.participantes.map(async (p) => {
-      const func = p.funcionario;
-      if (func.email) {
-        await transporter.sendMail({
-          from: process.env.SMTP_FROM,
-          to: func.email,
-          subject: `Nova Capacitação: ${capacitacao.titulo}`,
-          html: `
+  capacitacao.participantes.map(async (p) => {
+    const func = p.funcionario;
+    if (func?.email) {
+      const emailData = {
+        to: func.email,
+        subject: `Nova Capacitação: ${capacitacao.titulo}`,
+        html: `
             <html lang="pt-BR">
     <head>
       <meta charset="UTF-8">
@@ -193,10 +193,17 @@ const createCapacitacao = async (data) => {
     </body>
     </html>
           `
-        });
+        };
+
+      try {
+        await emailUtils.enviarEmail(emailData);
+        console.log(`Email enviado para ${func.email} - Capacitação #${capacitacao.id}`);
+      } catch (err) {
+        console.error(`Erro ao enviar para ${func.email}:`, err);
       }
-    })
-  );
+    }
+  })
+);
 
   return capacitacao;
 };

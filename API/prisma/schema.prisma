@@ -10,6 +10,7 @@ datasource db {
 model Setor {
   id                     Int                      @id @default(autoincrement())
   nome                   String                   @unique
+  funcionarios           Funcionario[]            // Relacionamento com funcionários
   HcrAirConditioning     HcrAirConditioning[]
   HcrComputer            HcrComputer[]
   HcrEquipamentosMedicos HcrEquipamentosMedicos[]
@@ -314,7 +315,8 @@ model Funcionario {
   nome          String
   cpf           String                    @unique
   cargo         String?
-  setor         String?
+  setorId       Int?                      // Chave estrangeira para Setor
+  setor         Setor?                    @relation(fields: [setorId], references: [id], onDelete: SetNull)
   email         String                    @unique
   telefone      String?
   createdAt     DateTime                  @default(now())
