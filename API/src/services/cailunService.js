@@ -246,98 +246,134 @@ async function createFolder(name, downward = 0) {
   }
 }
 function formatarTelefone(phone) {
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length === 13) {
-    const country = digits.substring(0, 2);
-    const area = digits.substring(2, 4);
-    const number = digits.substring(4);
-    return `${country}(${area})${number.slice(0, 5)}-${number.slice(5)}`;
-  }
-  return phone;
-}
-async function startSubscriptionFlow(data) {
-  try {
-    const tokenResult = await getValidToken();
-    if (!tokenResult.success) throw new Error(tokenResult.error);
-
-    const FormData = require("form-data");
-    const fs = require("fs");
-    const axios = require("axios");
-    const form = new FormData();
-
-    // 1. Arquivo
-    const fileStream = fs.createReadStream(data.file.path);
-    form.append("file", fileStream, {
-      filename: data.file.originalname,
-      contentType: data.file.mimetype
-    });
-
-    // 2. Outros campos
-    if (data.folderId) form.append("folderId", String(data.folderId));
-    if (data.signatureLimitDate) form.append("signatureLimitDate", data.signatureLimitDate);
-    if (data.reminder !== undefined) form.append("reminder", String(data.reminder));
-    if (data.reminderDays) form.append("reminderDays", String(data.reminderDays));
-    if (data.notificationDescription) form.append("notificationDescription", data.notificationDescription);
-    if (data.notificationDate) form.append("notificationDate", data.notificationDate);
-    if (data.message) form.append("message", data.message);
-
-    // 3. SIGNATORIES - Tentativa com JSON string
-    if (data.signatories && Array.isArray(data.signatories)) {
-      data.signatories.forEach((signatory, i) => {
-        // ✅ Adicionando todos os campos necessários
-        form.append(`signatories[${i}][name]`, signatory.name);
-        form.append(`signatories[${i}][email]`, signatory.email);
-        form.append(`signatories[${i}][cpf]`, signatory.cpf);
-        form.append(`signatories[${i}][phone]`, formatarTelefone(signatory.phone));
-        form.append(`signatories[${i}][signAsId]`, String(signatory.signAsId));
-        form.append(`signatories[${i}][requiredAuthenticationType]`, String(signatory.requiredAuthenticationType)); // Crucial
-        form.append(`signatories[${i}][requiredAuthenticationType]`, String(signatory.requiredAuthenticationType));
-        const authTypes = Array.isArray(signatory.additionalAuthenticationType)
-      ? signatory.additionalAuthenticationType
-      : [signatory.additionalAuthenticationType]; // Transforma '1' em ['1']
-    
-    // Adiciona cada item do array ao formulário
-    authTypes.forEach(type => {
-      form.append(`signatories[${i}][additionalAuthenticationType][]`, String(type));
-    });
-      });
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 13) {
+        const country = digits.substring(0, 2);
+        const area = digits.substring(2, 4);
+        const number = digits.substring(4);
+        return `${country}(${area})${number.slice(0, 5)}-${number.slice(5)}`;
     }
+    return phone;
+}
 
-    // 4. Debug simples
-    console.log("📤 Dados sendo enviados:");
-    console.log("- Arquivo:", data.file.originalname);
-    console.log("- Signatories:", JSON.stringify(data.signatories));
-    console.log("- Message:", data.message);
+async function startSubscriptionFlow(data) {
+    try {
+        const tokenResult = await getValidToken();
+        if (!tokenResult.success) throw new Error(tokenResult.error);
 
-    // 5. Requisição
-    const response = await axios.post(
-      `${process.env.CAILUN_URL}/subscriptionFlow`,
-      form,
-      {
-        headers: {
-          Authorization: `Bearer ${tokenResult.token}`,
-          ...form.getHeaders()
-        },
-        timeout: 30000
-      }
-    );
+        const FormData = require("form-data");
+        const fs = require("fs");
+        const axios = require("axios");
+        const form = new FormData();
 
-    fs.unlinkSync(data.file.path);
-    return { success: true, data: response.data.data };
+        // 1. Arquivo
+        const fileStream = fs.createReadStream(data.file.path);
+        form.append("file", fileStream, {
+            filename: data.file.originalname,
+            contentType: data.file.mimetype
+        });
 
-  } catch (error) {
-    console.error("❌ ERRO DETALHADO:");
-    console.error("- Message:", error.message);
-    console.error("- Status:", error.response?.status);
-    console.error("- Response Data:", JSON.stringify(error.response?.data, null, 2));
+        // 2. Outros campos
+        if (data.folderId) form.append("folderId", String(data.folderId));
+        if (data.signatureLimitDate) form.append("signatureLimitDate", data.signatureLimitDate);
+        if (data.reminder !== undefined) form.append("reminder", String(data.reminder));
+        if (data.reminderDays) form.append("reminderDays", String(data.reminderDays));
+        if (data.notificationDescription) form.append("notificationDescription", data.notificationDescription);
+        if (data.notificationDate) form.append("notificationDate", data.notificationDate);
+        if (data.message) form.append("message", data.message);
 
-    return {
-      success: false,
-      error: error.message,
-      details: error.response?.data,
-      status: error.response?.status
-    };
-  }
+        // 3. 🔧 SIGNATORIES CORRIGIDO - Agora com tipos corretos
+        if (data.signatories && Array.isArray(data.signatories)) {
+            data.signatories.forEach((signatory, i) => {
+                // Campos básicos
+                form.append(`signatories[${i}][name]`, signatory.name);
+                form.append(`signatories[${i}][email]`, signatory.email);
+                form.append(`signatories[${i}][cpf]`, signatory.cpf);
+                form.append(`signatories[${i}][phone]`, formatarTelefone(signatory.phone));
+                
+                // 🔧 CAMPOS QUE CAUSAVAM ERRO - Agora como integers
+                form.append(`signatories[${i}][signAsId]`, signatory.signAsId); // Já convertido no controller
+                form.append(`signatories[${i}][requiredAuthenticationType]`, signatory.requiredAuthenticationType); // Já convertido no controller
+                
+                // 🔧 additionalAuthenticationType como array de integers
+                if (Array.isArray(signatory.additionalAuthenticationType)) {
+                    signatory.additionalAuthenticationType.forEach(type => {
+                        form.append(`signatories[${i}][additionalAuthenticationType][]`, type); // Já convertido no controller
+                    });
+                }
+            });
+        }
+
+        // 4. Debug melhorado
+        console.log("📤 Dados sendo enviados:");
+        console.log("- Arquivo:", data.file.originalname);
+        data.signatories?.forEach((sig, i) => {
+            console.log(`- Signatory ${i}:`, {
+                name: sig.name,
+                signAsId: `${sig.signAsId} (${typeof sig.signAsId})`,
+                requiredAuthenticationType: `${sig.requiredAuthenticationType} (${typeof sig.requiredAuthenticationType})`,
+                additionalAuthenticationType: sig.additionalAuthenticationType?.map(type => `${type} (${typeof type})`)
+            });
+        });
+
+        // 5. Requisição
+        const response = await axios.post(
+            `${process.env.CAILUN_URL}/subscriptionFlow`,
+            form,
+            {
+                headers: {
+                    Authorization: `Bearer ${tokenResult.token}`,
+                    ...form.getHeaders()
+                },
+                timeout: 30000
+            }
+        );
+
+        fs.unlinkSync(data.file.path);
+        return { success: true, data: response.data.data };
+
+    } catch (error) {
+        console.error("❌ ERRO DETALHADO:");
+        console.error("- Message:", error.message);
+        console.error("- Status:", error.response?.status);
+        console.error("- Response Data:", JSON.stringify(error.response?.data, null, 2));
+
+        // 🔧 Cleanup do arquivo mesmo em caso de erro
+        try {
+            if (data.file?.path && fs.existsSync(data.file.path)) {
+                fs.unlinkSync(data.file.path);
+            }
+        } catch (cleanupError) {
+            console.error("❌ Erro ao limpar arquivo:", cleanupError.message);
+        }
+
+        return {
+            success: false,
+            error: error.message,
+            details: error.response?.data,
+            status: error.response?.status
+        };
+    }
+}
+
+// 🔧 FUNÇÃO AUXILIAR PARA VALIDAR DADOS ANTES DO ENVIO
+function validateSignatoryData(signatory, index) {
+    const errors = [];
+    
+    if (!signatory.name) errors.push(`signatories[${index}].name é obrigatório`);
+    if (!signatory.email) errors.push(`signatories[${index}].email é obrigatório`);
+    if (!signatory.cpf) errors.push(`signatories[${index}].cpf é obrigatório`);
+    if (!signatory.phone) errors.push(`signatories[${index}].phone é obrigatório`);
+    
+    // Valida se signAsId é um número válido
+    const signAsId = parseInt(signatory.SignAsid || signatory.signAsId || signatory.signAsID, 10);
+    if (isNaN(signAsId)) errors.push(`signatories[${index}].signAsId deve ser um número`);
+    
+    // Valida requiredAuthenticationType
+    const reqAuthType = parseInt(signatory.requiredAuthenticationtype || signatory.requiredAuthenticationType, 10);
+    if (isNaN(reqAuthType)) errors.push(`signatories[${index}].requiredAuthenticationType deve ser um número`);
+    
+    return { errors, isValid: errors.length === 0 };
 }
 
 async function createSignatory(signatoryData) {
@@ -402,5 +438,6 @@ module.exports = {
   getValidToken,
   createFolder,
   startSubscriptionFlow,
-  createSignatory
+  createSignatory,
+  validateSignatoryData
 };

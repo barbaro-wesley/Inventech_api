@@ -1,6 +1,9 @@
 // controllers/cailunController.js - Controller unificado para todas as operações Cailun
 const cailunService = require("../services/cailunService");
 
+// 🔧 CORREÇÃO DA IMPORTAÇÃO - Remover as chaves {}
+const FluxoAssinaturaService = require('../services/fluxoAssinaturaService'); // 👈 SEM CHAVES!
+
 // ==========================================
 // CONTROLLERS DE AUTENTICAÇÃO
 // ==========================================
@@ -173,6 +176,7 @@ async function createFolderController(req, res) {
         });
     }
 }
+
 async function startSubscriptionFlowController(req, res) {
     try {
         const body = req.body;
@@ -182,7 +186,7 @@ async function startSubscriptionFlowController(req, res) {
             signatories: body.signatories
         });
 
-        // ✅ Processa signatories - converte string para array se necessário
+        // ✅ Todo o código de processamento do signatories continua IGUAL
         if (body.signatories) {
             if (typeof body.signatories === 'string') {
                 try {
@@ -197,18 +201,26 @@ async function startSubscriptionFlowController(req, res) {
                 }
             }
             
-            // Validação básica
             if (Array.isArray(body.signatories)) {
-                body.signatories.forEach((signatory, index) => {
+                body.signatories = body.signatories.map((signatory, index) => {
                     if (!signatory.name || !signatory.email) {
                         throw new Error(`Signatory ${index}: name e email são obrigatórios`);
                     }
+                    
+                    return {
+                        ...signatory,
+                        signAsId: parseInt(signatory.SignAsid || signatory.signAsId || signatory.signAsID, 10),
+                        requiredAuthenticationType: parseInt(signatory.requiredAuthenticationtype || signatory.requiredAuthenticationType, 10),
+                        additionalAuthenticationType: Array.isArray(signatory.additionalAuthenticationType) 
+                            ? signatory.additionalAuthenticationType.map(type => parseInt(type, 10))
+                            : [parseInt(signatory.additionalAuthenticationType || '1', 10)]
+                    };
                 });
-                console.log("✅ Signatories validados:", body.signatories);
+                console.log("✅ Signatories validados e convertidos:", body.signatories);
             }
         }
 
-        // Validação do arquivo
+        // ✅ Validação do arquivo continua IGUAL
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -216,28 +228,55 @@ async function startSubscriptionFlowController(req, res) {
             });
         }
 
-        // Tenta primeiro método, se falhar tenta alternativo
-        let result = await cailunService.startSubscriptionFlow({
+        // ✅ Chamada do service continua IGUAL
+        const result = await cailunService.startSubscriptionFlow({
             file: req.file,
             ...body
         });
 
-        // Se falhar com erro de array, tenta método alternativo
-        if (!result.success && result.details?.errors?.signatories) {
-            console.log("🔄 Tentando método alternativo...");
-            result = await cailunService.startSubscriptionFlow({
-                file: req.file,
-                ...body
-            });
-        }
-
+        // 🔧 PARTE MODIFICADA COM MELHOR TRATAMENTO DE ERRO
         if (result.success) {
+            console.log("✅ Fluxo criado com sucesso! Salvando no banco...");
+            console.log("🔍 Verificando FluxoAssinaturaService:", typeof FluxoAssinaturaService);
+            
+            let salvamentoInfo = { success: false, error: "Service não disponível" };
+            
+            try {
+                // 🔍 Verificar se o service e o método existem
+                if (FluxoAssinaturaService && typeof FluxoAssinaturaService.salvarFluxoAssinatura === 'function') {
+                    console.log("🎯 Chamando FluxoAssinaturaService.salvarFluxoAssinatura...");
+                    salvamentoInfo = await FluxoAssinaturaService.salvarFluxoAssinatura(result.data);
+                    
+                    if (salvamentoInfo.success) {
+                        console.log("✅ Dados salvos no banco com sucesso!");
+                        console.log("📄 UUID salvo:", result.data.uuid);
+                    } else {
+                        console.error("⚠️ Fluxo criado mas houve erro ao salvar no banco:", salvamentoInfo.error);
+                    }
+                } else {
+                    console.error("❌ FluxoAssinaturaService ou método salvarFluxoAssinatura não encontrado");
+                    console.error("🔍 Tipo do FluxoAssinaturaService:", typeof FluxoAssinaturaService);
+                    console.error("🔍 Métodos disponíveis:", FluxoAssinaturaService ? Object.getOwnPropertyNames(FluxoAssinaturaService) : 'Service não existe');
+                }
+            } catch (bancoError) {
+                console.error("⚠️ Erro ao tentar salvar no banco:", bancoError.message);
+                console.error("🔍 Stack trace:", bancoError.stack);
+                salvamentoInfo = { success: false, error: bancoError.message };
+            }
+
+            // ✅ Resposta de sucesso (pode incluir info do banco)
             res.status(200).json({
                 success: true,
                 message: "✅ Subscription flow iniciado com sucesso!",
-                data: result.data
+                data: result.data,
+                // Opcional: adicionar info sobre salvamento no banco
+                database: {
+                    saved: salvamentoInfo.success,
+                    error: salvamentoInfo.success ? null : salvamentoInfo.error
+                }
             });
         } else {
+            // ✅ Caso de erro continua EXATAMENTE IGUAL
             res.status(result.status || 400).json({
                 success: false,
                 message: "❌ Falha ao iniciar subscription flow",
@@ -247,6 +286,7 @@ async function startSubscriptionFlowController(req, res) {
         }
 
     } catch (error) {
+        // ✅ Catch continua EXATAMENTE IGUAL
         console.error("💥 Erro no controller:", error);
         res.status(500).json({
             success: false,
@@ -255,7 +295,6 @@ async function startSubscriptionFlowController(req, res) {
         });
     }
 }
-
 
 async function createSignatory(req, res) {
   const result = await cailunService.createSignatory(req.body);
@@ -271,7 +310,6 @@ async function createSignatory(req, res) {
     });
   }
 }
-
 
 module.exports = {
     // Controllers de autenticação

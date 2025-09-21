@@ -1,6 +1,15 @@
 // routes/cailunRoutes.js
 const { Router } = require('express');
 const upload = require("../middlewares/upload");
+const {autenticarUsuario} = require('../middlewares/auth');
+const permitirSomente = require('../middlewares/permissoes');
+
+// Create router instance FIRST
+const router = Router();
+
+// THEN apply middleware
+router.use(autenticarUsuario);
+
 const {
   testLoginController,
   testTokenController,
@@ -10,10 +19,10 @@ const {
   createSignatory
 } = require('../controllers/cailunController');
 
-const router = Router();
 router.post('/test-login', testLoginController);
 router.get('/test-token', testTokenController);
 router.get('/config', checkConfigController);
+
 router.get('/', (req, res) => {
   res.json({
     message: '🔐 API de Teste do Cailun Login',
@@ -32,12 +41,14 @@ router.get('/', (req, res) => {
 
 // Criação de pastas
 router.post('/folder', createFolderController);
-//fluxo de assinatura
+
+// Fluxo de assinatura
 router.post(
   "/subscription-flow",
-  upload.single("file"), // campo `file` do multipart/form-data
+  upload.single("file"), 
   startSubscriptionFlowController
 );
 
 router.post('/signatories', createSignatory);
+
 module.exports = router;
