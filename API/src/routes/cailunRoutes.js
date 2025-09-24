@@ -16,7 +16,9 @@ const {
   checkConfigController,
   createFolderController,
   startSubscriptionFlowController,
-  createSignatory
+  createSignatory,
+  getFoldersController,
+  getFolderByIdController
 } = require('../controllers/cailunController');
 
 router.post('/test-login', testLoginController);
@@ -26,6 +28,10 @@ router.get('/config', checkConfigController);
 
 // Criação de pastas
 router.post('/folder', createFolderController);
+router.get('/folders', getFoldersController);
+router.get('/folder/:id', getFolderByIdController);
+
+
 
 // Fluxo de assinatura
 router.post(

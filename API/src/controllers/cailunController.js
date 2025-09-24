@@ -140,11 +140,30 @@ async function createFolderController(req, res) {
         const { name, downward } = req.body;
 
         // Validações básicas
-        if (!name) {
+        if (!name || name.trim() === '') {
             return res.status(400).json({
                 success: false,
                 message: '❌ Nome da pasta é obrigatório',
                 error: 'Campo "name" não pode estar vazio'
+            });
+        }
+
+        // Validar caracteres especiais no nome da pasta (evitar problemas no sistema de arquivos)
+        const invalidChars = /[<>:"/\\|?*]/;
+        if (invalidChars.test(name.trim())) {
+            return res.status(400).json({
+                success: false,
+                message: '❌ Nome da pasta contém caracteres inválidos',
+                error: 'O nome não pode conter os caracteres: < > : " / \\ | ? *'
+            });
+        }
+
+        // Validar tamanho do nome
+        if (name.trim().length > 255) {
+            return res.status(400).json({
+                success: false,
+                message: '❌ Nome da pasta muito longo',
+                error: 'O nome deve ter no máximo 255 caracteres'
             });
         }
 
@@ -156,7 +175,17 @@ async function createFolderController(req, res) {
             res.status(201).json({
                 success: true,
                 message: result.message,
-                data: result.folder
+                data: {
+                    cailun: result.folder,
+                    local: {
+                        id: result.localFolder.id,
+                        cailun_id: result.localFolder.cailun_id,
+                        name: result.localFolder.name,
+                        local_path: result.localFolder.local_path,
+                        created_at: result.localFolder.created_at
+                    },
+                    localPath: result.localPath
+                }
             });
         } else {
             res.status(result.status || 400).json({
@@ -169,6 +198,88 @@ async function createFolderController(req, res) {
 
     } catch (error) {
         console.error('💥 Erro inesperado ao criar pasta:', error);
+        res.status(500).json({
+            success: false,
+            message: '💥 Erro interno do servidor',
+            error: error.message
+        });
+    }
+}
+
+async function getFoldersController(req, res) {
+    try {
+        const { parentId } = req.query;
+
+        // Validar parentId se fornecido
+        if (parentId && isNaN(parseInt(parentId))) {
+            return res.status(400).json({
+                success: false,
+                message: '❌ ID da pasta pai inválido',
+                error: 'O parentId deve ser um número válido'
+            });
+        }
+
+        console.log(`📂 Buscando pastas${parentId ? ` da pasta pai: ${parentId}` : ' raiz'}`);
+
+        const result = await cailunService.getFolders(parentId ? parseInt(parentId) : null);
+
+        if (result.success) {
+            res.status(200).json({
+                success: true,
+                data: result.folders,
+                count: result.folders.length,
+                message: `${result.folders.length} pasta(s) encontrada(s)`
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: '❌ Erro ao buscar pastas',
+                error: result.error
+            });
+        }
+
+    } catch (error) {
+        console.error('💥 Erro inesperado ao buscar pastas:', error);
+        res.status(500).json({
+            success: false,
+            message: '💥 Erro interno do servidor',
+            error: error.message
+        });
+    }
+}
+
+async function getFolderByIdController(req, res) {
+    try {
+        const { id } = req.params;
+
+        if (!id || isNaN(parseInt(id))) {
+            return res.status(400).json({
+                success: false,
+                message: '❌ ID da pasta inválido',
+                error: 'O ID deve ser um número válido'
+            });
+        }
+
+        console.log(`🔍 Buscando pasta com Cailun ID: ${id}`);
+
+        const result = await cailunService.getFolderById(parseInt(id));
+
+        if (result.success) {
+            res.status(200).json({
+                success: true,
+                data: result.folder,
+                message: 'Pasta encontrada com sucesso'
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: '❌ Pasta não encontrada',
+                error: result.error
+            });
+        }
+
+    } catch (error) {
+        console.error('💥 Erro inesperado ao buscar pasta:', error);
         res.status(500).json({
             success: false,
             message: '💥 Erro interno do servidor',
@@ -200,18 +311,18 @@ async function startSubscriptionFlowController(req, res) {
                     });
                 }
             }
-            
+
             if (Array.isArray(body.signatories)) {
                 body.signatories = body.signatories.map((signatory, index) => {
                     if (!signatory.name || !signatory.email) {
                         throw new Error(`Signatory ${index}: name e email são obrigatórios`);
                     }
-                    
+
                     return {
                         ...signatory,
                         signAsId: parseInt(signatory.SignAsid || signatory.signAsId || signatory.signAsID, 10),
                         requiredAuthenticationType: parseInt(signatory.requiredAuthenticationtype || signatory.requiredAuthenticationType, 10),
-                        additionalAuthenticationType: Array.isArray(signatory.additionalAuthenticationType) 
+                        additionalAuthenticationType: Array.isArray(signatory.additionalAuthenticationType)
                             ? signatory.additionalAuthenticationType.map(type => parseInt(type, 10))
                             : [parseInt(signatory.additionalAuthenticationType || '1', 10)]
                     };
@@ -238,15 +349,15 @@ async function startSubscriptionFlowController(req, res) {
         if (result.success) {
             console.log("✅ Fluxo criado com sucesso! Salvando no banco...");
             console.log("🔍 Verificando FluxoAssinaturaService:", typeof FluxoAssinaturaService);
-            
+
             let salvamentoInfo = { success: false, error: "Service não disponível" };
-            
+
             try {
                 // 🔍 Verificar se o service e o método existem
                 if (FluxoAssinaturaService && typeof FluxoAssinaturaService.salvarFluxoAssinatura === 'function') {
                     console.log("🎯 Chamando FluxoAssinaturaService.salvarFluxoAssinatura...");
                     salvamentoInfo = await FluxoAssinaturaService.salvarFluxoAssinatura(result.data);
-                    
+
                     if (salvamentoInfo.success) {
                         console.log("✅ Dados salvos no banco com sucesso!");
                         console.log("📄 UUID salvo:", result.data.uuid);
@@ -297,18 +408,18 @@ async function startSubscriptionFlowController(req, res) {
 }
 
 async function createSignatory(req, res) {
-  const result = await cailunService.createSignatory(req.body);
+    const result = await cailunService.createSignatory(req.body);
 
-  if (result.success) {
-    res.status(200).json({ data: result.signatory });
-  } else {
-    res.status(result.status || 500).json({
-      success: false,
-      message: 'Erro ao criar signatário',
-      error: result.error,
-      details: result.details
-    });
-  }
+    if (result.success) {
+        res.status(200).json({ data: result.signatory });
+    } else {
+        res.status(result.status || 500).json({
+            success: false,
+            message: 'Erro ao criar signatário',
+            error: result.error,
+            details: result.details
+        });
+    }
 }
 
 module.exports = {
@@ -319,6 +430,8 @@ module.exports = {
     checkConfigController,
     // Controllers de operações com pastas
     createFolderController,
+    getFoldersController,
+    getFolderByIdController,
     //fluxo de assinatura
     startSubscriptionFlowController,
     createSignatory
