@@ -1,6 +1,7 @@
 // controllers/cailunController.js - Controller unificado para todas as operações Cailun
 const cailunService = require("../services/cailunService");
-
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 // 🔧 CORREÇÃO DA IMPORTAÇÃO - Remover as chaves {}
 const FluxoAssinaturaService = require('../services/fluxoAssinaturaService'); // 👈 SEM CHAVES!
 
@@ -210,18 +211,27 @@ async function getFoldersController(req, res) {
     try {
         const { parentId } = req.query;
 
-        // Validar parentId se fornecido
-        if (parentId && isNaN(parseInt(parentId))) {
-            return res.status(400).json({
-                success: false,
-                message: '❌ ID da pasta pai inválido',
-                error: 'O parentId deve ser um número válido'
-            });
+        console.log('🌐 Parâmetros da requisição:', req.query);
+        console.log('📥 parentId bruto:', parentId, typeof parentId);
+
+        // Validar e converter parentId
+        let parsedParentId = null;
+        
+        if (parentId !== undefined && parentId !== null && parentId !== '') {
+            if (isNaN(parseInt(parentId))) {
+                return res.status(400).json({
+                    success: false,
+                    message: '❌ ID da pasta pai inválido',
+                    error: 'O parentId deve ser um número válido'
+                });
+            }
+            parsedParentId = parseInt(parentId);
         }
 
-        console.log(`📂 Buscando pastas${parentId ? ` da pasta pai: ${parentId}` : ' raiz'}`);
+        console.log(`📂 Buscando pastas${parsedParentId ? ` da pasta pai: ${parsedParentId}` : ' raiz'}`);
 
-        const result = await cailunService.getFolders(parentId ? parseInt(parentId) : null);
+        // 🔧 CORREÇÃO: Usar cailunService.getFolders em vez de getFolders diretamente
+        const result = await cailunService.getFolders(parsedParentId);
 
         if (result.success) {
             res.status(200).json({
@@ -240,6 +250,7 @@ async function getFoldersController(req, res) {
 
     } catch (error) {
         console.error('💥 Erro inesperado ao buscar pastas:', error);
+        console.error('💥 Stack trace completo:', error.stack);
         res.status(500).json({
             success: false,
             message: '💥 Erro interno do servidor',
@@ -247,7 +258,65 @@ async function getFoldersController(req, res) {
         });
     }
 }
+async function getFolderFilesController(req, res) {
+    try {
+        const { folderId } = req.params;
+        const { search, fileType } = req.query;
 
+        console.log('📁 Parâmetros da requisição para arquivos:', { folderId, search, fileType });
+        console.log('📥 folderId bruto:', folderId, typeof folderId);
+
+        // Validar folderId
+        if (!folderId || isNaN(parseInt(folderId))) {
+            return res.status(400).json({
+                success: false,
+                message: '❌ ID da pasta é obrigatório e deve ser válido',
+                error: 'O folderId deve ser um número válido'
+            });
+        }
+
+        const parsedFolderId = parseInt(folderId);
+        console.log(`📂 Buscando arquivos da pasta ID: ${parsedFolderId}`);
+
+        // Verificar se a pasta existe
+        const folderExists = await cailunService.checkFolderExists(parsedFolderId);
+        if (!folderExists.success) {
+            return res.status(404).json({
+                success: false,
+                message: '❌ Pasta não encontrada',
+                error: folderExists.error
+            });
+        }
+
+        // Buscar arquivos da pasta
+        const result = await cailunService.getFolderFiles(parsedFolderId, { search, fileType });
+
+        if (result.success) {
+            res.status(200).json({
+                success: true,
+                data: result.files,
+                count: result.files.length,
+                folder: result.folder,
+                message: `${result.files.length} arquivo(s) encontrado(s) na pasta "${result.folder.name}"`
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: '❌ Erro ao buscar arquivos da pasta',
+                error: result.error
+            });
+        }
+
+    } catch (error) {
+        console.error('💥 Erro inesperado ao buscar arquivos da pasta:', error);
+        console.error('💥 Stack trace completo:', error.stack);
+        res.status(500).json({
+            success: false,
+            message: '💥 Erro interno do servidor',
+            error: error.message
+        });
+    }
+}
 async function getFolderByIdController(req, res) {
     try {
         const { id } = req.params;
@@ -434,5 +503,6 @@ module.exports = {
     getFolderByIdController,
     //fluxo de assinatura
     startSubscriptionFlowController,
-    createSignatory
+    createSignatory,
+    getFolderFilesController
 };

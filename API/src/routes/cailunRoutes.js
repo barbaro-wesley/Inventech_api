@@ -18,7 +18,8 @@ const {
   startSubscriptionFlowController,
   createSignatory,
   getFoldersController,
-  getFolderByIdController
+  getFolderByIdController,
+  getFolderFilesController
 } = require('../controllers/cailunController');
 
 router.post('/test-login', testLoginController);
@@ -30,6 +31,8 @@ router.get('/config', checkConfigController);
 router.post('/folder', createFolderController);
 router.get('/folders', getFoldersController);
 router.get('/folder/:id', getFolderByIdController);
+
+router.get('/folder/:folderId/files', getFolderFilesController);
 
 
 

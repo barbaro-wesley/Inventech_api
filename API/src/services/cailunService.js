@@ -447,8 +447,42 @@ async function createFolder(name, downward = 0) {
 // Função para buscar pastas do banco local
 async function getFolders(parentId = null) {
   try {
-    const whereCondition = parentId ? { downward: parentId } : { downward: 0 };
-    console.log('🔍 Buscando pastas com condição:', whereCondition);
+    // Debug: Verificar o valor recebido
+    console.log('🔍 Parâmetro parentId recebido:', parentId, typeof parentId);
+    
+    // Construir condição WHERE corretamente
+    let whereCondition;
+    
+    if (parentId === null || parentId === undefined) {
+      // Buscar pastas raiz (sem pai)
+      whereCondition = { 
+        OR: [
+          { downward: null },
+          { downward: 0 }
+        ]
+      };
+    } else {
+      // Buscar subpastas de um pai específico
+      whereCondition = { downward: parentId };
+    }
+
+    console.log('🔍 Condição WHERE construída:', JSON.stringify(whereCondition, null, 2));
+
+    // Debug: Verificar se há registros na tabela
+    const totalFolders = await prisma.folder.count();
+    console.log('📊 Total de pastas no banco:', totalFolders);
+
+    // Debug: Verificar alguns registros para entender a estrutura
+    const sampleFolders = await prisma.folder.findMany({
+      take: 3,
+      select: {
+        id: true,
+        cailun_id: true,
+        name: true,
+        downward: true
+      }
+    });
+    console.log('📋 Amostra de registros:', JSON.stringify(sampleFolders, null, 2));
 
     const folders = await prisma.folder.findMany({
       where: whereCondition,
@@ -465,14 +499,165 @@ async function getFolders(parentId = null) {
       }
     });
 
-    console.log(`✅ ${folders.length} pastas encontradas`);
+    console.log(`✅ ${folders.length} pastas encontradas com a condição`);
+    console.log('📁 Pastas encontradas:', folders.map(f => ({ id: f.id, name: f.name, downward: f.downward })));
+    
     return { success: true, folders };
 
   } catch (error) {
     console.error("❌ Erro ao buscar pastas:", error.message);
+    console.error("❌ Stack trace:", error.stack);
     return { success: false, error: error.message };
   }
+}async function checkFolderExists(folderId) {
+    try {
+        console.log('🔍 Verificando se pasta existe:', folderId);
+        
+        const folder = await prisma.folder.findUnique({
+            where: { id: folderId },
+            select: {
+                id: true,
+                cailun_id: true,
+                name: true,
+                local_path: true
+            }
+        });
+
+        if (!folder) {
+            return { success: false, error: 'Pasta não encontrada' };
+        }
+
+        console.log('✅ Pasta encontrada:', folder.name);
+        return { success: true, folder };
+
+    } catch (error) {
+        console.error("❌ Erro ao verificar pasta:", error.message);
+        return { success: false, error: error.message };
+    }
 }
+
+/**
+ * Buscar arquivos de uma pasta específica
+ */
+async function getFolderFiles(folderId, filters = {}) {
+    try {
+        const { search, fileType } = filters;
+        
+        console.log('🔍 Buscando arquivos da pasta:', folderId);
+        console.log('🔍 Filtros aplicados:', { search, fileType });
+
+        // Primeiro, buscar informações da pasta
+        const folder = await prisma.folder.findUnique({
+            where: { id: folderId },
+            select: {
+                id: true,
+                cailun_id: true,
+                name: true,
+                local_path: true,
+                created_at: true
+            }
+        });
+
+        if (!folder) {
+            return { success: false, error: 'Pasta não encontrada' };
+        }
+
+        // Construir condições de busca
+        const whereCondition = {
+            folder_id: folderId
+        };
+
+        // Filtro por nome do arquivo (se fornecido)
+        if (search && search.trim()) {
+            whereCondition.OR = [
+                {
+                    original_name: {
+                        contains: search.trim(),
+                        mode: 'insensitive'
+                    }
+                },
+                {
+                    name: {
+                        contains: search.trim(),
+                        mode: 'insensitive'
+                    }
+                }
+            ];
+        }
+
+        // Filtro por tipo de arquivo (se fornecido)
+        if (fileType && fileType.trim()) {
+            whereCondition.mime_type = {
+                contains: fileType.trim(),
+                mode: 'insensitive'
+            };
+        }
+
+        console.log('🔍 Condição WHERE para arquivos:', JSON.stringify(whereCondition, null, 2));
+
+        // Debug: Verificar total de arquivos na pasta
+        const totalFiles = await prisma.file.count({
+            where: { folder_id: folderId }
+        });
+        console.log('📊 Total de arquivos na pasta:', totalFiles);
+
+        // Buscar arquivos
+        const files = await prisma.file.findMany({
+            where: whereCondition,
+            orderBy: { created_at: 'desc' },
+            select: {
+                id: true,
+                name: true,
+                original_name: true,
+                file_path: true,
+                file_size: true,
+                mime_type: true,
+                folder_id: true,
+                created_at: true,
+                updated_at: true,
+                // Se você tiver relacionamento com outras tabelas, pode incluir aqui
+                // folder: {
+                //     select: {
+                //         id: true,
+                //         name: true
+                //     }
+                // }
+            }
+        });
+
+        console.log(`✅ ${files.length} arquivo(s) encontrado(s) na pasta "${folder.name}"`);
+        
+        // Debug: Log dos primeiros arquivos encontrados
+        if (files.length > 0) {
+            console.log('📋 Primeiros arquivos encontrados:', 
+                files.slice(0, 3).map(f => ({ 
+                    id: f.id, 
+                    name: f.original_name, 
+                    size: f.file_size,
+                    type: f.mime_type
+                }))
+            );
+        }
+        
+        return { 
+            success: true, 
+            files, 
+            folder: {
+                id: folder.id,
+                cailun_id: folder.cailun_id,
+                name: folder.name,
+                local_path: folder.local_path,
+                created_at: folder.created_at
+            }
+        };
+
+    } catch (error) {
+        console.error("❌ Erro ao buscar arquivos da pasta:", error.message);
+        console.error("❌ Stack trace:", error.stack);
+        return { success: false, error: error.message };
+    }
+}
+
 
 // Função para buscar uma pasta específica
 async function getFolderById(cailunId) {
@@ -695,7 +880,11 @@ module.exports = {
   testToken,
   getValidToken,
   createFolder,
+  getFolders,
+  getFolderById,
   startSubscriptionFlow,
   createSignatory,
-  validateSignatoryData
+  validateSignatoryData,
+  getFolderFiles,
+  checkFolderExists
 };
