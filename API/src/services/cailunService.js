@@ -546,7 +546,7 @@ async function getFolderFiles(folderId, filters = {}) {
         console.log('🔍 Buscando arquivos da pasta:', folderId);
         console.log('🔍 Filtros aplicados:', { search, fileType });
 
-        // Primeiro, buscar informações da pasta
+        // Primeiro, buscar informações da pasta incluindo o cailun_id
         const folder = await prisma.folder.findUnique({
             where: { id: folderId },
             select: {
@@ -562,9 +562,9 @@ async function getFolderFiles(folderId, filters = {}) {
             return { success: false, error: 'Pasta não encontrada' };
         }
 
-        // Construir condições de busca
+        // Construir condições de busca usando o cailun_id
         const whereCondition = {
-            folder_id: folderId
+            folder_cailun_id: folder.cailun_id  // ← Mudança aqui
         };
 
         // Filtro por nome do arquivo (se fornecido)
@@ -597,7 +597,7 @@ async function getFolderFiles(folderId, filters = {}) {
 
         // Debug: Verificar total de arquivos na pasta
         const totalFiles = await prisma.file.count({
-            where: { folder_id: folderId }
+            where: { folder_cailun_id: folder.cailun_id }  // ← Mudança aqui também
         });
         console.log('📊 Total de arquivos na pasta:', totalFiles);
 
@@ -612,32 +612,13 @@ async function getFolderFiles(folderId, filters = {}) {
                 file_path: true,
                 file_size: true,
                 mime_type: true,
-                folder_id: true,
+                folder_cailun_id: true,  // ← Campo correto
                 created_at: true,
                 updated_at: true,
-                // Se você tiver relacionamento com outras tabelas, pode incluir aqui
-                // folder: {
-                //     select: {
-                //         id: true,
-                //         name: true
-                //     }
-                // }
             }
         });
 
         console.log(`✅ ${files.length} arquivo(s) encontrado(s) na pasta "${folder.name}"`);
-        
-        // Debug: Log dos primeiros arquivos encontrados
-        if (files.length > 0) {
-            console.log('📋 Primeiros arquivos encontrados:', 
-                files.slice(0, 3).map(f => ({ 
-                    id: f.id, 
-                    name: f.original_name, 
-                    size: f.file_size,
-                    type: f.mime_type
-                }))
-            );
-        }
         
         return { 
             success: true, 

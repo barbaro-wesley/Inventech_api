@@ -474,6 +474,27 @@ model Folder {
   // Relacionamentos para hierarquia de pastas
   parent_folder          Folder?  @relation("FolderHierarchy", fields: [downward], references: [cailun_id])
   child_folders          Folder[] @relation("FolderHierarchy")
-  
+  files                  File[]
   @@map("folders")
+}
+
+model File {
+  id                     Int      @id @default(autoincrement())
+  cailun_id              Int?     
+  name                   String   
+  original_name          String   
+  file_path              String   
+  file_size              Int      
+  mime_type              String   
+  folder_cailun_id       Int      // FK para folder.cailun_id
+  hash                   String?  
+  
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+  cailun_created_at      String?  
+  cailun_updated_at      String?  
+  
+  folder                 Folder   @relation(fields: [folder_cailun_id], references: [cailun_id], onDelete: Cascade)
+  
+  @@map("files")
 }
