@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const axios = require("axios");
 const Redis = require("ioredis");
-const fs = require('fs').promises;
+const fs = require("fs");
 const redis = new Redis(process.env.REDIS_URL);
 const path = require('path');
 const CAILUN_BASE_URL = process.env.CAILUN_URL;
@@ -681,76 +681,66 @@ function formatarTelefone(phone) {
 }
 
 async function startSubscriptionFlow(data) {
+  // Imports dentro da função para garantir escopo correto
+  const FormData = require("form-data");
+  const fs = require("fs");
+  
+  let filePath = data.file.path;
+  
   try {
     const tokenResult = await getValidToken();
     if (!tokenResult.success) throw new Error(tokenResult.error);
 
-    const FormData = require("form-data");
-    const fs = require("fs");
-    const axios = require("axios");
-    const form = new FormData();
+    // Validar data limite
+    let signatureLimitDateOriginal = null;
+    if (data.signatureLimitDate) {
+      try {
+        signatureLimitDateOriginal = new Date(data.signatureLimitDate);
+        if (isNaN(signatureLimitDateOriginal.getTime())) {
+          signatureLimitDateOriginal = null;
+        }
+      } catch (e) {
+        console.error("Erro ao processar data:", e.message);
+      }
+    }
 
-    // 1. Arquivo
-    const fileStream = fs.createReadStream(data.file.path);
-    form.append("file", fileStream, {
+    // Criar FormData
+    const form = new FormData();
+    
+    // Adicionar arquivo
+    form.append("file", fs.createReadStream(filePath), {
       filename: data.file.originalname,
       contentType: data.file.mimetype
     });
 
-    // 2. Outros campos
+    // Adicionar outros campos
     if (data.folderId) form.append("folderId", String(data.folderId));
-    
-    // 🆕 CAMPO PRINCIPAL - signatureLimitDate
-    if (data.signatureLimitDate) {
-      console.log("📅 Adicionando signatureLimitDate:", data.signatureLimitDate);
-      form.append("signatureLimitDate", data.signatureLimitDate);
-    }
-    
+    if (data.signatureLimitDate) form.append("signatureLimitDate", data.signatureLimitDate);
     if (data.reminder !== undefined) form.append("reminder", String(data.reminder));
     if (data.reminderDays) form.append("reminderDays", String(data.reminderDays));
     if (data.notificationDescription) form.append("notificationDescription", data.notificationDescription);
     if (data.notificationDate) form.append("notificationDate", data.notificationDate);
     if (data.message) form.append("message", data.message);
 
-    // 3. 🔧 SIGNATORIES CORRIGIDO - Agora com tipos corretos
+    // Adicionar signatories
     if (data.signatories && Array.isArray(data.signatories)) {
       data.signatories.forEach((signatory, i) => {
-        // Campos básicos
         form.append(`signatories[${i}][name]`, signatory.name);
         form.append(`signatories[${i}][email]`, signatory.email);
         form.append(`signatories[${i}][cpf]`, signatory.cpf);
         form.append(`signatories[${i}][phone]`, formatarTelefone(signatory.phone));
+        form.append(`signatories[${i}][signAsId]`, signatory.signAsId);
+        form.append(`signatories[${i}][requiredAuthenticationType]`, signatory.requiredAuthenticationType);
 
-        // 🔧 CAMPOS QUE CAUSAVAM ERRO - Agora como integers
-        form.append(`signatories[${i}][signAsId]`, signatory.signAsId); // Já convertido no controller
-        form.append(`signatories[${i}][requiredAuthenticationType]`, signatory.requiredAuthenticationType); // Já convertido no controller
-
-        // 🔧 additionalAuthenticationType como array de integers
         if (Array.isArray(signatory.additionalAuthenticationType)) {
           signatory.additionalAuthenticationType.forEach(type => {
-            form.append(`signatories[${i}][additionalAuthenticationType][]`, type); // Já convertido no controller
+            form.append(`signatories[${i}][additionalAuthenticationType][]`, type);
           });
         }
       });
     }
 
-    // 4. Debug melhorado
-    console.log("📤 Dados sendo enviados para o Cailun:");
-    console.log("- Arquivo:", data.file.originalname);
-    console.log("- Data limite:", data.signatureLimitDate); // 🆕 ADICIONADO
-    console.log("- FolderId:", data.folderId);
-    console.log("- Message:", data.message);
-    data.signatories?.forEach((sig, i) => {
-      console.log(`- Signatory ${i}:`, {
-        name: sig.name,
-        signAsId: `${sig.signAsId} (${typeof sig.signAsId})`,
-        requiredAuthenticationType: `${sig.requiredAuthenticationType} (${typeof sig.requiredAuthenticationType})`,
-        additionalAuthenticationType: sig.additionalAuthenticationType?.map(type => `${type} (${typeof type})`)
-      });
-    });
-
-    // 5. Requisição para o Cailun
-    console.log("🌐 Enviando requisição para o Cailun...");
+    // Fazer requisição
     const response = await axios.post(
       `${process.env.CAILUN_URL}/subscriptionFlow`,
       form,
@@ -763,55 +753,41 @@ async function startSubscriptionFlow(data) {
       }
     );
 
-    console.log("✅ Resposta recebida do Cailun:", {
-      status: response.status,
-      hasData: !!response.data?.data,
-      uuid: response.data?.data?.uuid
-    });
-
-    // 🔧 LIMPAR ARQUIVO APÓS SUCESSO
-    fs.unlinkSync(data.file.path);
+    // Limpar arquivo
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (e) {
+      console.error("Erro ao limpar arquivo:", e.message);
+    }
     
-    // 🆕 ENRIQUECER OS DADOS DE RETORNO COM OS DADOS ORIGINAIS
+    // Enriquecer dados
     const enrichedData = {
       ...response.data.data,
-      // Adicionar dados originais que podem não vir na resposta do Cailun
+      signatureLimitDate: signatureLimitDateOriginal,
+      signatureLimitDateISO: signatureLimitDateOriginal?.toISOString(),
       originalSignatureLimitDate: data.signatureLimitDate,
       originalFolderId: data.folderId,
       originalMessage: data.message,
       originalSignatories: data.signatories,
-      // Campos úteis para o banco
       fileName: data.file.originalname,
       fileSize: data.file.size,
       fileMimeType: data.file.mimetype
     };
 
-    console.log("🔍 Dados enriquecidos para retorno:", {
-      uuid: enrichedData.uuid,
-      originalSignatureLimitDate: enrichedData.originalSignatureLimitDate,
-      fileName: enrichedData.fileName
-    });
-
-    return { 
-      success: true, 
-      data: enrichedData 
-    };
+    return { success: true, data: enrichedData };
 
   } catch (error) {
-    console.error("❌ ERRO DETALHADO:");
-    console.error("- Message:", error.message);
-    console.error("- Status:", error.response?.status);
-    console.error("- Response Data:", JSON.stringify(error.response?.data, null, 2));
-
-    // 🔧 Cleanup do arquivo mesmo em caso de erro
+    console.error("Erro:", error.message);
+    
+    // Limpar arquivo em caso de erro
+    const fs = require("fs");
     try {
-      if (data.file?.path && fs.existsSync(data.file.path)) {
-        fs.unlinkSync(data.file.path);
-        console.log("🗑️ Arquivo temporário removido após erro");
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
       }
-    } catch (cleanupError) {
-      console.error("❌ Erro ao limpar arquivo:", cleanupError.message);
-    }
+    } catch (e) {}
 
     return {
       success: false,
@@ -821,172 +797,98 @@ async function startSubscriptionFlow(data) {
     };
   }
 }
-async function salvarFluxoAssinatura(cailunData) {
-    try {
-        console.log("🔍 === SALVANDO FLUXO NO BANCO ===");
-        console.log("📦 Dados recebidos do Cailun:");
-        console.log(JSON.stringify(cailunData, null, 2));
-        
-        // 🔧 VERIFICAR SE OS DADOS NECESSÁRIOS EXISTEM
-        if (!cailunData || !cailunData.uuid) {
-            throw new Error("UUID é obrigatório para salvar o fluxo");
-        }
-
-        // 🔍 EXTRAIR E PROCESSAR A DATA LIMITE
-        console.log("🔍 === PROCESSAMENTO DA DATA LIMITE ===");
-        let signatureLimitDate = null;
-        
-        // Tentar múltiplas fontes para a data limite
-        const possiveisFontes = [
-            cailunData.signatureLimitDate,
-            cailunData.originalSignatureLimitDate,
-            cailunData.signature_limit_date,
-            cailunData.limitDate,
-            cailunData.expirationDate
-        ];
-        
-        for (const fonte of possiveisFontes) {
-            if (fonte) {
-                console.log("📅 Tentando processar data:", fonte, "- Tipo:", typeof fonte);
-                
-                let dataTemp = null;
-                if (typeof fonte === 'string') {
-                    dataTemp = new Date(fonte);
-                } else if (fonte instanceof Date) {
-                    dataTemp = fonte;
-                }
-                
-                if (dataTemp && !isNaN(dataTemp.getTime())) {
-                    signatureLimitDate = dataTemp;
-                    console.log("✅ Data limite processada:", signatureLimitDate.toISOString());
-                    break;
-                } else {
-                    console.log("❌ Data inválida:", fonte);
-                }
-            }
-        }
-
-        if (!signatureLimitDate) {
-            console.log("⚠️ Nenhuma data limite válida encontrada");
-        }
-
-        // 🔧 PREPARAR DADOS PARA O BANCO
-        const fluxoData = {
-            // IDs obrigatórios - AJUSTAR CONFORME SUA LÓGICA
-            organizationAccountId: BigInt(cailunData.organizationAccountId || 1),
-            documentStatusTypeId: parseInt(cailunData.documentStatusTypeId || cailunData.status || 1),
-            documentTypesId: parseInt(cailunData.documentTypesId || 1),
-            envelopesId: BigInt(cailunData.envelopesId || cailunData.id || Date.now()),
-            filesId: BigInt(cailunData.filesId || cailunData.id || Date.now()),
-            versionId: BigInt(cailunData.versionId || 1),
-            
-            // Campos básicos
-            status: parseInt(cailunData.status || 1),
-            name: cailunData.name || cailunData.fileName || cailunData.originalMessage || "Documento",
-            label: cailunData.label || cailunData.fileName || "Documento",
-            uuid: cailunData.uuid,
-            
-            // 🆕 CAMPO PRINCIPAL - signatureLimitDate
-            signatureLimitDate: signatureLimitDate,
-            
-            // Campos opcionais
-            resolution: cailunData.resolution ? parseInt(cailunData.resolution) : null,
-            pages: cailunData.pages ? parseInt(cailunData.pages) : null,
-            size: cailunData.size || cailunData.fileSize ? parseInt(cailunData.size || cailunData.fileSize) : null,
-            language: cailunData.language || null,
-            timezone: cailunData.timezone ? parseInt(cailunData.timezone) : null,
-            
-            // Timestamps
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            dtTimezoneZero: new Date(),
-            
-            // Links/metadata
-            links: cailunData.links || cailunData.metadata || cailunData.originalSignatories ? 
-                   JSON.stringify({
-                       links: cailunData.links,
-                       metadata: cailunData.metadata,
-                       originalData: {
-                           signatories: cailunData.originalSignatories,
-                           message: cailunData.originalMessage,
-                           fileName: cailunData.fileName,
-                           fileSize: cailunData.fileSize,
-                           fileMimeType: cailunData.fileMimeType
-                       }
-                   }) : null
-        };
-
-        console.log("💾 Dados FINAIS para salvar no banco:");
-        console.log({
-            uuid: fluxoData.uuid,
-            signatureLimitDate: fluxoData.signatureLimitDate,
-            signatureLimitDateISO: fluxoData.signatureLimitDate?.toISOString(),
-            name: fluxoData.name,
-            status: fluxoData.status,
-            hasLinks: !!fluxoData.links
-        });
-
-        // 🔧 VERIFICAR SE JÁ EXISTE
-        const existente = await prisma.fluxoAssinatura.findUnique({
-            where: { uuid: cailunData.uuid }
-        });
-
-        let resultado;
-
-        if (existente) {
-            console.log("⚠️ Fluxo já existe, atualizando...");
-            
-            resultado = await prisma.fluxoAssinatura.update({
-                where: { uuid: cailunData.uuid },
-                data: {
-                    signatureLimitDate: fluxoData.signatureLimitDate,
-                    status: fluxoData.status,
-                    name: fluxoData.name,
-                    label: fluxoData.label,
-                    updatedAt: new Date(),
-                    links: fluxoData.links
-                }
-            });
-
-            console.log("✅ Fluxo ATUALIZADO! ID:", resultado.id);
-        } else {
-            console.log("💾 Criando novo fluxo...");
-            
-            resultado = await prisma.fluxoAssinatura.create({
-                data: fluxoData
-            });
-
-            console.log("✅ Fluxo CRIADO! ID:", resultado.id);
-        }
-
-        console.log("📅 Data limite final salva:", resultado.signatureLimitDate);
-        console.log("📅 Data limite ISO:", resultado.signatureLimitDate?.toISOString());
-
-        return {
-            success: true,
-            data: resultado,
-            message: existente ? "Fluxo atualizado com sucesso" : "Fluxo criado com sucesso"
-        };
-
-    } catch (error) {
-        console.error("❌ === ERRO AO SALVAR NO BANCO ===");
-        console.error("💥 Erro:", error.message);
-        console.error("🔍 Stack:", error.stack);
-        
-        if (error.code) {
-            console.error("🔍 Código do erro:", error.code);
-        }
-        if (error.meta) {
-            console.error("🔍 Meta:", error.meta);
-        }
-        
-        return {
-            success: false,
-            error: error.message,
-            message: "Erro ao salvar no banco de dados"
-        };
+async function salvarFluxoAssinatura(dadosAPI) {
+  try {
+    console.log("Salvando fluxo no banco...");
+    
+    if (!dadosAPI || !dadosAPI.uuid) {
+      throw new Error("UUID é obrigatório");
     }
+
+    // Processar signatureLimitDate
+    let signatureLimitDate = null;
+    const fontes = [
+      dadosAPI.signatureLimitDate,
+      dadosAPI.originalSignatureLimitDate,
+      dadosAPI.signatureLimitDateISO,
+      dadosAPI.signature_limit_date
+    ];
+    
+    for (const fonte of fontes) {
+      if (fonte) {
+        let dataTemp = fonte instanceof Date ? fonte : new Date(fonte);
+        if (!isNaN(dataTemp.getTime())) {
+          signatureLimitDate = dataTemp;
+          break;
+        }
+      }
+    }
+
+    const dadosMapeados = {
+      organizationAccountId: BigInt(dadosAPI.organization_account_id || 1),
+      documentStatusTypeId: dadosAPI.document_status_type_id || 1,
+      documentTypesId: dadosAPI.document_types_id || 1,
+      envelopesId: BigInt(dadosAPI.envelopes_id || dadosAPI.id || Date.now()),
+      filesId: BigInt(dadosAPI.files_id || dadosAPI.id || Date.now()),
+      status: dadosAPI.status || 1,
+      name: dadosAPI.name || dadosAPI.fileName || "Documento",
+      label: dadosAPI.label || dadosAPI.fileName || "Documento",
+      uuid: dadosAPI.uuid,
+      signatureLimitDate: signatureLimitDate,
+      resolution: dadosAPI.resolution || null,
+      pages: dadosAPI.pages || null,
+      size: dadosAPI.size || dadosAPI.fileSize || null,
+      createdAt: dadosAPI.created_at ? new Date(dadosAPI.created_at) : new Date(),
+      updatedAt: dadosAPI.updated_at ? new Date(dadosAPI.updated_at) : new Date(),
+      language: dadosAPI.language || null,
+      timezone: dadosAPI.timezone || null,
+      versionId: BigInt(dadosAPI.version_id || 1),
+      dtTimezoneZero: dadosAPI.dt_timezone_zero ? new Date(dadosAPI.dt_timezone_zero) : new Date(),
+      links: JSON.stringify({
+        originalData: {
+          signatories: dadosAPI.originalSignatories,
+          message: dadosAPI.originalMessage,
+          fileName: dadosAPI.fileName
+        }
+      })
+    };
+
+    console.log("Salvando com signatureLimitDate:", signatureLimitDate?.toISOString() || null);
+
+    const fluxoSalvo = await prisma.fluxoAssinatura.upsert({
+      where: { uuid: dadosAPI.uuid },
+      update: {
+        signatureLimitDate: dadosMapeados.signatureLimitDate,
+        status: dadosMapeados.status,
+        name: dadosMapeados.name,
+        label: dadosMapeados.label,
+        updatedAt: new Date(),
+        links: dadosMapeados.links
+      },
+      create: dadosMapeados
+    });
+
+    console.log("Fluxo salvo! Data:", fluxoSalvo.signatureLimitDate?.toISOString() || null);
+
+    return {
+      success: true,
+      data: {
+        ...fluxoSalvo,
+        id: fluxoSalvo.id.toString()
+      },
+      message: "Fluxo salvo com sucesso"
+    };
+
+  } catch (error) {
+    console.error("Erro ao salvar:", error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 }
+
+
 // 🔧 FUNÇÃO AUXILIAR PARA VALIDAR DADOS ANTES DO ENVIO
 function validateSignatoryData(signatory, index) {
   const errors = [];
@@ -1059,8 +961,277 @@ async function createSignatory(signatoryData) {
     };
   }
 }
+async function downloadDocumento(uuid) {
+  try {
+    console.log("📥 Iniciando download do documento:", uuid);
 
+    // 1. Buscar FluxoAssinatura pelo UUID
+    const fluxo = await prisma.fluxoAssinatura.findUnique({
+      where: { uuid }
+    });
 
+    if (!fluxo) {
+      throw new Error("Fluxo de assinatura não encontrado");
+    }
+
+    console.log("✅ Fluxo encontrado:", fluxo.name);
+
+    // 2. Extrair folderId dos links (se disponível)
+    let folderId = null;
+    if (fluxo.links) {
+      try {
+        const linksData = typeof fluxo.links === 'string' 
+          ? JSON.parse(fluxo.links) 
+          : fluxo.links;
+        
+        folderId = linksData.originalData?.folderId;
+        console.log("🔍 FolderId extraído dos links:", folderId);
+      } catch (e) {
+        console.error("⚠️ Erro ao parsear links:", e.message);
+      }
+    }
+
+    // 3. Buscar pasta (com fallback para pasta "Assinaturas")
+    let folder = null;
+    
+    if (folderId) {
+      // Tentar buscar pela folderId específica
+      folder = await prisma.folder.findUnique({
+        where: { cailun_id: parseInt(folderId) }
+      });
+      
+      if (folder) {
+        console.log("✅ Pasta encontrada pelo folderId:", folder.name);
+      }
+    }
+
+    // Se não encontrou pasta específica, buscar pasta padrão "Assinaturas"
+    if (!folder) {
+      console.log("🔄 FolderId não encontrado ou pasta não existe. Buscando pasta padrão 'Assinaturas'...");
+      
+      folder = await prisma.folder.findFirst({
+        where: { 
+          name: "Assinaturas",
+          is_root: 1
+        },
+        orderBy: {
+          created_at: 'desc'
+        }
+      });
+
+      if (!folder) {
+        throw new Error("Pasta padrão 'Assinaturas' não encontrada no banco de dados");
+      }
+
+      console.log("✅ Usando pasta padrão:", folder.name, "(ID:", folder.id, "| cailun_id:", folder.cailun_id + ")");
+    }
+
+    if (!folder.local_path) {
+      throw new Error("Pasta não possui caminho local definido");
+    }
+
+    console.log("📂 Pasta selecionada:", folder.name);
+    console.log("📍 Caminho local:", folder.local_path);
+
+    // 4. Verificar se a pasta local existe, se não, criar
+    if (!fs.existsSync(folder.local_path)) {
+      fs.mkdirSync(folder.local_path, { recursive: true });
+      console.log("✅ Diretório criado:", folder.local_path);
+    }
+
+    // 5. Obter token válido
+    const tokenResult = await getValidToken();
+    if (!tokenResult.success) {
+      throw new Error("Falha ao obter token de autenticação");
+    }
+
+    // 6. Fazer download do arquivo da API do Cailun
+    console.log("⬇️ Fazendo download do arquivo da API Cailun...");
+    const downloadUrl = `${process.env.CAILUN_URL}/documents/${uuid}/download`;
+    
+    const response = await axios.get(downloadUrl, {
+      headers: {
+        Authorization: `Bearer ${tokenResult.token}`
+      },
+      responseType: 'stream',
+      timeout: 60000 // 60 segundos
+    });
+
+    // 7. Gerar nome do arquivo
+    const timestamp = Date.now();
+    const sanitizedName = fluxo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileName = `${sanitizedName}_assinado_${timestamp}.pdf`;
+    const filePath = path.join(folder.local_path, fileName);
+
+    console.log("💾 Salvando arquivo como:", fileName);
+
+    // 8. Salvar arquivo localmente
+    const writer = fs.createWriteStream(filePath);
+    response.data.pipe(writer);
+
+    await new Promise((resolve, reject) => {
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
+
+    console.log("✅ Arquivo salvo em:", filePath);
+
+    // 9. Obter tamanho do arquivo
+    const stats = fs.statSync(filePath);
+    const fileSize = stats.size;
+    console.log("📊 Tamanho do arquivo:", (fileSize / 1024).toFixed(2), "KB");
+
+    // 10. Gerar hash MD5 do arquivo
+    let fileHash = null;
+    try {
+      const crypto = require('crypto');
+      const fileBuffer = fs.readFileSync(filePath);
+      fileHash = crypto.createHash('md5').update(fileBuffer).digest('hex');
+      console.log("🔐 Hash MD5 gerado:", fileHash);
+    } catch (hashError) {
+      console.warn("⚠️ Não foi possível gerar hash do arquivo:", hashError.message);
+    }
+
+    // 11. Criar registro na tabela File usando folder_cailun_id
+    const fileRecord = await prisma.file.create({
+      data: {
+        cailun_id: null, // Documentos assinados não têm ID no Cailun
+        name: fileName,
+        original_name: fluxo.label || fluxo.name,
+        file_path: filePath,
+        file_size: fileSize,
+        mime_type: 'application/pdf',
+        folder_cailun_id: folder.cailun_id, // ← Usando cailun_id da pasta
+        hash: fileHash,
+        cailun_created_at: fluxo.createdAt.toISOString(),
+        cailun_updated_at: new Date().toISOString()
+      }
+    });
+
+    console.log("✅ Registro de arquivo criado! ID:", fileRecord.id);
+    console.log("🔗 Arquivo vinculado à pasta:", folder.name, "(folder.id:", folder.id, "| folder.cailun_id:", folder.cailun_id + ")");
+
+    // 12. Atualizar FluxoAssinatura com informações completas do download
+    const linksData = typeof fluxo.links === 'string' 
+      ? JSON.parse(fluxo.links) 
+      : (fluxo.links || {});
+
+    await prisma.fluxoAssinatura.update({
+      where: { uuid },
+      data: {
+        links: JSON.stringify({
+          ...linksData,
+          downloadInfo: {
+            fileId: fileRecord.id,
+            filePath: filePath,
+            fileName: fileName,
+            fileHash: fileHash,
+            fileSize: fileSize,
+            folderId: folder.cailun_id,
+            folderDatabaseId: folder.id,
+            folderName: folder.name,
+            downloadedAt: new Date().toISOString(),
+            usedDefaultFolder: !folderId // Indica se usou pasta padrão
+          }
+        })
+      }
+    });
+
+    console.log("✅ FluxoAssinatura atualizado com informações do download");
+    console.log("🎉 Download concluído com sucesso!");
+
+    return {
+      success: true,
+      message: "Documento baixado e registrado com sucesso",
+      data: {
+        fluxo: {
+          id: fluxo.id.toString(),
+          uuid: fluxo.uuid,
+          name: fluxo.name,
+          label: fluxo.label
+        },
+        file: {
+          id: fileRecord.id,
+          name: fileName,
+          original_name: fluxo.label || fluxo.name,
+          path: filePath,
+          size: fileSize,
+          size_mb: (fileSize / (1024 * 1024)).toFixed(2),
+          hash: fileHash,
+          mime_type: 'application/pdf'
+        },
+        folder: {
+          id: folder.id,
+          cailun_id: folder.cailun_id,
+          name: folder.name,
+          local_path: folder.local_path
+        },
+        metadata: {
+          downloaded_at: new Date().toISOString(),
+          used_default_folder: !folderId
+        }
+      }
+    };
+
+  } catch (error) {
+    console.error("❌ Erro ao baixar documento:", error.message);
+    console.error("❌ Stack trace:", error.stack);
+    
+    return {
+      success: false,
+      error: error.message,
+      details: error.response?.data || null
+    };
+  }
+}
+async function getFileById(fileId) {
+  try {
+    console.log('🔍 Buscando arquivo por ID:', fileId);
+
+    const file = await prisma.file.findUnique({
+      where: {
+        id: parseInt(fileId)
+      },
+      include: {
+        folder: {
+          select: {
+            id: true,
+            cailun_id: true,
+            name: true,
+            local_path: true
+          }
+        }
+      }
+    });
+
+    if (!file) {
+      return {
+        success: false,
+        error: "Arquivo não encontrado"
+      };
+    }
+
+    // Verificar se o arquivo físico existe
+    const fileExists = fs.existsSync(file.file_path);
+
+    console.log('✅ Arquivo encontrado:', file.name);
+    console.log('📁 Arquivo físico existe:', fileExists);
+
+    return {
+      success: true,
+      data: {
+        ...file,
+        physical_file_exists: fileExists
+      }
+    };
+  } catch (error) {
+    console.error("❌ Erro ao buscar arquivo por ID:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
 
 
 module.exports = {
@@ -1075,5 +1246,7 @@ module.exports = {
   validateSignatoryData,
   getFolderFiles,
   checkFolderExists,
-  salvarFluxoAssinatura
+  salvarFluxoAssinatura,
+  downloadDocumento,
+  getFileById
 };

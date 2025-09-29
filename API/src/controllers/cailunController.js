@@ -3,7 +3,6 @@ const cailunService = require("../services/cailunService");
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 // 🔧 CORREÇÃO DA IMPORTAÇÃO - Remover as chaves {}
-const FluxoAssinaturaService = require('../services/fluxoAssinaturaService'); // 👈 SEM CHAVES!
 
 // ==========================================
 // CONTROLLERS DE AUTENTICAÇÃO
@@ -364,10 +363,10 @@ async function startSubscriptionFlowController(req, res) {
         console.log("📥 Dados recebidos:", {
             file: req.file ? req.file.originalname : 'Nenhum arquivo',
             signatories: body.signatories,
-            signatureLimitDate: body.signatureLimitDate // 🆕 ADICIONADO LOG
+            signatureLimitDate: body.signatureLimitDate
         });
 
-        // ✅ Todo o código de processamento do signatories continua IGUAL
+        // Processamento do signatories
         if (body.signatories) {
             if (typeof body.signatories === 'string') {
                 try {
@@ -376,7 +375,7 @@ async function startSubscriptionFlowController(req, res) {
                 } catch (parseError) {
                     return res.status(400).json({
                         success: false,
-                        message: "❌ Formato inválido para signatories",
+                        message: "Formato inválido para signatories",
                         error: "Invalid JSON format"
                     });
                 }
@@ -397,19 +396,19 @@ async function startSubscriptionFlowController(req, res) {
                             : [parseInt(signatory.additionalAuthenticationType || '1', 10)]
                     };
                 });
-                console.log("✅ Signatories validados e convertidos:", body.signatories);
+                console.log("✅ Signatories validados e convertidos");
             }
         }
 
-        // ✅ Validação do arquivo continua IGUAL
+        // Validação do arquivo
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: "❌ Arquivo é obrigatório"
+                message: "Arquivo é obrigatório"
             });
         }
 
-        // 🆕 VALIDAÇÃO OPCIONAL DA DATA LIMITE
+        // Validação da data limite
         if (body.signatureLimitDate) {
             const dataLimite = new Date(body.signatureLimitDate);
             const agora = new Date();
@@ -417,25 +416,25 @@ async function startSubscriptionFlowController(req, res) {
             if (isNaN(dataLimite.getTime())) {
                 return res.status(400).json({
                     success: false,
-                    message: "❌ Data limite de assinatura inválida"
+                    message: "Data limite de assinatura inválida"
                 });
             }
 
             if (dataLimite <= agora) {
                 return res.status(400).json({
                     success: false,
-                    message: "❌ Data limite deve ser futura"
+                    message: "Data limite deve ser futura"
                 });
             }
 
             console.log("✅ Data limite validada:", body.signatureLimitDate);
         }
 
-        // 🔧 CHAMADA DO SERVICE AGORA INCLUI TODOS OS CAMPOS
+        // Chamada do service
         const result = await cailunService.startSubscriptionFlow({
             file: req.file,
             folderId: body.folderId,
-            signatureLimitDate: body.signatureLimitDate, // 🆕 ADICIONADO
+            signatureLimitDate: body.signatureLimitDate,
             reminder: body.reminder,
             reminderDays: body.reminderDays,
             notificationDescription: body.notificationDescription,
@@ -444,72 +443,59 @@ async function startSubscriptionFlowController(req, res) {
             signatories: body.signatories
         });
 
-        // 🔧 PARTE MODIFICADA COM MELHOR TRATAMENTO DE ERRO
         if (result.success) {
-            console.log("✅ Fluxo criado com sucesso! Salvando no banco...");
-            console.log("🔍 Verificando FluxoAssinaturaService:", typeof FluxoAssinaturaService);
-
+            console.log("✅ Fluxo criado no Cailun! Salvando no banco...");
+            
             let salvamentoInfo = { success: false, error: "Service não disponível" };
 
             try {
-                // 🔍 Verificar se o service e o método existem
-                if (FluxoAssinaturaService && typeof FluxoAssinaturaService.salvarFluxoAssinatura === 'function') {
-                    console.log("🎯 Chamando FluxoAssinaturaService.salvarFluxoAssinatura...");
+                // Usar a mesma instância do cailunService
+                salvamentoInfo = await cailunService.salvarFluxoAssinatura(result.data);
 
-                    // 🔍 DEBUG: Mostrar dados recebidos do Cailun
-                    if (FluxoAssinaturaService.debugCailunData) {
-                        await FluxoAssinaturaService.debugCailunData(result.data);
-                    }
-
-                    salvamentoInfo = await FluxoAssinaturaService.salvarFluxoAssinatura({
-                        ...result.data,
-                        signatureLimitDate: body.signatureLimitDate // 👈 força salvar a data no banco
-                    });
-
-                    if (salvamentoInfo.success) {
-                        console.log("✅ Dados salvos no banco com sucesso!");
-                        console.log("📄 UUID salvo:", result.data.uuid);
-                    } else {
-                        console.error("⚠️ Fluxo criado mas houve erro ao salvar no banco:", salvamentoInfo.error);
-                    }
+                if (salvamentoInfo.success) {
+                    console.log("✅ Dados salvos no banco com sucesso!");
+                    console.log("📄 UUID:", result.data.uuid);
+                    console.log("📅 Data salva:", salvamentoInfo.data?.signatureLimitDate);
                 } else {
-                    console.error("❌ FluxoAssinaturaService ou método salvarFluxoAssinatura não encontrado");
-                    console.error("🔍 Tipo do FluxoAssinaturaService:", typeof FluxoAssinaturaService);
-                    console.error("🔍 Métodos disponíveis:", FluxoAssinaturaService ? Object.getOwnPropertyNames(FluxoAssinaturaService) : 'Service não existe');
+                    console.error("⚠️ Fluxo criado mas houve erro ao salvar no banco:", salvamentoInfo.error);
                 }
             } catch (bancoError) {
                 console.error("⚠️ Erro ao tentar salvar no banco:", bancoError.message);
-                console.error("🔍 Stack trace:", bancoError.stack);
+                console.error("🔍 Stack:", bancoError.stack);
                 salvamentoInfo = { success: false, error: bancoError.message };
             }
 
-            // ✅ Resposta de sucesso (pode incluir info do banco)
+            // Resposta de sucesso
             res.status(200).json({
                 success: true,
-                message: "✅ Subscription flow iniciado com sucesso!",
+                message: "Subscription flow iniciado com sucesso!",
                 data: result.data,
-                // Opcional: adicionar info sobre salvamento no banco
                 database: {
                     saved: salvamentoInfo.success,
-                    error: salvamentoInfo.success ? null : salvamentoInfo.error
+                    error: salvamentoInfo.success ? null : salvamentoInfo.error,
+                    ...(salvamentoInfo.success && salvamentoInfo.data && {
+                        databaseRecord: {
+                            id: salvamentoInfo.data.id,
+                            uuid: salvamentoInfo.data.uuid,
+                            signatureLimitDate: salvamentoInfo.data.signatureLimitDate
+                        }
+                    })
                 }
             });
         } else {
-            // ✅ Caso de erro continua EXATAMENTE IGUAL
             res.status(result.status || 400).json({
                 success: false,
-                message: "❌ Falha ao iniciar subscription flow",
+                message: "Falha ao iniciar subscription flow",
                 error: result.error,
                 details: result.details
             });
         }
 
     } catch (error) {
-        // ✅ Catch continua EXATAMENTE IGUAL
         console.error("💥 Erro no controller:", error);
         res.status(500).json({
             success: false,
-            message: "💥 Erro interno no servidor",
+            message: "Erro interno no servidor",
             error: error.message
         });
     }
@@ -529,6 +515,112 @@ async function createSignatory(req, res) {
         });
     }
 }
+async function downloadDocumentoController(req, res) {
+    try {
+        const { uuid } = req.params;
+
+        // Validação básica
+        if (!uuid) {
+            return res.status(400).json({
+                success: false,
+                message: "UUID é obrigatório"
+            });
+        }
+
+        console.log("Requisição de download para UUID:", uuid);
+
+        // Chamar service
+        const result = await cailunService.downloadDocumento(uuid);
+
+        if (result.success) {
+            return res.status(200).json({
+                success: true,
+                message: result.message,
+                data: result.data
+            });
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: "Falha ao baixar documento",
+                error: result.error,
+                details: result.details
+            });
+        }
+
+    } catch (error) {
+        console.error("Erro no controller de download:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Erro interno no servidor",
+            error: error.message
+        });
+    }
+}
+
+async function downloadFileController(req, res) {
+  try {
+    const { fileId } = req.params;
+
+    if (!fileId || isNaN(parseInt(fileId))) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID do arquivo é obrigatório e deve ser válido'
+      });
+    }
+
+    console.log('📥 Requisição de download para arquivo:', fileId);
+
+    const result = await cailunService.getFileById(fileId);
+
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        message: 'Arquivo não encontrado',
+        error: result.error
+      });
+    }
+
+    const file = result.data;
+
+    // Verificar se o arquivo físico existe
+    if (!file.physical_file_exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Arquivo físico não encontrado no servidor',
+        file_path: file.file_path
+      });
+    }
+
+    console.log('✅ Iniciando download:', file.name);
+    
+    // Fazer download do arquivo
+    res.download(file.file_path, file.original_name, (err) => {
+      if (err) {
+        console.error('❌ Erro ao fazer download:', err);
+        if (!res.headersSent) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao fazer download do arquivo',
+            error: err.message
+          });
+        }
+      } else {
+        console.log('✅ Download concluído com sucesso:', file.original_name);
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erro no controller downloadFile:', error);
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno no servidor',
+        error: error.message
+      });
+    }
+  }
+}
+
 
 module.exports = {
     // Controllers de autenticação
@@ -543,5 +635,7 @@ module.exports = {
     //fluxo de assinatura
     startSubscriptionFlowController,
     createSignatory,
-    getFolderFilesController
+    getFolderFilesController,
+    downloadDocumentoController,
+    downloadFileController
 };

@@ -19,7 +19,9 @@ const {
   createSignatory,
   getFoldersController,
   getFolderByIdController,
-  getFolderFilesController
+  getFolderFilesController,
+  downloadDocumentoController,
+  downloadFileController
 } = require('../controllers/cailunController');
 
 router.post('/test-login', testLoginController);
@@ -33,6 +35,11 @@ router.get('/folders', getFoldersController);
 router.get('/folder/:id', getFolderByIdController);
 
 router.get('/folder/:folderId/files', getFolderFilesController);
+router.get('/files/:fileId/download', downloadFileController);
+
+
+// baixar docs
+router.get('/:uuid/download', downloadDocumentoController);
 
 
 
