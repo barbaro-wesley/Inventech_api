@@ -699,7 +699,13 @@ async function startSubscriptionFlow(data) {
 
     // 2. Outros campos
     if (data.folderId) form.append("folderId", String(data.folderId));
-    if (data.signatureLimitDate) form.append("signatureLimitDate", data.signatureLimitDate);
+    
+    // 🆕 CAMPO PRINCIPAL - signatureLimitDate
+    if (data.signatureLimitDate) {
+      console.log("📅 Adicionando signatureLimitDate:", data.signatureLimitDate);
+      form.append("signatureLimitDate", data.signatureLimitDate);
+    }
+    
     if (data.reminder !== undefined) form.append("reminder", String(data.reminder));
     if (data.reminderDays) form.append("reminderDays", String(data.reminderDays));
     if (data.notificationDescription) form.append("notificationDescription", data.notificationDescription);
@@ -729,8 +735,11 @@ async function startSubscriptionFlow(data) {
     }
 
     // 4. Debug melhorado
-    console.log("📤 Dados sendo enviados:");
+    console.log("📤 Dados sendo enviados para o Cailun:");
     console.log("- Arquivo:", data.file.originalname);
+    console.log("- Data limite:", data.signatureLimitDate); // 🆕 ADICIONADO
+    console.log("- FolderId:", data.folderId);
+    console.log("- Message:", data.message);
     data.signatories?.forEach((sig, i) => {
       console.log(`- Signatory ${i}:`, {
         name: sig.name,
@@ -740,7 +749,8 @@ async function startSubscriptionFlow(data) {
       });
     });
 
-    // 5. Requisição
+    // 5. Requisição para o Cailun
+    console.log("🌐 Enviando requisição para o Cailun...");
     const response = await axios.post(
       `${process.env.CAILUN_URL}/subscriptionFlow`,
       form,
@@ -753,8 +763,39 @@ async function startSubscriptionFlow(data) {
       }
     );
 
+    console.log("✅ Resposta recebida do Cailun:", {
+      status: response.status,
+      hasData: !!response.data?.data,
+      uuid: response.data?.data?.uuid
+    });
+
+    // 🔧 LIMPAR ARQUIVO APÓS SUCESSO
     fs.unlinkSync(data.file.path);
-    return { success: true, data: response.data.data };
+    
+    // 🆕 ENRIQUECER OS DADOS DE RETORNO COM OS DADOS ORIGINAIS
+    const enrichedData = {
+      ...response.data.data,
+      // Adicionar dados originais que podem não vir na resposta do Cailun
+      originalSignatureLimitDate: data.signatureLimitDate,
+      originalFolderId: data.folderId,
+      originalMessage: data.message,
+      originalSignatories: data.signatories,
+      // Campos úteis para o banco
+      fileName: data.file.originalname,
+      fileSize: data.file.size,
+      fileMimeType: data.file.mimetype
+    };
+
+    console.log("🔍 Dados enriquecidos para retorno:", {
+      uuid: enrichedData.uuid,
+      originalSignatureLimitDate: enrichedData.originalSignatureLimitDate,
+      fileName: enrichedData.fileName
+    });
+
+    return { 
+      success: true, 
+      data: enrichedData 
+    };
 
   } catch (error) {
     console.error("❌ ERRO DETALHADO:");
@@ -766,6 +807,7 @@ async function startSubscriptionFlow(data) {
     try {
       if (data.file?.path && fs.existsSync(data.file.path)) {
         fs.unlinkSync(data.file.path);
+        console.log("🗑️ Arquivo temporário removido após erro");
       }
     } catch (cleanupError) {
       console.error("❌ Erro ao limpar arquivo:", cleanupError.message);
@@ -779,7 +821,172 @@ async function startSubscriptionFlow(data) {
     };
   }
 }
+async function salvarFluxoAssinatura(cailunData) {
+    try {
+        console.log("🔍 === SALVANDO FLUXO NO BANCO ===");
+        console.log("📦 Dados recebidos do Cailun:");
+        console.log(JSON.stringify(cailunData, null, 2));
+        
+        // 🔧 VERIFICAR SE OS DADOS NECESSÁRIOS EXISTEM
+        if (!cailunData || !cailunData.uuid) {
+            throw new Error("UUID é obrigatório para salvar o fluxo");
+        }
 
+        // 🔍 EXTRAIR E PROCESSAR A DATA LIMITE
+        console.log("🔍 === PROCESSAMENTO DA DATA LIMITE ===");
+        let signatureLimitDate = null;
+        
+        // Tentar múltiplas fontes para a data limite
+        const possiveisFontes = [
+            cailunData.signatureLimitDate,
+            cailunData.originalSignatureLimitDate,
+            cailunData.signature_limit_date,
+            cailunData.limitDate,
+            cailunData.expirationDate
+        ];
+        
+        for (const fonte of possiveisFontes) {
+            if (fonte) {
+                console.log("📅 Tentando processar data:", fonte, "- Tipo:", typeof fonte);
+                
+                let dataTemp = null;
+                if (typeof fonte === 'string') {
+                    dataTemp = new Date(fonte);
+                } else if (fonte instanceof Date) {
+                    dataTemp = fonte;
+                }
+                
+                if (dataTemp && !isNaN(dataTemp.getTime())) {
+                    signatureLimitDate = dataTemp;
+                    console.log("✅ Data limite processada:", signatureLimitDate.toISOString());
+                    break;
+                } else {
+                    console.log("❌ Data inválida:", fonte);
+                }
+            }
+        }
+
+        if (!signatureLimitDate) {
+            console.log("⚠️ Nenhuma data limite válida encontrada");
+        }
+
+        // 🔧 PREPARAR DADOS PARA O BANCO
+        const fluxoData = {
+            // IDs obrigatórios - AJUSTAR CONFORME SUA LÓGICA
+            organizationAccountId: BigInt(cailunData.organizationAccountId || 1),
+            documentStatusTypeId: parseInt(cailunData.documentStatusTypeId || cailunData.status || 1),
+            documentTypesId: parseInt(cailunData.documentTypesId || 1),
+            envelopesId: BigInt(cailunData.envelopesId || cailunData.id || Date.now()),
+            filesId: BigInt(cailunData.filesId || cailunData.id || Date.now()),
+            versionId: BigInt(cailunData.versionId || 1),
+            
+            // Campos básicos
+            status: parseInt(cailunData.status || 1),
+            name: cailunData.name || cailunData.fileName || cailunData.originalMessage || "Documento",
+            label: cailunData.label || cailunData.fileName || "Documento",
+            uuid: cailunData.uuid,
+            
+            // 🆕 CAMPO PRINCIPAL - signatureLimitDate
+            signatureLimitDate: signatureLimitDate,
+            
+            // Campos opcionais
+            resolution: cailunData.resolution ? parseInt(cailunData.resolution) : null,
+            pages: cailunData.pages ? parseInt(cailunData.pages) : null,
+            size: cailunData.size || cailunData.fileSize ? parseInt(cailunData.size || cailunData.fileSize) : null,
+            language: cailunData.language || null,
+            timezone: cailunData.timezone ? parseInt(cailunData.timezone) : null,
+            
+            // Timestamps
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            dtTimezoneZero: new Date(),
+            
+            // Links/metadata
+            links: cailunData.links || cailunData.metadata || cailunData.originalSignatories ? 
+                   JSON.stringify({
+                       links: cailunData.links,
+                       metadata: cailunData.metadata,
+                       originalData: {
+                           signatories: cailunData.originalSignatories,
+                           message: cailunData.originalMessage,
+                           fileName: cailunData.fileName,
+                           fileSize: cailunData.fileSize,
+                           fileMimeType: cailunData.fileMimeType
+                       }
+                   }) : null
+        };
+
+        console.log("💾 Dados FINAIS para salvar no banco:");
+        console.log({
+            uuid: fluxoData.uuid,
+            signatureLimitDate: fluxoData.signatureLimitDate,
+            signatureLimitDateISO: fluxoData.signatureLimitDate?.toISOString(),
+            name: fluxoData.name,
+            status: fluxoData.status,
+            hasLinks: !!fluxoData.links
+        });
+
+        // 🔧 VERIFICAR SE JÁ EXISTE
+        const existente = await prisma.fluxoAssinatura.findUnique({
+            where: { uuid: cailunData.uuid }
+        });
+
+        let resultado;
+
+        if (existente) {
+            console.log("⚠️ Fluxo já existe, atualizando...");
+            
+            resultado = await prisma.fluxoAssinatura.update({
+                where: { uuid: cailunData.uuid },
+                data: {
+                    signatureLimitDate: fluxoData.signatureLimitDate,
+                    status: fluxoData.status,
+                    name: fluxoData.name,
+                    label: fluxoData.label,
+                    updatedAt: new Date(),
+                    links: fluxoData.links
+                }
+            });
+
+            console.log("✅ Fluxo ATUALIZADO! ID:", resultado.id);
+        } else {
+            console.log("💾 Criando novo fluxo...");
+            
+            resultado = await prisma.fluxoAssinatura.create({
+                data: fluxoData
+            });
+
+            console.log("✅ Fluxo CRIADO! ID:", resultado.id);
+        }
+
+        console.log("📅 Data limite final salva:", resultado.signatureLimitDate);
+        console.log("📅 Data limite ISO:", resultado.signatureLimitDate?.toISOString());
+
+        return {
+            success: true,
+            data: resultado,
+            message: existente ? "Fluxo atualizado com sucesso" : "Fluxo criado com sucesso"
+        };
+
+    } catch (error) {
+        console.error("❌ === ERRO AO SALVAR NO BANCO ===");
+        console.error("💥 Erro:", error.message);
+        console.error("🔍 Stack:", error.stack);
+        
+        if (error.code) {
+            console.error("🔍 Código do erro:", error.code);
+        }
+        if (error.meta) {
+            console.error("🔍 Meta:", error.meta);
+        }
+        
+        return {
+            success: false,
+            error: error.message,
+            message: "Erro ao salvar no banco de dados"
+        };
+    }
+}
 // 🔧 FUNÇÃO AUXILIAR PARA VALIDAR DADOS ANTES DO ENVIO
 function validateSignatoryData(signatory, index) {
   const errors = [];
@@ -867,5 +1074,6 @@ module.exports = {
   createSignatory,
   validateSignatoryData,
   getFolderFiles,
-  checkFolderExists
+  checkFolderExists,
+  salvarFluxoAssinatura
 };

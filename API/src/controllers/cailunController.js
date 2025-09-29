@@ -216,7 +216,7 @@ async function getFoldersController(req, res) {
 
         // Validar e converter parentId
         let parsedParentId = null;
-        
+
         if (parentId !== undefined && parentId !== null && parentId !== '') {
             if (isNaN(parseInt(parentId))) {
                 return res.status(400).json({
@@ -363,7 +363,8 @@ async function startSubscriptionFlowController(req, res) {
 
         console.log("📥 Dados recebidos:", {
             file: req.file ? req.file.originalname : 'Nenhum arquivo',
-            signatories: body.signatories
+            signatories: body.signatories,
+            signatureLimitDate: body.signatureLimitDate // 🆕 ADICIONADO LOG
         });
 
         // ✅ Todo o código de processamento do signatories continua IGUAL
@@ -408,10 +409,39 @@ async function startSubscriptionFlowController(req, res) {
             });
         }
 
-        // ✅ Chamada do service continua IGUAL
+        // 🆕 VALIDAÇÃO OPCIONAL DA DATA LIMITE
+        if (body.signatureLimitDate) {
+            const dataLimite = new Date(body.signatureLimitDate);
+            const agora = new Date();
+
+            if (isNaN(dataLimite.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: "❌ Data limite de assinatura inválida"
+                });
+            }
+
+            if (dataLimite <= agora) {
+                return res.status(400).json({
+                    success: false,
+                    message: "❌ Data limite deve ser futura"
+                });
+            }
+
+            console.log("✅ Data limite validada:", body.signatureLimitDate);
+        }
+
+        // 🔧 CHAMADA DO SERVICE AGORA INCLUI TODOS OS CAMPOS
         const result = await cailunService.startSubscriptionFlow({
             file: req.file,
-            ...body
+            folderId: body.folderId,
+            signatureLimitDate: body.signatureLimitDate, // 🆕 ADICIONADO
+            reminder: body.reminder,
+            reminderDays: body.reminderDays,
+            notificationDescription: body.notificationDescription,
+            notificationDate: body.notificationDate,
+            message: body.message,
+            signatories: body.signatories
         });
 
         // 🔧 PARTE MODIFICADA COM MELHOR TRATAMENTO DE ERRO
@@ -425,7 +455,16 @@ async function startSubscriptionFlowController(req, res) {
                 // 🔍 Verificar se o service e o método existem
                 if (FluxoAssinaturaService && typeof FluxoAssinaturaService.salvarFluxoAssinatura === 'function') {
                     console.log("🎯 Chamando FluxoAssinaturaService.salvarFluxoAssinatura...");
-                    salvamentoInfo = await FluxoAssinaturaService.salvarFluxoAssinatura(result.data);
+
+                    // 🔍 DEBUG: Mostrar dados recebidos do Cailun
+                    if (FluxoAssinaturaService.debugCailunData) {
+                        await FluxoAssinaturaService.debugCailunData(result.data);
+                    }
+
+                    salvamentoInfo = await FluxoAssinaturaService.salvarFluxoAssinatura({
+                        ...result.data,
+                        signatureLimitDate: body.signatureLimitDate // 👈 força salvar a data no banco
+                    });
 
                     if (salvamentoInfo.success) {
                         console.log("✅ Dados salvos no banco com sucesso!");

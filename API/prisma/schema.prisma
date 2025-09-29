@@ -441,6 +441,7 @@ model FluxoAssinatura {
   resolution              Int?     // 👈 ADICIONAR ? para opcional
   pages                   Int?     // 👈 ADICIONAR ? para opcional
   size                    Int?     // 👈 ADICIONAR ? para opcional
+  signatureLimitDate      DateTime? @map("signature_limit_date")
   createdAt               DateTime @map("created_at")
   updatedAt               DateTime @map("updated_at")
   language                String?  @db.VarChar(10) // 👈 ADICIONAR ? para opcional
