@@ -620,8 +620,15 @@ async function downloadFileController(req, res) {
     }
   }
 }
-
-
+async function findAll(req, res) {
+  try {
+    const fluxos = await cailunService.findAll();
+    return res.status(200).json(fluxos);
+  } catch (error) {
+    console.error("Erro ao buscar fluxos:", error);
+    return res.status(500).json({ error: "Erro ao buscar fluxos de assinatura" });
+  }
+}
 module.exports = {
     // Controllers de autenticação
     testLoginController,
@@ -637,5 +644,7 @@ module.exports = {
     createSignatory,
     getFolderFilesController,
     downloadDocumentoController,
-    downloadFileController
+    downloadFileController,
+    findAll
+    
 };

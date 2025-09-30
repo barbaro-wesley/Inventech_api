@@ -1234,7 +1234,13 @@ async function getFileById(fileId) {
     };
   }
 }
-
+async function findAll() {
+  return prisma.fluxoAssinatura.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+}
 
 module.exports = {
   loginCailun,
@@ -1250,5 +1256,6 @@ module.exports = {
   checkFolderExists,
   salvarFluxoAssinatura,
   downloadDocumento,
-  getFileById
+  getFileById,
+  findAll
 };

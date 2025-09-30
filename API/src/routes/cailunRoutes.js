@@ -21,7 +21,8 @@ const {
   getFolderByIdController,
   getFolderFilesController,
   downloadDocumentoController,
-  downloadFileController
+  downloadFileController,
+  findAll
 } = require('../controllers/cailunController');
 
 router.post('/test-login', testLoginController);
@@ -36,7 +37,7 @@ router.get('/folder/:id', getFolderByIdController);
 
 router.get('/folder/:folderId/files', getFolderFilesController);
 router.get('/files/:fileId/download', downloadFileController);
-
+router.get('/fluxos', findAll);
 
 // baixar docs
 router.get('/:uuid/download', downloadDocumentoController);
