@@ -826,6 +826,20 @@ async function salvarFluxoAssinatura(dadosAPI) {
       }
     }
 
+    // Preparar o objeto links com TODOS os dados necessários
+    const linksCompleto = {
+      // Links de assinatura (principal)
+      signatureLinks: dadosAPI.links || [],
+      
+      // Dados originais que você quer preservar
+      originalData: {
+        signatories: dadosAPI.originalSignatories || [],
+        message: dadosAPI.originalMessage || null,
+        fileName: dadosAPI.fileName || null,
+        folderId: dadosAPI.originalFolderId || null
+      }
+    };
+
     const dadosMapeados = {
       organizationAccountId: BigInt(dadosAPI.organization_account_id || 1),
       documentStatusTypeId: dadosAPI.document_status_type_id || 1,
@@ -846,16 +860,169 @@ async function salvarFluxoAssinatura(dadosAPI) {
       timezone: dadosAPI.timezone || null,
       versionId: BigInt(dadosAPI.version_id || 1),
       dtTimezoneZero: dadosAPI.dt_timezone_zero ? new Date(dadosAPI.dt_timezone_zero) : new Date(),
-      links: JSON.stringify({
-        originalData: {
-          signatories: dadosAPI.originalSignatories,
-          message: dadosAPI.originalMessage,
-          fileName: dadosAPI.fileName
-        }
-      })
+      // Salvar TUDO no campo links (já que metadata não existe no schema)
+      links: linksCompleto
     };
 
     console.log("Salvando com signatureLimitDate:", signatureLimitDate?.toISOString() || null);
+    console.log("Salvando links completo:", JSON.stringify(linksCompleto, null, 2));
+
+    const fluxoSalvo = await prisma.fluxoAssinatura.upsert({
+      where: { uuid: dadosAPI.uuid },
+      update: {
+        signatureLimitDate: dadosMapeados.signatureLimitDate,
+        status: dadosMapeados.status,
+        name: dadosMapeados.name,
+        label: dadosMapeados.label,
+        updatedAt: new Date(),
+        links: dadosMapeados.links // Prisma converte automaticamente para JSON
+      },
+      create: dadosMapeados
+    });
+
+    console.log("Fluxo salvo! Data:", fluxoSalvo.signatureLimitDate?.toISOString() || null);
+
+    return {
+      success: true,
+      data: {
+        ...fluxoSalvo,
+        id: fluxoSalvo.id.toString(),
+        // O Prisma já retorna o campo links como objeto, não precisa fazer parse
+        links: fluxoSalvo.links
+      },
+      message: "Fluxo salvo com sucesso"
+    };
+
+  } catch (error) {
+    console.error("Erro ao salvar:", error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Função auxiliar para recuperar apenas os links de assinatura
+function getSignatureLinks(fluxoAssinatura) {
+  try {
+    if (!fluxoAssinatura.links) return [];
+    
+    // Se links é um objeto com signatureLinks
+    if (fluxoAssinatura.links.signatureLinks) {
+      return fluxoAssinatura.links.signatureLinks;
+    }
+    
+    // Se links é um array direto (compatibilidade)
+    if (Array.isArray(fluxoAssinatura.links)) {
+      return fluxoAssinatura.links;
+    }
+    
+    return [];
+  } catch (error) {
+    console.error("Erro ao processar links:", error);
+    return [];
+  }
+}
+
+// Função para recuperar todos os dados originais
+function getOriginalData(fluxoAssinatura) {
+  try {
+    if (!fluxoAssinatura.links) return null;
+    
+    if (fluxoAssinatura.links.originalData) {
+      return fluxoAssinatura.links.originalData;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Erro ao processar dados originais:", error);
+    return null;
+  }
+}
+
+// Exemplo de uso para recuperar os dados
+async function buscarFluxoComLinks(uuid) {
+  try {
+    const fluxo = await prisma.fluxoAssinatura.findUnique({
+      where: { uuid }
+    });
+
+    if (!fluxo) {
+      return { success: false, error: "Fluxo não encontrado" };
+    }
+
+    // O Prisma já retorna o campo Json como objeto
+    const signatureLinks = getSignatureLinks(fluxo);
+    const originalData = getOriginalData(fluxo);
+
+    return {
+      success: true,
+      data: {
+        ...fluxo,
+        id: fluxo.id.toString(),
+        signatureLinks: signatureLinks,
+        originalData: originalData,
+        // Manter compatibilidade se necessário
+        links: fluxo.links
+      }
+    };
+  } catch (error) {
+    console.error("Erro ao buscar fluxo:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ALTERNATIVA: Se você quiser salvar APENAS os links de assinatura (sem dados originais)
+async function salvarFluxoAssinaturaSimples(dadosAPI) {
+  try {
+    console.log("Salvando fluxo no banco (versão simples)...");
+    
+    if (!dadosAPI || !dadosAPI.uuid) {
+      throw new Error("UUID é obrigatório");
+    }
+
+    // Processar signatureLimitDate
+    let signatureLimitDate = null;
+    const fontes = [
+      dadosAPI.signatureLimitDate,
+      dadosAPI.originalSignatureLimitDate,
+      dadosAPI.signatureLimitDateISO,
+      dadosAPI.signature_limit_date
+    ];
+    
+    for (const fonte of fontes) {
+      if (fonte) {
+        let dataTemp = fonte instanceof Date ? fonte : new Date(fonte);
+        if (!isNaN(dataTemp.getTime())) {
+          signatureLimitDate = dataTemp;
+          break;
+        }
+      }
+    }
+
+    const dadosMapeados = {
+      organizationAccountId: BigInt(dadosAPI.organization_account_id || 1),
+      documentStatusTypeId: dadosAPI.document_status_type_id || 1,
+      documentTypesId: dadosAPI.document_types_id || 1,
+      envelopesId: BigInt(dadosAPI.envelopes_id || dadosAPI.id || Date.now()),
+      filesId: BigInt(dadosAPI.files_id || dadosAPI.id || Date.now()),
+      status: dadosAPI.status || 1,
+      name: dadosAPI.name || dadosAPI.fileName || "Documento",
+      label: dadosAPI.label || dadosAPI.fileName || "Documento",
+      uuid: dadosAPI.uuid,
+      signatureLimitDate: signatureLimitDate,
+      resolution: dadosAPI.resolution || null,
+      pages: dadosAPI.pages || null,
+      size: dadosAPI.size || dadosAPI.fileSize || null,
+      createdAt: dadosAPI.created_at ? new Date(dadosAPI.created_at) : new Date(),
+      updatedAt: dadosAPI.updated_at ? new Date(dadosAPI.updated_at) : new Date(),
+      language: dadosAPI.language || null,
+      timezone: dadosAPI.timezone || null,
+      versionId: BigInt(dadosAPI.version_id || 1),
+      dtTimezoneZero: dadosAPI.dt_timezone_zero ? new Date(dadosAPI.dt_timezone_zero) : new Date(),
+      // Salvar APENAS os links de assinatura como array
+      links: dadosAPI.links || []
+    };
 
     const fluxoSalvo = await prisma.fluxoAssinatura.upsert({
       where: { uuid: dadosAPI.uuid },
@@ -869,8 +1036,6 @@ async function salvarFluxoAssinatura(dadosAPI) {
       },
       create: dadosMapeados
     });
-
-    console.log("Fluxo salvo! Data:", fluxoSalvo.signatureLimitDate?.toISOString() || null);
 
     return {
       success: true,
@@ -887,6 +1052,22 @@ async function salvarFluxoAssinatura(dadosAPI) {
       success: false,
       error: error.message
     };
+  }
+}
+
+// Função auxiliar para recuperar e processar os links
+function getSignatureLinks(fluxoAssinatura) {
+  try {
+    if (!fluxoAssinatura.links) return [];
+    
+    const links = typeof fluxoAssinatura.links === 'string' 
+      ? JSON.parse(fluxoAssinatura.links) 
+      : fluxoAssinatura.links;
+    
+    return links;
+  } catch (error) {
+    console.error("Erro ao processar links:", error);
+    return [];
   }
 }
 
@@ -1036,8 +1217,8 @@ async function downloadDocumento(uuid) {
     console.log("📍 Caminho local:", folder.local_path);
 
     // 4. Verificar se a pasta local existe, se não, criar
-    if (!fs.existsSync(folder.local_path)) {
-      fs.mkdirSync(folder.local_path, { recursive: true });
+    if (!fsSync.existsSync(folder.local_path)) {
+      fsSync.mkdirSync(folder.local_path, { recursive: true });
       console.log("✅ Diretório criado:", folder.local_path);
     }
 
@@ -1068,7 +1249,7 @@ async function downloadDocumento(uuid) {
     console.log("💾 Salvando arquivo como:", fileName);
 
     // 8. Salvar arquivo localmente
-    const writer = fs.createWriteStream(filePath);
+    const writer = fsSync.createWriteStream(filePath);
     response.data.pipe(writer);
 
     await new Promise((resolve, reject) => {
@@ -1079,7 +1260,7 @@ async function downloadDocumento(uuid) {
     console.log("✅ Arquivo salvo em:", filePath);
 
     // 9. Obter tamanho do arquivo
-    const stats = fs.statSync(filePath);
+    const stats = fsSync.statSync(filePath);
     const fileSize = stats.size;
     console.log("📊 Tamanho do arquivo:", (fileSize / 1024).toFixed(2), "KB");
 
