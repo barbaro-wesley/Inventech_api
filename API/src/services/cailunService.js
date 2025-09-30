@@ -3,7 +3,9 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const axios = require("axios");
 const Redis = require("ioredis");
-const fs = require('fs').promises;
+const fsSync = require('fs');  // Para métodos síncronos
+const fs = require('fs').promises;  // Para métodos assíncronos
+
 const redis = new Redis(process.env.REDIS_URL);
 const path = require('path');
 const CAILUN_BASE_URL = process.env.CAILUN_URL;
@@ -1212,7 +1214,7 @@ async function getFileById(fileId) {
     }
 
     // Verificar se o arquivo físico existe
-    const fileExists = fs.existsSync(file.file_path);
+    const fileExists = fsSync.existsSync(file.file_path);
 
     console.log('✅ Arquivo encontrado:', file.name);
     console.log('📁 Arquivo físico existe:', fileExists);
