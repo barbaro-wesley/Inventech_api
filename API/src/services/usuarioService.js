@@ -474,7 +474,91 @@ const listarTecnicosDisponiveis = async () => {
   });
   return tecnicosDisponiveis;
 };
+const sincronizarModulos = async (usuarioId, moduloIds) => {
+  const id = parseInt(usuarioId);
+  
+  if (isNaN(id)) {
+    throw new Error('ID do usuário deve ser um número válido');
+  }
 
+  return await prisma.$transaction(async (tx) => {
+    // Verificar se o usuário existe
+    const usuario = await tx.usuario.findUnique({
+      where: { id }
+    });
+
+    if (!usuario) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    // Validar se os módulos existem (se fornecidos)
+    if (moduloIds && Array.isArray(moduloIds) && moduloIds.length > 0) {
+      const modulosExistentes = await tx.modulo.findMany({
+        where: {
+          id: { in: moduloIds.map(m => parseInt(m)) }
+        }
+      });
+
+      if (modulosExistentes.length !== moduloIds.length) {
+        throw new Error('Um ou mais módulos não foram encontrados');
+      }
+    }
+
+    // Remover todos os módulos atuais
+    await tx.usuarioModulo.deleteMany({
+      where: { usuarioId: id }
+    });
+
+    // Adicionar os novos módulos (se houver)
+    if (moduloIds && Array.isArray(moduloIds) && moduloIds.length > 0) {
+      const modulosParaCriar = moduloIds
+        .filter(moduloId => moduloId !== null && moduloId !== undefined)
+        .map(moduloId => ({
+          usuarioId: id,
+          moduloId: parseInt(moduloId),
+          ativo: true
+        }));
+
+      if (modulosParaCriar.length > 0) {
+        await tx.usuarioModulo.createMany({
+          data: modulosParaCriar
+        });
+      }
+    }
+
+    // Buscar o usuário atualizado com os novos módulos
+    const usuarioAtualizado = await tx.usuario.findUnique({
+      where: { id },
+      include: {
+        modulos: { 
+          include: { 
+            modulo: true 
+          } 
+        },
+        tecnico: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            telefone: true,
+            matricula: true,
+            ativo: true,
+            grupo: {
+              select: {
+                id: true,
+                nome: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Remover senha do retorno
+    const { senha: _, ...usuarioSemSenha } = usuarioAtualizado;
+    return usuarioSemSenha;
+  });
+};
 module.exports = {
   criarUsuario,
   login,
@@ -485,6 +569,7 @@ module.exports = {
   atualizarSenha,      // Nova função
   redefinirSenha,      // Nova função
   atualizarUsuario,
-  vincularModulo
+  vincularModulo,
+  sincronizarModulos
 
 };

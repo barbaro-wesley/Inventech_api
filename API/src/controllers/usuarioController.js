@@ -262,6 +262,38 @@ const atualizarUsuario = async (req, res) => {
     });
   }
 };
+const sincronizarModulos = async (req, res) => {
+  try {
+    const { usuarioId, moduloIds } = req.body;
+
+    // Validações
+    if (!usuarioId) {
+      return res.status(400).json({
+        error: 'ID do usuário é obrigatório'
+      });
+    }
+
+    if (!Array.isArray(moduloIds)) {
+      return res.status(400).json({
+        error: 'moduloIds deve ser um array'
+      });
+    }
+
+    const usuario = await usuarioService.sincronizarModulos(usuarioId, moduloIds);
+    
+    res.json({
+      success: true,
+      message: 'Módulos sincronizados com sucesso',
+      data: usuario
+    });
+  } catch (error) {
+    console.error('Erro ao sincronizar módulos:', error);
+    res.status(400).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+};
 
 
 
@@ -274,7 +306,8 @@ module.exports = {
   listarTecnicosDisponiveis,
   vincularModulo,
   removerModulo,
-  atualizarSenha,      // Nova função
-  redefinirSenha,      // Nova função
-  atualizarUsuario
+  atualizarSenha,     
+  redefinirSenha,   
+  atualizarUsuario,
+  sincronizarModulos
 };

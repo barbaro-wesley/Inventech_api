@@ -761,6 +761,7 @@ async listarPorTecnico(tecnicoId, filtros = {}) {
       criadoEm: true,
       iniciadaEm: true,
       finalizadoEm: true,
+      resolucao: true,
       canceladaEm: true,
       dataAgendada: true,
       tipoEquipamento: true,

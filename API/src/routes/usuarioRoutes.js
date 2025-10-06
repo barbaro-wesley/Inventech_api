@@ -35,6 +35,11 @@ router.put('/:usuarioId/redefinir-senha',
 router.post(
   "/vincular-modulo", usuarioController.vincularModulo
 );
-
+router.post(
+  "/sincronizar-modulos",
+  autenticarUsuario,
+  permitirSomente('admin'),
+  usuarioController.sincronizarModulos
+);
 
 module.exports = router;
