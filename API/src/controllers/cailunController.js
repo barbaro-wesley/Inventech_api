@@ -623,7 +623,18 @@ async function downloadFileController(req, res) {
 async function findAll(req, res) {
   try {
     const fluxos = await cailunService.findAll();
-    return res.status(200).json(fluxos);
+    
+    // Converter BigInt para String
+    const fluxosSerializados = fluxos.map(fluxo => ({
+      ...fluxo,
+      id: fluxo.id.toString(),
+      organizationAccountId: fluxo.organizationAccountId.toString(),
+      envelopesId: fluxo.envelopesId.toString(),
+      filesId: fluxo.filesId.toString(),
+      versionId: fluxo.versionId.toString(),
+    }));
+    
+    return res.status(200).json(fluxosSerializados);
   } catch (error) {
     console.error("Erro ao buscar fluxos:", error);
     return res.status(500).json({ error: "Erro ao buscar fluxos de assinatura" });
