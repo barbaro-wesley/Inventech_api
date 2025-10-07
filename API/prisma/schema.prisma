@@ -69,13 +69,12 @@ model GrupoManutencao {
   nome      String
   descricao String?
   tecnicos  Tecnico[]
-  tipos     TipoEquipamento[]
+  tipos     TipoEquipamento[] @relation("GrupoTipos")
 }
 
 model TipoEquipamento {
   id                     Int                      @id @default(autoincrement())
   nome                   String                   @unique
-  grupoId                Int?
   taxaDepreciacao        Float?
   HcrAirConditioning     HcrAirConditioning[]
   HcrComputer            HcrComputer[]
@@ -83,7 +82,7 @@ model TipoEquipamento {
   HcrMobilia             HcrMobilia[]
   HcrPrinter             HcrPrinter[]
   OrdemServico           OrdemServico[]
-  grupo                  GrupoManutencao?         @relation(fields: [grupoId], references: [id])
+  grupos                 GrupoManutencao[]        @relation("GrupoTipos")
 }
 
 model Tecnico {

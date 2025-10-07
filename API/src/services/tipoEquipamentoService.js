@@ -8,7 +8,7 @@ const normalizarTaxa = (valor) => {
   return num > 1 ? num / 100 : num; // se > 1 assume que veio em %, divide por 100
 };
 
-const criar = async ({ nome, taxaDepreciacao, grupoId }) => {
+const criar = async ({ nome, taxaDepreciacao, gruposIds }) => {
   const existente = await prisma.tipoEquipamento.findUnique({ where: { nome } });
   if (existente) throw new Error('Tipo já existe');
 
@@ -16,26 +16,32 @@ const criar = async ({ nome, taxaDepreciacao, grupoId }) => {
     data: {
       nome,
       taxaDepreciacao: normalizarTaxa(taxaDepreciacao),
-      grupoId: grupoId ? parseInt(grupoId, 10) : null,
+      grupos: {
+        connect: gruposIds?.map((id) => ({ id: parseInt(id, 10) })) || [],
+      },
     },
+    include: { grupos: true },
   });
 };
 
 const listarTodos = async () => {
   return prisma.tipoEquipamento.findMany({
     orderBy: { nome: 'asc' },
-    include: { grupo: true },
+    include: { grupos: true },
   });
 };
 
-const atualizar = async (id, { nome, taxaDepreciacao, grupoId }) => {
+const atualizar = async (id, { nome, taxaDepreciacao, gruposIds }) => {
   return prisma.tipoEquipamento.update({
     where: { id },
     data: {
       nome,
       taxaDepreciacao: normalizarTaxa(taxaDepreciacao),
-      grupoId: grupoId ? parseInt(grupoId, 10) : null,
+      grupos: {
+        set: gruposIds?.map((id) => ({ id: parseInt(id, 10) })) || [],
+      },
     },
+    include: { grupos: true },
   });
 };
 
@@ -101,7 +107,7 @@ const obterContagemDetalhada = async () => {
         id: true,
         nome: true,
         taxaDepreciacao: true,
-        grupo: {
+        grupos: {
           select: {
             id: true,
             nome: true,
@@ -123,10 +129,7 @@ const obterContagemDetalhada = async () => {
       tipoNome: tipo.nome,
       quantidade: tipo._count.HcrEquipamentosMedicos,
       taxaDepreciacao: tipo.taxaDepreciacao,
-      grupo: tipo.grupo ? {
-        id: tipo.grupo.id,
-        nome: tipo.grupo.nome,
-      } : null,
+      grupos: tipo.grupos || [], // Agora retorna array de grupos
     }));
 
   } catch (error) {
@@ -172,7 +175,7 @@ const obterContagemPorTipoEspecifico = async (tipoId) => {
         id: true,
         nome: true,
         taxaDepreciacao: true,
-        grupo: {
+        grupos: {
           select: {
             id: true,
             nome: true,
@@ -195,7 +198,7 @@ const obterContagemPorTipoEspecifico = async (tipoId) => {
       tipoNome: tipoInfo.nome,
       quantidade: tipoInfo._count.HcrEquipamentosMedicos,
       taxaDepreciacao: tipoInfo.taxaDepreciacao,
-      grupo: tipoInfo.grupo,
+      grupos: tipoInfo.grupos || [], // Agora retorna array de grupos
     };
 
   } catch (error) {

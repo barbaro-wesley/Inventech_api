@@ -6,7 +6,7 @@ const criar = async ({ nome, descricao, tiposIds }) => {
       nome,
       descricao,
       tipos: {
-        connect: tiposIds?.map((id) => ({ id })),
+        connect: tiposIds?.map((id) => ({ id })) || [],
       },
     },
     include: { tipos: true },
@@ -27,8 +27,7 @@ const atualizar = async (id, { nome, descricao, tiposIds }) => {
       nome,
       descricao,
       tipos: {
-        set: [], // limpa as relações
-        connect: tiposIds?.map((id) => ({ id })),
+        set: tiposIds?.map((id) => ({ id })) || [],
       },
     },
     include: { tipos: true },
