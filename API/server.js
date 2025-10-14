@@ -2,14 +2,12 @@ const express = require('express');
 require('dotenv').config();
 const helmet = require('helmet');
 const app = express();
-
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500 
 });
-
 app.use(cookieParser()); 
 app.use(helmet());
 app.use(express.json());

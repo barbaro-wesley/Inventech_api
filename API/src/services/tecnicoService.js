@@ -97,7 +97,7 @@ const listarTiposEquipamentoPorTecnico = async (tecnicoId) => {
         include: {
           tipos: {
             include: {
-              grupo: true, // Inclui os detalhes do grupo para cada tipo
+              grupos: true, // ✅ plural correto
             },
           },
         },
@@ -116,16 +116,17 @@ const listarTiposEquipamentoPorTecnico = async (tecnicoId) => {
       tipos: [],
     };
   }
+
+  // ✅ Corrigido: agora itera corretamente sobre os grupos
   const formattedTipos = tiposEquipamento.map((tipo) => ({
     id: tipo.id,
     nome: tipo.nome,
-    grupoId: tipo.grupoId,
     taxaDepreciacao: tipo.taxaDepreciacao,
-    grupo: {
-      id: tipo.grupo.id,
-      nome: tipo.grupo.nome,
-      descricao: tipo.grupo.descricao,
-    },
+    grupos: tipo.grupos.map((g) => ({
+      id: g.id,
+      nome: g.nome,
+      descricao: g.descricao,
+    })),
   }));
 
   return {

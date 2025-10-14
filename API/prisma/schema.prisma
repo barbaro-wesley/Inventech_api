@@ -10,7 +10,7 @@ datasource db {
 model Setor {
   id                     Int                      @id @default(autoincrement())
   nome                   String                   @unique
-  funcionarios           Funcionario[]            // Relacionamento com funcionários
+  funcionarios           Funcionario[]
   HcrAirConditioning     HcrAirConditioning[]
   HcrComputer            HcrComputer[]
   HcrEquipamentosMedicos HcrEquipamentosMedicos[]
@@ -314,13 +314,13 @@ model Funcionario {
   nome          String
   cpf           String                    @unique
   cargo         String?
-  setorId       Int?                      // Chave estrangeira para Setor
-  setor         Setor?                    @relation(fields: [setorId], references: [id], onDelete: SetNull)
   email         String                    @unique
   telefone      String?
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
+  setorId       Int?
   participacoes CapacitacaoParticipante[]
+  setor         Setor?                    @relation(fields: [setorId], references: [id])
 }
 
 model TipoDocumento {
@@ -377,6 +377,74 @@ model GestaoSoftware {
   equipamento      HcrEquipamentosMedicos @relation(fields: [equipamentoId], references: [id])
 }
 
+model FluxoAssinatura {
+  id                    BigInt    @id @default(autoincrement())
+  organizationAccountId BigInt
+  documentStatusTypeId  Int
+  documentTypesId       Int
+  envelopesId           BigInt
+  filesId               BigInt
+  status                Int
+  name                  String
+  label                 String
+  uuid                  String    @unique @db.Uuid
+  resolution            Int?
+  pages                 Int?
+  size                  Int?
+  createdAt             DateTime  @map("created_at")
+  updatedAt             DateTime  @map("updated_at")
+  language              String?   @db.VarChar(10)
+  timezone              Int?
+  versionId             BigInt
+  dtTimezoneZero        DateTime  @map("dt_timezone_zero")
+  links                 Json?
+  signatureLimitDate    DateTime? @map("signature_limit_date")
+
+  @@map("fluxosAssinaturas")
+}
+
+model Folder {
+  id                      Int      @id @default(autoincrement())
+  cailun_id               Int      @unique
+  organization_account_id Int?
+  name                    String
+  label                   String?
+  hash                    String?
+  downward                Int?
+  is_root                 Int      @default(0)
+  users_id                Int?
+  local_path              String?
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+  cailun_created_at       String?
+  cailun_updated_at       String?
+  cailun_deleted_at       String?
+  files                   File[]
+  parent_folder           Folder?  @relation("FolderHierarchy", fields: [downward], references: [cailun_id])
+  child_folders           Folder[] @relation("FolderHierarchy")
+
+  @@map("folders")
+}
+
+model File {
+  id                Int      @id @default(autoincrement())
+  cailun_id         Int?
+  name              String
+  original_name     String
+  file_path         String
+  file_size         Int
+  mime_type         String
+  folder_cailun_id  Int
+  hash              String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  cailun_created_at String?
+  cailun_updated_at String?
+  folder            Folder   @relation(fields: [folder_cailun_id], references: [cailun_id], onDelete: Cascade)
+
+  @@map("files")
+}
+
 enum PapelUsuario {
   admin
   cadastro
@@ -408,93 +476,18 @@ enum StatusChamado {
 }
 
 enum Recorrencia {
-  NENHUMA       // para corretivas
-  DIARIA
+  NENHUMA
   SEMANAL
   QUINZENAL
   MENSAL
   TRIMESTRAL
   SEMESTRAL
   ANUAL
-  PERSONALIZADA // caso queira usar dias específicos (ex: 15 dias)
+  PERSONALIZADA
+  DIARIA
 }
 
 enum TipoMovimento {
   ENTRADA
   SAIDA
-}
-
-// schema.prisma - Modelo FluxoAssinatura CORRIGIDO
-
-model FluxoAssinatura {
-  id                      BigInt   @id @default(autoincrement()) // 👈 ADICIONAR @default(autoincrement())
-  organizationAccountId   BigInt
-  documentStatusTypeId    Int
-  documentTypesId         Int
-  envelopesId             BigInt
-  filesId                 BigInt
-  status                  Int
-  name                    String
-  label                   String
-  uuid                    String   @unique @db.Uuid // 👈 ADICIONAR @unique (MUITO IMPORTANTE!)
-  resolution              Int?     // 👈 ADICIONAR ? para opcional
-  pages                   Int?     // 👈 ADICIONAR ? para opcional
-  size                    Int?     // 👈 ADICIONAR ? para opcional
-  signatureLimitDate      DateTime? @map("signature_limit_date")
-  createdAt               DateTime @map("created_at")
-  updatedAt               DateTime @map("updated_at")
-  language                String?  @db.VarChar(10) // 👈 ADICIONAR ? para opcional
-  timezone                Int?     // 👈 ADICIONAR ? para opcional
-  versionId               BigInt
-  dtTimezoneZero          DateTime @map("dt_timezone_zero")
-  links                   Json?
-
-  @@map("fluxosAssinaturas")
-}
-
-model Folder {
-  id                      Int      @id @default(autoincrement())
-  cailun_id              Int      @unique // ID retornado pela API do Cailun
-  organization_account_id Int?
-  name                   String
-  label                  String?
-  hash                   String?
-  downward               Int?     // ID da pasta pai (NULL para pastas raiz)
-  is_root                Int      @default(0)
-  users_id               Int?
-  local_path             String?  // Caminho local do diretório criado
-  
-  // Timestamps
-  created_at             DateTime @default(now())
-  updated_at             DateTime @updatedAt
-  cailun_created_at      String?  // Data de criação no Cailun (formato string)
-  cailun_updated_at      String?  // Data de atualização no Cailun
-  cailun_deleted_at      String?  // Data de deleção no Cailun (se houver)
-  
-  // Relacionamentos para hierarquia de pastas
-  parent_folder          Folder?  @relation("FolderHierarchy", fields: [downward], references: [cailun_id])
-  child_folders          Folder[] @relation("FolderHierarchy")
-  files                  File[]
-  @@map("folders")
-}
-
-model File {
-  id                     Int      @id @default(autoincrement())
-  cailun_id              Int?     
-  name                   String   
-  original_name          String   
-  file_path              String   
-  file_size              Int      
-  mime_type              String   
-  folder_cailun_id       Int      // FK para folder.cailun_id
-  hash                   String?  
-  
-  created_at             DateTime @default(now())
-  updated_at             DateTime @updatedAt
-  cailun_created_at      String?  
-  cailun_updated_at      String?  
-  
-  folder                 Folder   @relation(fields: [folder_cailun_id], references: [cailun_id], onDelete: Cascade)
-  
-  @@map("files")
 }
