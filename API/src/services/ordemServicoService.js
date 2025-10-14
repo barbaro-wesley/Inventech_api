@@ -168,6 +168,49 @@ class OrdemServicoService {
       }))
     };
   }
+async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
+    const os = await prisma.ordemServico.findUnique({
+      where: { id: ordemServicoId },
+      include: { solicitante: true, tecnico: true },
+    });
+
+    if (!os) {
+      throw new Error("Ordem de Serviço não encontrada.");
+    }
+
+    const podeAdicionar =
+      os.solicitanteId === userId || os.tecnicoId === userId;
+
+    if (!podeAdicionar) {
+      throw new Error("Você não tem permissão para adicionar acompanhamentos a esta OS.");
+    }
+
+    const acompanhamento = await prisma.acompanhamentoOS.create({
+      data: {
+        ordemServicoId,
+        descricao,
+        criadoPorId: userId,
+      },
+      include: {
+        criadoPor: { select: { id: true, nome: true, email: true } },
+      },
+    });
+
+    return acompanhamento;
+  }
+
+/**
+ * Lista os acompanhamentos de uma OS.
+ */
+async listarAcompanhamentos(ordemServicoId) {
+  return await prisma.acompanhamentoOS.findMany({
+    where: { ordemServicoId },
+    include: {
+      criadoPor: { select: { id: true, nome: true, email: true } },
+    },
+    orderBy: { criadoEm: "asc" },
+  });
+}
 
   async criarOSUnica(data, enviarNotificacao = true) {
     // Normaliza a recorrência antes de salvar
@@ -531,72 +574,81 @@ class OrdemServicoService {
   }
 
   async listar() {
-    const [preventivas, corretivas] = await Promise.all([
-      prisma.ordemServico.findMany({
-        where: { preventiva: true },
-        include: {
-          tipoEquipamento: true,
-          tecnico: true,
-          Setor: true,
-          solicitante: { select: { nome: true } },
-          equipamento: {
-            select: {
-              nomeEquipamento: true,
-              marca: true,
-              modelo: true,
-              numeroSerie: true,
-            }
+  const [preventivas, corretivas] = await Promise.all([
+    prisma.ordemServico.findMany({
+      where: { preventiva: true },
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        Setor: true,
+        solicitante: { select: { nome: true } },
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            marca: true,
+            modelo: true,
+            numeroSerie: true,
           }
         },
-        // Ordenar por prioridade (URGENTE primeiro) e depois por data
-        orderBy: [
-          {
-            prioridade: 'desc', // Ordena: URGENTE -> ALTO -> MEDIO -> BAIXO
-          },
-          {
-            criadoEm: 'desc',
-          }
-        ]
-      }),
-      prisma.ordemServico.findMany({
-        where: { preventiva: false },
-        include: {
-          tipoEquipamento: true,
-          tecnico: true,
-          Setor: true,
-          solicitante: { select: { nome: true } },
-          equipamento: {
-            select: {
-              nomeEquipamento: true,
-              marca: true,
-              modelo: true,
-              numeroSerie: true,
+        acompanhamentos: {
+          select: {
+            id: true,
+            descricao: true,
+            criadoEm: true,
+            criadoPor: {  // ✅ MUDANÇA AQUI
+              select: { nome: true, email: true }
             }
+          },
+          orderBy: { criadoEm: 'asc' }
+        }
+      },
+      orderBy: [
+        { prioridade: 'desc' },
+        { criadoEm: 'desc' }
+      ]
+    }),
+
+    prisma.ordemServico.findMany({
+      where: { preventiva: false },
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        Setor: true,
+        solicitante: { select: { nome: true } },
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            marca: true,
+            modelo: true,
+            numeroSerie: true,
           }
         },
-        // Ordenar por prioridade (URGENTE primeiro) e depois por data
-        orderBy: [
-          {
-            prioridade: 'desc', // Ordena: URGENTE -> ALTO -> MEDIO -> BAIXO
+        acompanhamentos: {
+          select: {
+            id: true,
+            descricao: true,
+            criadoEm: true,
+            criadoPor: {  // ✅ E AQUI TAMBÉM
+              select: { nome: true, email: true }
+            }
           },
-          {
-            criadoEm: 'desc',
-          }
-        ]
-      }),
-    ]);
+          orderBy: { criadoEm: 'asc' }
+        }
+      },
+      orderBy: [
+        { prioridade: 'desc' },
+        { criadoEm: 'desc' }
+      ]
+    }),
+  ]);
 
-    const totalManutencao = [...preventivas, ...corretivas].reduce((acc, os) => {
-      const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
-      return acc + valor;
-    }, 0);
+  const totalManutencao = [...preventivas, ...corretivas].reduce((acc, os) => {
+    const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
+    return acc + valor;
+  }, 0);
 
-    return {
-      preventivas,
-      corretivas,
-      totalManutencao,
-    };
-  }
+  return { preventivas, corretivas, totalManutencao };
+}
 
   async buscarPorId(id) {
     return await prisma.ordemServico.findUnique({

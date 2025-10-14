@@ -47,6 +47,45 @@ const ordemServicoController = {
       res.status(400).json({ error: 'Erro ao listar ordens de serviço', detalhes: error.message });
     }
   },
+  async  criarAcompanhamentoController(req, res) {
+  try {
+    const { ordemServicoId, descricao } = req.body;
+    const userId = req.usuario.id; // vindo do middleware de autenticação
+
+    if (!descricao || !ordemServicoId) {
+      return res
+        .status(400)
+        .json({ message: "Descrição e ordemServicoId são obrigatórios." });
+    }
+
+    const acompanhamento = await ordemServicoService.criarAcompanhamento({
+      userId,
+      ordemServicoId: Number(ordemServicoId),
+      descricao,
+    });
+
+    return res.status(201).json(acompanhamento);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ message: error.message });
+  }
+},
+
+/**
+ * Controller: Lista acompanhamentos de uma OS
+ */
+async  listarAcompanhamentosController(req, res) {
+  try {
+    const { id } = req.params;
+    const acompanhamentos = await ordemServicoService.listarAcompanhamentos(Number(id));
+    res.json(acompanhamentos);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Erro ao listar acompanhamentos.", error: error.message });
+  }
+},
 
   async listarPorTecnico(req, res) {
   try {

@@ -57,5 +57,9 @@ router.put(
 );
 router.put("/:id/iniciar", autenticarUsuario,permitirSomente('admin', 'tecnico','cadastro'),ordemServicoController.iniciar);
 router.put("/:id/cancelar", autenticarUsuario,permitirSomente('admin', 'tecnico','cadastro'),ordemServicoController.cancelar);
+// ROTAS DE ADICIONAR E PEGAR ACOMPANHAMENTOS
+router.post("/acompanhamento", ordemServicoController.criarAcompanhamentoController);
+router.get("acompanhamento/:id", ordemServicoController.listarAcompanhamentosController);
+
 
 module.exports = router;

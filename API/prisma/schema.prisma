@@ -33,16 +33,17 @@ model Localizacao {
 }
 
 model Usuario {
-  id            Int             @id @default(autoincrement())
-  nome          String
-  email         String          @unique
-  senha         String
-  papel         PapelUsuario
-  tecnicoId     Int?
-  OrdemServico  OrdemServico[]
-  movimentacoes StockMovement[]
-  tecnico       Tecnico?        @relation(fields: [tecnicoId], references: [id])
-  modulos       UsuarioModulo[]
+  id               Int                @id @default(autoincrement())
+  nome             String
+  email            String             @unique
+  senha            String
+  papel            PapelUsuario
+  tecnicoId        Int?
+  OrdemServico     OrdemServico[]
+  movimentacoes    StockMovement[]
+  tecnico          Tecnico?           @relation(fields: [tecnicoId], references: [id])
+  modulos          UsuarioModulo[]
+  AcompanhamentoOS AcompanhamentoOS[]
 }
 
 model Modulo {
@@ -127,6 +128,7 @@ model OrdemServico {
   solicitante       Usuario                @relation(fields: [solicitanteId], references: [id])
   tecnico           Tecnico?               @relation(fields: [tecnicoId], references: [id])
   tipoEquipamento   TipoEquipamento        @relation(fields: [tipoEquipamentoId], references: [id])
+  acompanhamentos   AcompanhamentoOS[]
 }
 
 model HcrComputer {
@@ -141,6 +143,17 @@ model HcrComputer {
   localizacao        Localizacao     @relation(fields: [localizacaoId], references: [id])
   setor              Setor           @relation(fields: [setorId], references: [id])
   tipoEquipamento    TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
+
+model AcompanhamentoOS {
+  id             Int      @id @default(autoincrement())
+  ordemServicoId Int
+  descricao      String
+  criadoPorId    Int
+  criadoEm       DateTime @default(now())
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+  criadoPor    Usuario      @relation(fields: [criadoPorId], references: [id])
 }
 
 model HcrPrinter {
