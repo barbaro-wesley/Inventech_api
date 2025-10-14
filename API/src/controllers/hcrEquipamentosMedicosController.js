@@ -20,14 +20,29 @@ class HcrEquipamentosMedicosController {
     }
   }
 
-  async listar(req, res) {
-    try {
-      const lista = await service.listar();
-      res.json(lista);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao listar os equipamentos.' });
-    }
+ async listar(req, res) {
+  try {
+    const filtros = {
+      setorId: req.query.setorId,
+      localizacaoId: req.query.localizacaoId,
+      tipoEquipamentoId: req.query.tipoEquipamentoId
+    };
+    
+    // Remove propriedades undefined
+    Object.keys(filtros).forEach(key => {
+      if (filtros[key] === undefined) {
+        delete filtros[key];
+      }
+    });
+    
+    
+    const lista = await service.listar(filtros);
+    res.json(lista);
+  } catch (error) {
+    console.error('Erro ao listar equipamentos:', error);
+    res.status(500).json({ error: 'Erro ao listar os equipamentos.' });
   }
+}
   async listarPorTipo(req, res) {
   try {
     const tipoEquipamentoId = parseInt(req.params.tipoEquipamentoId, 10);

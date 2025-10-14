@@ -42,18 +42,47 @@ class HcrEquipamentosMedicosService {
     return await prisma.hcrEquipamentosMedicos.create({ data: dadosParaCriar });
   }
 
-  async listar() {
-    const equipamentos = await prisma.hcrEquipamentosMedicos.findMany({
-      include: { setor: true, localizacao: true, tipoEquipamento: true, ordensServico: true },
-    });
-
-    return equipamentos.map(eq => {
-      if (eq.tipoEquipamento?.taxaDepreciacao && eq.valorCompra && eq.dataCompra) {
-        eq.valorAtual = this.calcularValorAtual(eq.valorCompra, eq.dataCompra, eq.tipoEquipamento.taxaDepreciacao);
-      }
-      return eq;
-    });
+  async listar(filtros = {}) {
+  const where = {};
+  
+  // Filtro por setor
+  if (filtros.setorId) {
+    where.setorId = parseInt(filtros.setorId);
   }
+  
+  // Filtro por localização
+  if (filtros.localizacaoId) {
+    where.localizacaoId = parseInt(filtros.localizacaoId);
+  }
+  
+  // Filtro por tipo de equipamento
+  if (filtros.tipoEquipamentoId) {
+    where.tipoEquipamentoId = parseInt(filtros.tipoEquipamentoId);
+  }
+
+  console.log('Filtros aplicados:', where); // 👈 Debug
+
+  const equipamentos = await prisma.hcrEquipamentosMedicos.findMany({
+    where, // 👈 IMPORTANTE: o where precisa estar aqui
+    include: { 
+      setor: true, 
+      localizacao: true, 
+      tipoEquipamento: true, 
+      ordensServico: true 
+    },
+  });
+
+  return equipamentos.map(eq => {
+    if (eq.tipoEquipamento?.taxaDepreciacao && eq.valorCompra && eq.dataCompra) {
+      eq.valorAtual = this.calcularValorAtual(
+        eq.valorCompra, 
+        eq.dataCompra, 
+        eq.tipoEquipamento.taxaDepreciacao
+      );
+    }
+    return eq;
+  });
+}
 
   async listarPorTipo(tipoEquipamentoId) {
     const equipamentos = await prisma.hcrEquipamentosMedicos.findMany({
