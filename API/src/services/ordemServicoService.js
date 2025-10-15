@@ -804,22 +804,11 @@ async listarPorTecnico(tecnicoId, filtros = {}) {
 
   const ordens = await prisma.ordemServico.findMany({
     where: whereCondition,
-    select: {
-      id: true,
-      descricao: true,
-      preventiva: true,
-      prioridade: true,
-      status: true,
-      criadoEm: true,
-      iniciadaEm: true,
-      finalizadoEm: true,
-      resolucao: true,
-      canceladaEm: true,
-      dataAgendada: true,
+    include: {
       tipoEquipamento: true,
       tecnico: true,
-      solicitante: { select: { nome: true } },
       Setor: true,
+      solicitante: { select: { nome: true } },
       equipamento: {
         select: {
           nomeEquipamento: true,
@@ -827,6 +816,17 @@ async listarPorTecnico(tecnicoId, filtros = {}) {
           modelo: true,
           numeroSerie: true,
         }
+      },
+      acompanhamentos: {
+        select: {
+          id: true,
+          descricao: true,
+          criadoEm: true,
+          criadoPor: {
+            select: { nome: true, email: true }
+          }
+        },
+        orderBy: { criadoEm: 'asc' }
       }
     },
     orderBy: orderBy
@@ -850,11 +850,25 @@ async listarPorTecnico(tecnicoId, filtros = {}) {
         : null,
       dataAgendada: os.dataAgendada
         ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-        : null
+        : null,
+      acompanhamentos: os.acompanhamentos.map(acomp => ({
+        ...acomp,
+        criadoEm: acomp.criadoEm
+          ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : null
+      }))
     }));
   }
 
-  return ordens;
+  return ordens.map(os => ({
+    ...os,
+    acompanhamentos: os.acompanhamentos.map(acomp => ({
+      ...acomp,
+      criadoEm: acomp.criadoEm
+        ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null
+    }))
+  }));
 }
 
 async listarPreventivasPorTecnico(tecnicoId) {
@@ -865,17 +879,30 @@ async listarPreventivasPorTecnico(tecnicoId) {
       preventiva: true,
       NOT: { dataAgendada: null }
     },
-    select: {
-      id: true,
-      descricao: true,
-      preventiva: true,
-      prioridade: true,
-      status: true,
-      criadoEm: true,
-      dataAgendada: true,
+    include: {
       tecnico: true,
       tipoEquipamento: true,
-      equipamento: true,
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
+      },
+      solicitante: { select: { nome: true } },
+      Setor: true,
+      acompanhamentos: {
+        select: {
+          id: true,
+          descricao: true,
+          criadoEm: true,
+          criadoPor: {
+            select: { nome: true, email: true }
+          }
+        },
+        orderBy: { criadoEm: 'asc' }
+      }
     },
     orderBy: [
       { dataAgendada: 'asc' },
@@ -890,7 +917,13 @@ async listarPreventivasPorTecnico(tecnicoId) {
       : null,
     dataAgendada: os.dataAgendada
       ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null
+      : null,
+    acompanhamentos: os.acompanhamentos.map(acomp => ({
+      ...acomp,
+      criadoEm: acomp.criadoEm
+        ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null
+    }))
   }));
 }
 
