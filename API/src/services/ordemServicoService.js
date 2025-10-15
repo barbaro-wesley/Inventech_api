@@ -169,35 +169,53 @@ class OrdemServicoService {
     };
   }
 async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
-    const os = await prisma.ordemServico.findUnique({
-      where: { id: ordemServicoId },
-      include: { solicitante: true, tecnico: true },
-    });
+  const os = await prisma.ordemServico.findUnique({
+    where: { id: ordemServicoId },
+    include: { 
+      solicitante: true, 
+      tecnico: true 
+    },
+  });
 
-    if (!os) {
-      throw new Error("Ordem de Serviço não encontrada.");
-    }
-
-    const podeAdicionar =
-      os.solicitanteId === userId || os.tecnicoId === userId;
-
-    if (!podeAdicionar) {
-      throw new Error("Você não tem permissão para adicionar acompanhamentos a esta OS.");
-    }
-
-    const acompanhamento = await prisma.acompanhamentoOS.create({
-      data: {
-        ordemServicoId,
-        descricao,
-        criadoPorId: userId,
-      },
-      include: {
-        criadoPor: { select: { id: true, nome: true, email: true } },
-      },
-    });
-
-    return acompanhamento;
+  if (!os) {
+    throw new Error("Ordem de Serviço não encontrada.");
   }
+
+  // Buscar informações do usuário incluindo o técnico vinculado
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: userId },
+    include: { 
+      tecnico: true
+    }
+  });
+
+  if (!usuario) {
+    throw new Error("Usuário não encontrado.");
+  }
+
+  // Verificar se é o solicitante OU se é o técnico atribuído à OS
+  const ehSolicitante = os.solicitanteId === userId;
+  const ehTecnicoAtribuido = os.tecnicoId && usuario.tecnicoId && os.tecnicoId === usuario.tecnicoId;
+
+  const podeAdicionar = ehSolicitante || ehTecnicoAtribuido;
+
+  if (!podeAdicionar) {
+    throw new Error("Você não tem permissão para adicionar acompanhamentos a esta OS.");
+  }
+
+  const acompanhamento = await prisma.acompanhamentoOS.create({
+    data: {
+      ordemServicoId,
+      descricao,
+      criadoPorId: userId,
+    },
+    include: {
+      criadoPor: { select: { id: true, nome: true, email: true } },
+    },
+  });
+
+  return acompanhamento;
+}
 
 /**
  * Lista os acompanhamentos de uma OS.
@@ -1010,19 +1028,33 @@ async listarPorSolicitante(solicitanteId, filtros = {}) {
           numeroSerie: true,
           numeroPatrimonio: true
         }
+      },
+      acompanhamentos: {
+        select: {
+          id: true,
+          descricao: true,
+          criadoEm: true,
+          criadoPor: {
+            select: {
+              id: true,
+              nome: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          criadoEm: 'desc'
+        }
       }
     },
     orderBy: [
       {
-        // Ordenar por status - ABERTA e EM_ANDAMENTO primeiro
         status: 'asc'
       },
       {
-        // Depois por prioridade (URGENTE primeiro)
         prioridade: 'desc'
       },
       {
-        // Por último, por data de criação (mais recente primeiro)
         criadoEm: 'desc'
       }
     ]
@@ -1046,7 +1078,13 @@ async listarPorSolicitante(solicitanteId, filtros = {}) {
     dataAgendada: os.dataAgendada
       ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
       : null,
-    valorManutencao: os.valorManutencao ? Number(os.valorManutencao) : null
+    valorManutencao: os.valorManutencao ? Number(os.valorManutencao) : null,
+    acompanhamentos: os.acompanhamentos.map(acomp => ({
+      ...acomp,
+      criadoEm: acomp.criadoEm
+        ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null
+    }))
   }));
 
   // Calcular estatísticas
@@ -1074,7 +1112,6 @@ async listarPorSolicitante(solicitanteId, filtros = {}) {
     }
   };
 }
-
 }
 
 module.exports = new OrdemServicoService();
