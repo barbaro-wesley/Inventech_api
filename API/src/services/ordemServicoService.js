@@ -591,81 +591,101 @@ async listarAcompanhamentos(ordemServicoId) {
     return novasOSCriadas;
   }
 
-  async listar() {
-  const [preventivas, corretivas] = await Promise.all([
-    prisma.ordemServico.findMany({
-      where: { preventiva: true },
-      include: {
-        tipoEquipamento: true,
-        tecnico: true,
-        Setor: true,
-        solicitante: { select: { nome: true } },
-        equipamento: {
-          select: {
-            nomeEquipamento: true,
-            marca: true,
-            modelo: true,
-            numeroSerie: true,
-          }
-        },
-        acompanhamentos: {
-          select: {
-            id: true,
-            descricao: true,
-            criadoEm: true,
-            criadoPor: {  // ✅ MUDANÇA AQUI
-              select: { nome: true, email: true }
-            }
-          },
-          orderBy: { criadoEm: 'asc' }
+  async listar(filtros = {}) {
+  const { 
+    grupoManutencaoId, 
+    tecnicoId,
+    status,
+    preventiva 
+  } = filtros;
+
+  // Construir objeto where dinamicamente
+  const whereCondition = {};
+
+  if (preventiva !== undefined) {
+    whereCondition.preventiva = preventiva === true || preventiva === 'true';
+  }
+
+  if (status) {
+    whereCondition.status = status;
+  }
+
+  // Filtro por técnico
+  if (tecnicoId) {
+    whereCondition.tecnicoId = Number(tecnicoId);
+  }
+
+  // Filtro por grupo de manutenção (requer join com técnico)
+  let tecnicoWhere = undefined;
+  if (grupoManutencaoId) {
+    tecnicoWhere = {
+      grupoId: Number(grupoManutencaoId)
+    };
+  }
+
+  const queryOptions = {
+    where: whereCondition,
+    include: {
+      tipoEquipamento: true,
+      tecnico: {
+        include: {
+          grupo: true // Inclui informações do grupo de manutenção
         }
       },
-      orderBy: [
-        { prioridade: 'desc' },
-        { criadoEm: 'desc' }
-      ]
-    }),
-
-    prisma.ordemServico.findMany({
-      where: { preventiva: false },
-      include: {
-        tipoEquipamento: true,
-        tecnico: true,
-        Setor: true,
-        solicitante: { select: { nome: true } },
-        equipamento: {
-          select: {
-            nomeEquipamento: true,
-            marca: true,
-            modelo: true,
-            numeroSerie: true,
-          }
-        },
-        acompanhamentos: {
-          select: {
-            id: true,
-            descricao: true,
-            criadoEm: true,
-            criadoPor: {  // ✅ E AQUI TAMBÉM
-              select: { nome: true, email: true }
-            }
-          },
-          orderBy: { criadoEm: 'asc' }
+      Setor: true,
+      solicitante: { select: { nome: true } },
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
         }
       },
-      orderBy: [
-        { prioridade: 'desc' },
-        { criadoEm: 'desc' }
-      ]
-    }),
-  ]);
+      acompanhamentos: {
+        select: {
+          id: true,
+          descricao: true,
+          criadoEm: true,
+          criadoPor: {
+            select: { nome: true, email: true }
+          }
+        },
+        orderBy: { criadoEm: 'asc' }
+      }
+    },
+    orderBy: [
+      { prioridade: 'desc' },
+      { criadoEm: 'desc' }
+    ]
+  };
 
-  const totalManutencao = [...preventivas, ...corretivas].reduce((acc, os) => {
+  // Buscar todas as ordens de serviço
+  let todasAsOrdens = await prisma.ordemServico.findMany(queryOptions);
+
+  // Aplicar filtro por grupo de manutenção (após busca, já que é relação indireta)
+  if (grupoManutencaoId) {
+    todasAsOrdens = todasAsOrdens.filter(os => 
+      os.tecnico?.grupo?.id === Number(grupoManutencaoId)
+    );
+  }
+
+  // Separar em preventivas e corretivas
+  const preventivas = todasAsOrdens.filter(os => os.preventiva === true);
+  const corretivas = todasAsOrdens.filter(os => os.preventiva === false);
+
+  // Calcular total de manutenção
+  const totalManutencao = todasAsOrdens.reduce((acc, os) => {
     const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
     return acc + valor;
   }, 0);
 
-  return { preventivas, corretivas, totalManutencao };
+  return { 
+    preventivas, 
+    corretivas, 
+    totalManutencao,
+    total: todasAsOrdens.length 
+  };
 }
 
   async buscarPorId(id) {
@@ -1148,16 +1168,6 @@ async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
     throw new Error("Usuário não encontrado.");
   }
 
-  // Verificar se é o solicitante OU se é o técnico atribuído à OS
-  const ehSolicitante = os.solicitanteId === userId;
-  const ehTecnicoAtribuido = os.tecnicoId && usuario.tecnicoId && os.tecnicoId === usuario.tecnicoId;
-
-  const podeAdicionar = ehSolicitante || ehTecnicoAtribuido;
-
-  if (!podeAdicionar) {
-    throw new Error("Você não tem permissão para adicionar acompanhamentos a esta OS.");
-  }
-
   const acompanhamento = await prisma.acompanhamentoOS.create({
     data: {
       ordemServicoId,
@@ -1189,7 +1199,7 @@ async enviarNotificacoesAcompanhamento(os, acompanhamento, usuarioQueRegistrou) 
   }
 
   // Adiciona o email do técnico (se não foi ele quem registrou)
-  if (os.tecnico && os.tecnico.email && os.tecnico.id !== usuarioQueRegistrou.tecnicoId) {
+  if (os.tecnico && os.tecnico.email && os.tecnico.id !== usuarioQueRegistrou.id) {
     emailsParaNotificar.push({
       email: os.tecnico.email,
       nome: os.tecnico.nome,
@@ -1223,7 +1233,7 @@ async enviarNotificacoesAcompanhamento(os, acompanhamento, usuarioQueRegistrou) 
   // Notificação no Telegram (opcional - apenas para o técnico)
   if (os.tecnico && 
       os.tecnico.telegramChatId && 
-      os.tecnico.id !== usuarioQueRegistrou.tecnicoId) {
+      os.tecnico.id !== usuarioQueRegistrou.id) {
     
     let msg = `🔔 <b>Nova Atualização na OS #${os.id}</b>\n\n`;
     msg += `👤 Registrado por: ${usuarioQueRegistrou.nome}\n`;

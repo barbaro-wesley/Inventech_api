@@ -40,13 +40,41 @@ const ordemServicoController = {
   },
 
   async listar(req, res) {
-    try {
-      const { preventivas, corretivas, totalManutencao } = await ordemServicoService.listar();
-      res.status(200).json({ preventivas, corretivas, totalManutencao });
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao listar ordens de serviço', detalhes: error.message });
-    }
-  },
+  try {
+    const { 
+      grupoManutencaoId, 
+      tecnicoId,
+      status,
+      preventiva 
+    } = req.query;
+
+    const filtros = {
+      grupoManutencaoId: grupoManutencaoId ? Number(grupoManutencaoId) : undefined,
+      tecnicoId: tecnicoId ? Number(tecnicoId) : undefined,
+      status: status || undefined,
+      preventiva: preventiva !== undefined ? preventiva === 'true' : undefined
+    };
+
+    // Remove propriedades undefined
+    Object.keys(filtros).forEach(key => 
+      filtros[key] === undefined && delete filtros[key]
+    );
+
+    const resultado = await ordemServicoService.listar(filtros);
+    
+    res.status(200).json({ 
+      preventivas: resultado.preventivas, 
+      corretivas: resultado.corretivas, 
+      totalManutencao: resultado.totalManutencao,
+      total: resultado.total
+    });
+  } catch (error) {
+    res.status(400).json({ 
+      error: 'Erro ao listar ordens de serviço', 
+      detalhes: error.message 
+    });
+  }
+},
   async  criarAcompanhamentoController(req, res) {
   try {
     const { ordemServicoId, descricao } = req.body;
