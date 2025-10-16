@@ -1112,6 +1112,334 @@ async listarPorSolicitante(solicitanteId, filtros = {}) {
     }
   };
 }
+
+
+// envia notificação quando um acompanhament é registrado
+async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
+  const os = await prisma.ordemServico.findUnique({
+    where: { id: ordemServicoId },
+    include: { 
+      solicitante: true, 
+      tecnico: true,
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          numeroPatrimonio: true,
+          numeroSerie: true,
+        }
+      },
+      Setor: true
+    },
+  });
+
+  if (!os) {
+    throw new Error("Ordem de Serviço não encontrada.");
+  }
+
+  // Buscar informações do usuário incluindo o técnico vinculado
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: userId },
+    include: { 
+      tecnico: true
+    }
+  });
+
+  if (!usuario) {
+    throw new Error("Usuário não encontrado.");
+  }
+
+  // Verificar se é o solicitante OU se é o técnico atribuído à OS
+  const ehSolicitante = os.solicitanteId === userId;
+  const ehTecnicoAtribuido = os.tecnicoId && usuario.tecnicoId && os.tecnicoId === usuario.tecnicoId;
+
+  const podeAdicionar = ehSolicitante || ehTecnicoAtribuido;
+
+  if (!podeAdicionar) {
+    throw new Error("Você não tem permissão para adicionar acompanhamentos a esta OS.");
+  }
+
+  const acompanhamento = await prisma.acompanhamentoOS.create({
+    data: {
+      ordemServicoId,
+      descricao,
+      criadoPorId: userId,
+    },
+    include: {
+      criadoPor: { select: { id: true, nome: true, email: true } },
+    },
+  });
+
+  // ====== ENVIO DE NOTIFICAÇÕES ======
+  await this.enviarNotificacoesAcompanhamento(os, acompanhamento, usuario);
+
+  return acompanhamento;
+}
+
+// Novo método para enviar notificações de acompanhamento
+async enviarNotificacoesAcompanhamento(os, acompanhamento, usuarioQueRegistrou) {
+  const emailsParaNotificar = [];
+  
+  // Adiciona o email do solicitante (se não foi ele quem registrou)
+  if (os.solicitante && os.solicitante.email && os.solicitante.id !== usuarioQueRegistrou.id) {
+    emailsParaNotificar.push({
+      email: os.solicitante.email,
+      nome: os.solicitante.nome,
+      tipo: 'solicitante'
+    });
+  }
+
+  // Adiciona o email do técnico (se não foi ele quem registrou)
+  if (os.tecnico && os.tecnico.email && os.tecnico.id !== usuarioQueRegistrou.tecnicoId) {
+    emailsParaNotificar.push({
+      email: os.tecnico.email,
+      nome: os.tecnico.nome,
+      tipo: 'tecnico'
+    });
+  }
+
+  // Envia emails para todos os destinatários
+  for (const destinatario of emailsParaNotificar) {
+    const htmlTemplate = this.gerarTemplateEmailAcompanhamento(
+      os, 
+      acompanhamento, 
+      usuarioQueRegistrou, 
+      destinatario
+    );
+
+    const emailData = {
+      to: destinatario.email,
+      subject: `Nova Atualização na OS #${os.id} - ${os.preventiva ? 'Preventiva' : 'Corretiva'}`,
+      html: htmlTemplate
+    };
+
+    try {
+      await emailUtils.enviarEmail(emailData);
+      console.log(`Email de acompanhamento enviado para ${destinatario.email} - OS #${os.id}`);
+    } catch (error) {
+      console.error('Erro ao enviar email de acompanhamento:', error);
+    }
+  }
+
+  // Notificação no Telegram (opcional - apenas para o técnico)
+  if (os.tecnico && 
+      os.tecnico.telegramChatId && 
+      os.tecnico.id !== usuarioQueRegistrou.tecnicoId) {
+    
+    let msg = `🔔 <b>Nova Atualização na OS #${os.id}</b>\n\n`;
+    msg += `👤 Registrado por: ${usuarioQueRegistrou.nome}\n`;
+    msg += `📝 Descrição: ${os.descricao}\n`;
+    msg += `💬 Acompanhamento: ${acompanhamento.descricao}\n`;
+    msg += `📅 Data: ${new Date().toLocaleString('pt-BR')}`;
+
+    try {
+      await enviarNotificacaoTelegram(os.tecnico.telegramChatId, msg);
+    } catch (error) {
+      console.error('Erro ao enviar notificação Telegram:', error);
+    }
+  }
+}
+
+// Template de email para acompanhamento
+gerarTemplateEmailAcompanhamento(os, acompanhamento, usuarioQueRegistrou, destinatario) {
+  const prioridadeEmoji = this.getPrioridadeEmoji(os.prioridade);
+  const prioridadeTexto = this.getPrioridadeTexto(os.prioridade);
+  
+  const corPrioridade = {
+    BAIXO: '#10b981',
+    MEDIO: '#f59e0b',
+    ALTO: '#f97316',
+    URGENTE: '#ef4444'
+  };
+  
+  const cor = corPrioridade[os.prioridade] || '#f59e0b';
+  
+  const corStatus = {
+    ABERTA: '#3b82f6',
+    EM_ANDAMENTO: '#f59e0b',
+    CONCLUIDA: '#10b981',
+    CANCELADA: '#ef4444'
+  };
+  
+  const statusCor = corStatus[os.status] || '#3b82f6';
+  
+  const statusTexto = {
+    ABERTA: 'Aberta',
+    EM_ANDAMENTO: 'Em Andamento',
+    CONCLUIDA: 'Concluída',
+    CANCELADA: 'Cancelada'
+  };
+
+  return `
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Atualização na Ordem de Serviço</title>
+    </head>
+    <body style="margin:0; padding:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:#f8fafc; line-height:1.6;">
+      <div style="max-width:600px; margin:0 auto; background-color:#ffffff; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%); padding:40px 30px; text-align:center;">
+          <div style="background-color:rgba(255,255,255,0.15); width:80px; height:80px; border-radius:50%; margin:0 auto 20px; display:flex; align-items:center; justify-content:center;">
+            <div style="font-size:36px;">🔔</div>
+          </div>
+          <h1 style="color:#ffffff; margin:0; font-size:28px; font-weight:700; text-shadow:0 2px 4px rgba(0,0,0,0.1);">
+            Nova Atualização na OS #${os.id}
+          </h1>
+          <p style="color:rgba(255,255,255,0.9); margin:10px 0 0; font-size:16px;">
+            ${usuarioQueRegistrou.nome} adicionou um acompanhamento
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding:40px 30px;">
+
+          <!-- Greeting -->
+          <p style="color:#1e293b; font-size:16px; margin:0 0 25px;">
+            Olá <strong>${destinatario.nome}</strong>,
+          </p>
+
+          <!-- Status e Prioridade -->
+          <div style="text-align:center; margin-bottom:30px;">
+            <div style="display:inline-block; background-color:${statusCor}; color:#ffffff; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; margin:5px;">
+              Status: ${statusTexto[os.status] || 'Aberta'}
+            </div>
+            <div style="display:inline-block; background-color:${cor}; color:#ffffff; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; margin:5px;">
+              ${prioridadeEmoji} ${prioridadeTexto}
+            </div>
+          </div>
+
+          <!-- Acompanhamento em Destaque -->
+          <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left:4px solid #3b82f6; border-radius:12px; padding:25px; margin-bottom:30px;">
+            <div style="display:flex; align-items:center; margin-bottom:15px;">
+              <div style="background-color:#3b82f6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:15px;">
+                <span style="color:#ffffff; font-size:20px;">💬</span>
+              </div>
+              <div>
+                <h3 style="color:#1e293b; margin:0; font-size:16px; font-weight:600;">
+                  Novo Acompanhamento
+                </h3>
+                <p style="color:#64748b; margin:5px 0 0; font-size:13px;">
+                  ${new Date(acompanhamento.criadoEm).toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            </div>
+            <p style="color:#0f172a; font-size:15px; line-height:1.7; margin:0; white-space:pre-wrap;">
+              ${acompanhamento.descricao}
+            </p>
+            <p style="color:#64748b; font-size:13px; margin:15px 0 0; font-style:italic;">
+              Registrado por: ${usuarioQueRegistrou.nome}
+            </p>
+          </div>
+
+          <!-- Detalhes da OS -->
+          <div style="background-color:#f8fafc; border-radius:12px; padding:25px; margin-bottom:30px;">
+            <h3 style="color:#0f172a; font-size:18px; margin:0 0 20px; font-weight:600;">
+              📋 Detalhes da Ordem de Serviço
+            </h3>
+
+            <!-- Descrição -->
+            <div style="margin-bottom:15px;">
+              <span style="color:#64748b; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                Descrição
+              </span>
+              <p style="color:#1e293b; font-size:15px; margin:5px 0 0;">
+                ${os.descricao}
+              </p>
+            </div>
+
+            <!-- Técnico -->
+            ${os.tecnico ? `
+            <div style="margin-bottom:15px;">
+              <span style="color:#64748b; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                🔧 Técnico Responsável
+              </span>
+              <p style="color:#1e293b; font-size:15px; margin:5px 0 0;">
+                ${os.tecnico.nome}
+              </p>
+            </div>` : ''}
+
+            <!-- Setor -->
+            ${os.Setor ? `
+            <div style="margin-bottom:15px;">
+              <span style="color:#64748b; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                📍 Setor
+              </span>
+              <p style="color:#1e293b; font-size:15px; margin:5px 0 0;">
+                ${os.Setor.nome}
+              </p>
+            </div>` : ''}
+
+            <!-- Equipamento -->
+            ${os.equipamento ? `
+            <div style="margin-bottom:15px;">
+              <span style="color:#64748b; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                ⚙️ Equipamento
+              </span>
+              <p style="color:#1e293b; font-size:15px; margin:5px 0 0;">
+                ${os.equipamento.nomeEquipamento || 'Não informado'}<br>
+                <span style="font-size:13px; color:#64748b;">
+                  Patrimônio: ${os.equipamento.numeroPatrimonio || 'N/I'} | 
+                  N° Série: ${os.equipamento.numeroSerie || 'N/I'}
+                </span>
+              </p>
+            </div>` : ''}
+
+            <!-- Data de Criação -->
+            <div>
+              <span style="color:#64748b; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+                📅 Criada em
+              </span>
+              <p style="color:#1e293b; font-size:15px; margin:5px 0 0;">
+                ${new Date(os.criadoEm).toLocaleString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div style="text-align:center; margin-bottom:30px;">
+            <a href="${process.env.APP_URL || '#'}" style="display:inline-block; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%); padding:14px 35px; border-radius:8px; text-decoration:none; color:#ffffff; font-weight:600; font-size:16px; box-shadow:0 4px 15px rgba(59,130,246,0.3);">
+              🔗 Visualizar OS Completa
+            </a>
+          </div>
+
+          <!-- Info -->
+          <div style="background-color:#fef3c7; border-left:4px solid #f59e0b; border-radius:8px; padding:15px; margin-bottom:20px;">
+            <p style="color:#92400e; font-size:14px; margin:0;">
+              <strong>💡 Dica:</strong> Você pode responder a este acompanhamento adicionando outro comentário no sistema.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color:#f8fafc; padding:30px; text-align:center; border-top:1px solid #e2e8f0;">
+          <p style="color:#64748b; font-size:14px; margin:0 0 10px;">
+            <strong>Sistema de Gestão de Ordens de Serviço</strong>
+          </p>
+          <p style="color:#94a3b8; font-size:12px; margin:0; line-height:1.5;">
+            Este é um e-mail automático. Você está recebendo porque está envolvido nesta OS.<br>
+            Para responder, acesse o sistema e adicione um acompanhamento.
+          </p>
+        </div>
+
+      </div>
+    </body>
+    </html>`;
+}
 }
 
 module.exports = new OrdemServicoService();
