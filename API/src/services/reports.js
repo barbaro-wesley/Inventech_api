@@ -53,56 +53,132 @@ const formatDate = (date) => {
   });
 };
 
-const relatorioOsPorTecnico = async ({ tecnicoIds = [], dataInicio, dataFim, campoData = "criadoEm", statusArray = [] }) => {
+const relatorioOsPorTecnico = async ({ 
+  tecnicoIds = [], 
+  dataInicio, 
+  dataFim, 
+  campoData = "criadoEm", 
+  statusArray = [] 
+}) => {
   if (tecnicoIds.length === 0 || !dataInicio || !dataFim) return [];
-
+  
   const enumStatus = ["ABERTA", "EM_ANDAMENTO", "CONCLUIDA", "CANCELADA"];
   const statusFiltros = statusArray.filter(s => enumStatus.includes(s));
-
+  
   const where = {
     tecnicoId: { in: tecnicoIds },
     [campoData]: { gte: new Date(dataInicio), lte: new Date(dataFim) },
     ...(statusFiltros.length > 0 && { status: { in: statusFiltros } }),
   };
-
+  
   const ordens = await prisma.ordemServico.findMany({
     where,
     include: {
       tecnico: true,
-      equipamento: true,
+      solicitante: true,
+      equipamento: {
+        include: {
+          setor: true,
+          localizacao: true,
+          tipoEquipamento: true,
+        },
+      },
       tipoEquipamento: true,
+      Setor: true,
+      acompanhamentos: {
+        include: {
+          criadoPor: true, // ← CORRIGIDO: era 'usuario', agora é 'criadoPor'
+        },
+        orderBy: {
+          criadoEm: 'asc',
+        },
+      },
     },
     orderBy: { tecnicoId: "asc" },
   });
-
+  
   const agrupado = ordens.reduce((acc, os) => {
     const tId = os.tecnicoId || 0;
     if (!acc[tId]) {
       acc[tId] = {
         tecnicoId: tId,
-        tecnico: os.tecnico ? os.tecnico.nome : "Sem nome",
+        tecnico: os.tecnico ? os.tecnico.nome : "Sem técnico",
+        email: os.tecnico?.email || null,
         quantidade: 0,
         ordens: [],
       };
     }
-
+    
     acc[tId].ordens.push({
       id: os.id,
       descricao: os.descricao,
-      equipamento: os.equipamento?.nomeEquipamento || null,
       status: os.status,
-      criadoEm: formatDate(os.criadoEm),        // agora formatado
-      finalizadoEm: formatDate(os.finalizadoEm),// agora formatado
+      prioridade: os.prioridade,
+      preventiva: os.preventiva,
+      valorManutencao: os.valorManutencao ? parseFloat(os.valorManutencao) : null,
+      
+      // Resolução
       resolucao: os.resolucao,
+      
+      // Equipamento detalhado
+      equipamento: {
+        nomeEquipamento: os.equipamento?.nomeEquipamento || "N/I",
+        tipo: os.equipamento?.tipoEquipamento?.nome || os.tipoEquipamento?.nome || "N/I",
+        numeroPatrimonio: os.equipamento?.numeroPatrimonio || "N/I",
+        numeroSerie: os.equipamento?.numeroSerie || "N/I",
+        modelo: os.equipamento?.modelo || "N/I",
+        fabricante: os.equipamento?.fabricante || "N/I",
+        numeroAnvisa: os.equipamento?.numeroAnvisa || null,
+        identificacao: os.equipamento?.identificacao || null,
+      },
+      
+      // Responsáveis
+      responsaveis: {
+        solicitante: os.solicitante?.nome || "Não informado",
+        solicitanteEmail: os.solicitante?.email || null,
+        tecnico: os.tecnico?.nome || "Não atribuído",
+        tecnicoEmail: os.tecnico?.email || null,
+      },
+      
+      // Setor
+      setor: {
+        nome: os.Setor?.nome || os.equipamento?.setor?.nome || "N/I",
+        localizacao: os.equipamento?.localizacao?.nome || null,
+      },
+      
+      // Histórico
+      historico: {
+        criado: formatDate(os.criadoEm),
+        iniciado: formatDate(os.iniciadaEm),
+        finalizado: formatDate(os.finalizadoEm),
+        cancelado: formatDate(os.canceladaEm),
+        dataAgendada: formatDate(os.dataAgendada),
+      },
+      
+      // Acompanhamentos - CORRIGIDO
+      acompanhamentos: os.acompanhamentos?.map(acomp => ({
+        id: acomp.id,
+        descricao: acomp.descricao,
+        dataHora: formatDate(acomp.criadoEm),
+        usuario: acomp.criadoPor?.nome || "Sistema", // ← CORRIGIDO: era acomp.usuario, agora é acomp.criadoPor
+      })) || [],
+      
+      // Arquivos
+      arquivos: os.arquivos || [],
+      
+      // Recorrência
+      recorrencia: {
+        tipo: os.recorrencia,
+        intervaloDias: os.intervaloDias,
+      },
     });
-
+    
     acc[tId].quantidade++;
     return acc;
   }, {});
-
+  
   return Object.values(agrupado);
 };
-
 const relatorioPerformanceTecnicos = async ({ 
   dataInicio, 
   dataFim, 
