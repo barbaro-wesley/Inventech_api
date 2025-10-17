@@ -148,11 +148,11 @@ const gerarRelatorioTecnico = async (tecnicoId, filtros) => {
     whereClause.status = { in: filtros.status };
   }
 
- if (filtros.prioridade && filtros.prioridade.length > 0) {
-  whereClause.prioridade = { 
-    in: filtros.prioridade.map(p => p.trim().toUpperCase()) // normaliza
-  };
-}
+  if (filtros.prioridade && filtros.prioridade.length > 0) {
+    whereClause.prioridade = { 
+      in: filtros.prioridade.map(p => p.trim().toUpperCase())
+    };
+  }
 
   const ordens = await prisma.ordemServico.findMany({
     where: whereClause,
@@ -168,7 +168,7 @@ const gerarRelatorioTecnico = async (tecnicoId, filtros) => {
       canceladaEm: true,
       dataAgendada: true,
       valorManutencao: true,
-      resolucao: true,
+      resolucao: true, // já estava incluído
       tipoEquipamento: true,
       tecnico: true,
       solicitante: { select: { nome: true } },
@@ -179,6 +179,22 @@ const gerarRelatorioTecnico = async (tecnicoId, filtros) => {
           marca: true,
           modelo: true,
           numeroSerie: true,
+        }
+      },
+      // ADICIONAR OS ACOMPANHAMENTOS AQUI
+      acompanhamentos: {
+        select: {
+          id: true,
+          descricao: true,
+          criadoEm: true,
+          criadoPor: {
+            select: {
+              nome: true
+            }
+          }
+        },
+        orderBy: {
+          criadoEm: 'asc'
         }
       }
     },
@@ -212,7 +228,12 @@ const gerarRelatorioTecnico = async (tecnicoId, filtros) => {
     iniciadaEm: os.iniciadaEm?.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) || null,
     finalizadoEm: os.finalizadoEm?.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) || null,
     canceladaEm: os.canceladaEm?.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) || null,
-    dataAgendada: os.dataAgendada?.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) || null
+    dataAgendada: os.dataAgendada?.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) || null,
+    // FORMATAR OS ACOMPANHAMENTOS
+    acompanhamentos: os.acompanhamentos.map(acomp => ({
+      ...acomp,
+      criadoEm: acomp.criadoEm?.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) || null
+    }))
   }));
 
   return {

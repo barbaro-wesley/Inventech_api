@@ -3,6 +3,7 @@ node_modules
 .env
 
 /generated/prisma
+prisma/migrations/
 /uploads
 /storage
 
