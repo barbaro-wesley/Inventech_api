@@ -46,7 +46,7 @@ router.get('/minhas-os', autenticarUsuario, ordemServicoController.listarMinhasO
 router.post('/',autenticarUsuario, permitirSomente('admin','cadastro','visualizador','tecnico'),upload.array('arquivos', 5),ordemServicoController.criar);
 router.get('/', ordemServicoController.listar);
 router.get('/:id', permitirSomente('admin','cadastro','tecnico','visualizador'),ordemServicoController.buscarPorId);
-router.put('/:id', autenticarUsuario, permitirSomente('admin','cadastro'),ordemServicoController.atualizar);
+router.put('/ordens-servico/:id', autenticarUsuario, permitirSomente('admin','cadastro'),ordemServicoController.atualizar);
 router.delete('/:id',autenticarUsuario, permitirSomente('admin'), ordemServicoController.deletar);
 router.put(
   '/:id/concluir',

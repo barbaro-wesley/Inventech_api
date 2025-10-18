@@ -701,11 +701,62 @@ async listarAcompanhamentos(ordemServicoId) {
   }
 
   async atualizar(id, data) {
-    return await prisma.ordemServico.update({
-      where: { id },
-      data,
-    });
+  // Busca a OS atual para verificar o status
+  const osAtual = await prisma.ordemServico.findUnique({
+    where: { id },
+  });
+
+  if (!osAtual) {
+    throw new Error("Ordem de Serviço não encontrada.");
   }
+
+  // Verifica se a OS está com status ABERTA
+  if (osAtual.status !== 'ABERTA') {
+    throw new Error(`Apenas OSs com status ABERTA podem ser atualizadas. Status atual: ${osAtual.status}`);
+  }
+
+  // Define quais campos podem ser atualizados
+  const camposPermitidos = {
+    descricao: data.descricao,
+    tecnicoId: data.tecnicoId,
+    prioridade: data.prioridade
+  };
+
+  // Remove campos undefined/null
+  const dadosLimpos = {};
+  Object.keys(camposPermitidos).forEach(campo => {
+    if (data[campo] !== undefined && data[campo] !== null) {
+      dadosLimpos[campo] = camposPermitidos[campo];
+    }
+  });
+
+  // Se nenhum campo válido foi fornecido, retorna erro
+  if (Object.keys(dadosLimpos).length === 0) {
+    throw new Error("Nenhum campo válido foi fornecido para atualização. Campos permitidos: descricao, tecnicoId, prioridade");
+  }
+
+  // Atualiza apenas os campos permitidos
+  const osAtualizada = await prisma.ordemServico.update({
+    where: { id },
+    data: dadosLimpos,
+    include: {
+      tipoEquipamento: true,
+      tecnico: true,
+      solicitante: { select: { nome: true } },
+      Setor: true,
+      equipamento: {
+        select: {
+          nomeEquipamento: true,
+          marca: true,
+          modelo: true,
+          numeroSerie: true,
+        }
+      }
+    },
+  });
+
+  return osAtualizada;
+}
 
   async deletar(id) {
     return await prisma.ordemServico.delete({

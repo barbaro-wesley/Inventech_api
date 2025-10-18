@@ -1,5 +1,6 @@
 const ordemServicoService = require('../services/ordemServicoService');
-const { Prisma } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client');
+const Prisma = new PrismaClient();
 
 const ordemServicoController = {
   async criar(req, res) {
@@ -231,18 +232,81 @@ async listarMinhasOS (req, res)  {
   },
 
   async atualizar(req, res) {
-    try {
-      const { id } = req.params;
-      // Se prioridade estiver sendo atualizada, incluir na atualização
-      if (req.body.prioridade) {
-        req.body.prioridade = req.body.prioridade;
-      }
-      const os = await ordemServicoService.atualizar(Number(id), req.body);
-      res.status(200).json(os);
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao atualizar ordem de serviço' });
+  try {
+    const { id } = req.params;
+    const { descricao, tecnicoId, prioridade } = req.body;
+
+    // Validações básicas
+    if (!id) {
+      return res.status(400).json({ 
+        error: 'ID da ordem de serviço é obrigatório' 
+      });
     }
-  },
+
+    // Validação de prioridade se fornecida
+    const prioridadesValidas = ['BAIXO', 'MEDIO', 'ALTO', 'URGENTE'];
+    if (prioridade && !prioridadesValidas.includes(prioridade)) {
+      return res.status(400).json({ 
+        error: `Prioridade inválida. Valores permitidos: ${prioridadesValidas.join(', ')}` 
+      });
+    }
+
+    // Validação de tecnicoId se fornecido
+    if (tecnicoId) {
+      const tecnico = await Prisma.tecnico.findUnique({
+        where: { id: Number(tecnicoId) }
+      });
+
+      if (!tecnico) {
+        return res.status(404).json({ 
+          error: 'Técnico informado não existe' 
+        });
+      }
+    }
+
+    // Validação de descrição se fornecida
+    if (descricao !== undefined && typeof descricao !== 'string') {
+      return res.status(400).json({ 
+        error: 'Descrição deve ser uma string' 
+      });
+    }
+
+    // Monta objeto com dados filtrados
+    const dados = {};
+    if (descricao !== undefined && descricao.trim() !== '') {
+      dados.descricao = descricao.trim();
+    }
+    if (tecnicoId !== undefined) {
+      dados.tecnicoId = Number(tecnicoId);
+    }
+    if (prioridade !== undefined) {
+      dados.prioridade = prioridade;
+    }
+
+    // Chama o service
+    const os = await ordemServicoService.atualizar(Number(id), dados);
+
+    return res.status(200).json({
+      message: 'Ordem de serviço atualizada com sucesso',
+      data: os
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar ordem de serviço:', error.message);
+    
+    // Retorna mensagens de erro específicas do service
+    if (error.message.includes('não encontrada')) {
+      return res.status(404).json({ error: error.message });
+    }
+    
+    if (error.message.includes('não podem ser atualizadas')) {
+      return res.status(403).json({ error: error.message });
+    }
+
+    return res.status(400).json({ 
+      error: error.message || 'Erro ao atualizar ordem de serviço' 
+    });
+  }
+},
 
   async deletar(req, res) {
     try {
