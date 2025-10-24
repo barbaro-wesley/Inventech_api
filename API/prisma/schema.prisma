@@ -154,6 +154,7 @@ model AcompanhamentoOS {
 
   ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
   criadoPor    Usuario      @relation(fields: [criadoPorId], references: [id])
+  arquivos          String[]
 }
 
 model HcrPrinter {

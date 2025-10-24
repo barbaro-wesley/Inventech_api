@@ -168,67 +168,69 @@ class OrdemServicoService {
       }))
     };
   }
-async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
-  const os = await prisma.ordemServico.findUnique({
-    where: { id: ordemServicoId },
-    include: { 
-      solicitante: true, 
-      tecnico: true 
-    },
-  });
+  async criarAcompanhamento({ userId, ordemServicoId, descricao, files = [] }) {
+    const os = await prisma.ordemServico.findUnique({
+      where: { id: ordemServicoId },
+      include: {
+        solicitante: true,
+        tecnico: true
+      },
+    });
 
-  if (!os) {
-    throw new Error("Ordem de Serviço não encontrada.");
-  }
-
-  // Buscar informações do usuário incluindo o técnico vinculado
-  const usuario = await prisma.usuario.findUnique({
-    where: { id: userId },
-    include: { 
-      tecnico: true
+    if (!os) {
+      throw new Error("Ordem de Serviço não encontrada.");
     }
-  });
 
-  if (!usuario) {
-    throw new Error("Usuário não encontrado.");
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: userId },
+      include: {
+        tecnico: true
+      }
+    });
+
+    if (!usuario) {
+      throw new Error("Usuário não encontrado.");
+    }
+
+    const ehSolicitante = os.solicitanteId === userId;
+    const ehTecnicoAtribuido = os.tecnicoId && usuario.tecnicoId && os.tecnicoId === usuario.tecnicoId;
+
+    const podeAdicionar = ehSolicitante || ehTecnicoAtribuido;
+
+    if (!podeAdicionar) {
+      throw new Error("Você não tem permissão para adicionar acompanhamentos a esta OS.");
+    }
+
+    // Mapear os arquivos para um array de caminhos
+    const caminhos = files.map(file => file.path);
+
+    const acompanhamento = await prisma.acompanhamentoOS.create({
+      data: {
+        ordemServicoId,
+        descricao,
+        criadoPorId: userId,
+        arquivos: caminhos, // Salvar os caminhos dos arquivos
+      },
+      include: {
+        criadoPor: { select: { id: true, nome: true, email: true } },
+      },
+    });
+
+    return acompanhamento;
   }
 
-  // Verificar se é o solicitante OU se é o técnico atribuído à OS
-  const ehSolicitante = os.solicitanteId === userId;
-  const ehTecnicoAtribuido = os.tecnicoId && usuario.tecnicoId && os.tecnicoId === usuario.tecnicoId;
-
-  const podeAdicionar = ehSolicitante || ehTecnicoAtribuido;
-
-  if (!podeAdicionar) {
-    throw new Error("Você não tem permissão para adicionar acompanhamentos a esta OS.");
+  /**
+   * Lista os acompanhamentos de uma OS.
+   */
+  async listarAcompanhamentos(ordemServicoId) {
+    return await prisma.acompanhamentoOS.findMany({
+      where: { ordemServicoId },
+      include: {
+        criadoPor: { select: { id: true, nome: true, email: true } },
+      },
+      orderBy: { criadoEm: "asc" },
+    });
   }
-
-  const acompanhamento = await prisma.acompanhamentoOS.create({
-    data: {
-      ordemServicoId,
-      descricao,
-      criadoPorId: userId,
-    },
-    include: {
-      criadoPor: { select: { id: true, nome: true, email: true } },
-    },
-  });
-
-  return acompanhamento;
-}
-
-/**
- * Lista os acompanhamentos de uma OS.
- */
-async listarAcompanhamentos(ordemServicoId) {
-  return await prisma.acompanhamentoOS.findMany({
-    where: { ordemServicoId },
-    include: {
-      criadoPor: { select: { id: true, nome: true, email: true } },
-    },
-    orderBy: { criadoEm: "asc" },
-  });
-}
 
   async criarOSUnica(data, enviarNotificacao = true) {
     // Normaliza a recorrência antes de salvar
@@ -592,102 +594,95 @@ async listarAcompanhamentos(ordemServicoId) {
   }
 
   async listar(filtros = {}) {
-  const { 
-    grupoManutencaoId, 
-    tecnicoId,
-    status,
-    preventiva 
-  } = filtros;
+    const {
+      grupoManutencaoId,
+      tecnicoId,
+      status,
+      preventiva
+    } = filtros;
 
-  // Construir objeto where dinamicamente
-  const whereCondition = {};
+    const whereCondition = {};
 
-  if (preventiva !== undefined) {
-    whereCondition.preventiva = preventiva === true || preventiva === 'true';
-  }
+    if (preventiva !== undefined) {
+      whereCondition.preventiva = preventiva === true || preventiva === 'true';
+    }
 
-  if (status) {
-    whereCondition.status = status;
-  }
+    if (status) {
+      whereCondition.status = status;
+    }
 
-  // Filtro por técnico
-  if (tecnicoId) {
-    whereCondition.tecnicoId = Number(tecnicoId);
-  }
+    if (tecnicoId) {
+      whereCondition.tecnicoId = Number(tecnicoId);
+    }
 
-  // Filtro por grupo de manutenção (requer join com técnico)
-  let tecnicoWhere = undefined;
-  if (grupoManutencaoId) {
-    tecnicoWhere = {
-      grupoId: Number(grupoManutencaoId)
-    };
-  }
+    let tecnicoWhere = undefined;
+    if (grupoManutencaoId) {
+      tecnicoWhere = {
+        grupoId: Number(grupoManutencaoId)
+      };
+    }
 
-  const queryOptions = {
-    where: whereCondition,
-    include: {
-      tipoEquipamento: true,
-      tecnico: {
-        include: {
-          grupo: true // Inclui informações do grupo de manutenção
-        }
-      },
-      Setor: true,
-      solicitante: { select: { nome: true } },
-      equipamento: {
-        select: {
-          nomeEquipamento: true,
-          marca: true,
-          modelo: true,
-          numeroSerie: true,
-        }
-      },
-      acompanhamentos: {
-        select: {
-          id: true,
-          descricao: true,
-          criadoEm: true,
-          criadoPor: {
-            select: { nome: true, email: true }
+    const queryOptions = {
+      where: whereCondition,
+      include: {
+        tipoEquipamento: true,
+        tecnico: {
+          include: {
+            grupo: true
           }
         },
-        orderBy: { criadoEm: 'asc' }
-      }
-    },
-    orderBy: [
-      { prioridade: 'desc' },
-      { criadoEm: 'desc' }
-    ]
-  };
+        Setor: true,
+        solicitante: { select: { nome: true } },
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            marca: true,
+            modelo: true,
+            numeroSerie: true,
+          }
+        },
+        acompanhamentos: {
+          select: {
+            id: true,
+            descricao: true,
+            criadoEm: true,
+            arquivos: true, // ADICIONADO: Incluir arquivos
+            criadoPor: {
+              select: { nome: true, email: true }
+            }
+          },
+          orderBy: { criadoEm: 'asc' }
+        }
+      },
+      orderBy: [
+        { prioridade: 'desc' },
+        { criadoEm: 'desc' }
+      ]
+    };
 
-  // Buscar todas as ordens de serviço
-  let todasAsOrdens = await prisma.ordemServico.findMany(queryOptions);
+    let todasAsOrdens = await prisma.ordemServico.findMany(queryOptions);
 
-  // Aplicar filtro por grupo de manutenção (após busca, já que é relação indireta)
-  if (grupoManutencaoId) {
-    todasAsOrdens = todasAsOrdens.filter(os => 
-      os.tecnico?.grupo?.id === Number(grupoManutencaoId)
-    );
+    if (grupoManutencaoId) {
+      todasAsOrdens = todasAsOrdens.filter(os =>
+        os.tecnico?.grupo?.id === Number(grupoManutencaoId)
+      );
+    }
+
+    const preventivas = todasAsOrdens.filter(os => os.preventiva === true);
+    const corretivas = todasAsOrdens.filter(os => os.preventiva === false);
+
+    const totalManutencao = todasAsOrdens.reduce((acc, os) => {
+      const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
+      return acc + valor;
+    }, 0);
+
+    return {
+      preventivas,
+      corretivas,
+      totalManutencao,
+      total: todasAsOrdens.length
+    };
   }
-
-  // Separar em preventivas e corretivas
-  const preventivas = todasAsOrdens.filter(os => os.preventiva === true);
-  const corretivas = todasAsOrdens.filter(os => os.preventiva === false);
-
-  // Calcular total de manutenção
-  const totalManutencao = todasAsOrdens.reduce((acc, os) => {
-    const valor = os.valorManutencao ? Number(os.valorManutencao) : 0;
-    return acc + valor;
-  }, 0);
-
-  return { 
-    preventivas, 
-    corretivas, 
-    totalManutencao,
-    total: todasAsOrdens.length 
-  };
-}
-
   async buscarPorId(id) {
     return await prisma.ordemServico.findUnique({
       where: { id },
@@ -701,62 +696,62 @@ async listarAcompanhamentos(ordemServicoId) {
   }
 
   async atualizar(id, data) {
-  // Busca a OS atual para verificar o status
-  const osAtual = await prisma.ordemServico.findUnique({
-    where: { id },
-  });
+    // Busca a OS atual para verificar o status
+    const osAtual = await prisma.ordemServico.findUnique({
+      where: { id },
+    });
 
-  if (!osAtual) {
-    throw new Error("Ordem de Serviço não encontrada.");
-  }
-
-  // Verifica se a OS está com status ABERTA
-  if (osAtual.status !== 'ABERTA') {
-    throw new Error(`Apenas OSs com status ABERTA podem ser atualizadas. Status atual: ${osAtual.status}`);
-  }
-
-  // Define quais campos podem ser atualizados
-  const camposPermitidos = {
-    descricao: data.descricao,
-    tecnicoId: data.tecnicoId,
-    prioridade: data.prioridade
-  };
-
-  // Remove campos undefined/null
-  const dadosLimpos = {};
-  Object.keys(camposPermitidos).forEach(campo => {
-    if (data[campo] !== undefined && data[campo] !== null) {
-      dadosLimpos[campo] = camposPermitidos[campo];
+    if (!osAtual) {
+      throw new Error("Ordem de Serviço não encontrada.");
     }
-  });
 
-  // Se nenhum campo válido foi fornecido, retorna erro
-  if (Object.keys(dadosLimpos).length === 0) {
-    throw new Error("Nenhum campo válido foi fornecido para atualização. Campos permitidos: descricao, tecnicoId, prioridade");
-  }
+    // Verifica se a OS está com status ABERTA
+    if (osAtual.status !== 'ABERTA') {
+      throw new Error(`Apenas OSs com status ABERTA podem ser atualizadas. Status atual: ${osAtual.status}`);
+    }
 
-  // Atualiza apenas os campos permitidos
-  const osAtualizada = await prisma.ordemServico.update({
-    where: { id },
-    data: dadosLimpos,
-    include: {
-      tipoEquipamento: true,
-      tecnico: true,
-      solicitante: { select: { nome: true } },
-      Setor: true,
-      equipamento: {
-        select: {
-          nomeEquipamento: true,
-          marca: true,
-          modelo: true,
-          numeroSerie: true,
-        }
+    // Define quais campos podem ser atualizados
+    const camposPermitidos = {
+      descricao: data.descricao,
+      tecnicoId: data.tecnicoId,
+      prioridade: data.prioridade
+    };
+
+    // Remove campos undefined/null
+    const dadosLimpos = {};
+    Object.keys(camposPermitidos).forEach(campo => {
+      if (data[campo] !== undefined && data[campo] !== null) {
+        dadosLimpos[campo] = camposPermitidos[campo];
       }
-    },
-  });
+    });
 
-  return osAtualizada;
-}
+    // Se nenhum campo válido foi fornecido, retorna erro
+    if (Object.keys(dadosLimpos).length === 0) {
+      throw new Error("Nenhum campo válido foi fornecido para atualização. Campos permitidos: descricao, tecnicoId, prioridade");
+    }
+
+    // Atualiza apenas os campos permitidos
+    const osAtualizada = await prisma.ordemServico.update({
+      where: { id },
+      data: dadosLimpos,
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        solicitante: { select: { nome: true } },
+        Setor: true,
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            marca: true,
+            modelo: true,
+            numeroSerie: true,
+          }
+        }
+      },
+    });
+
+    return osAtualizada;
+  }
 
   async deletar(id) {
     return await prisma.ordemServico.delete({
@@ -840,27 +835,23 @@ async listarAcompanhamentos(ordemServicoId) {
   }
 
   // ===== SERVICE =====
-async listarPorTecnico(tecnicoId, filtros = {}) {
+  async listarPorTecnico(tecnicoId, filtros = {}) {
   const whereCondition = {
     tecnicoId: tecnicoId
   };
 
-  // Filtro por status
   if (filtros.status) {
     whereCondition.status = filtros.status;
   }
 
-  // Filtro por tipo de manutenção (preventiva/corretiva)
   if (filtros.preventiva !== undefined) {
     whereCondition.preventiva = filtros.preventiva === 'true' || filtros.preventiva === true;
   }
 
-  // Filtro por prioridade
   if (filtros.prioridade) {
     whereCondition.prioridade = filtros.prioridade;
   }
 
-  // Filtros de data
   if (filtros.dataInicio || filtros.dataFim) {
     const campoData = filtros.status === 'CONCLUIDA' ? 'finalizadoEm' : 
                      filtros.status === 'CANCELADA' ? 'canceladaEm' :
@@ -873,14 +864,12 @@ async listarPorTecnico(tecnicoId, filtros = {}) {
     }
     
     if (filtros.dataFim) {
-      // Adiciona 23:59:59 para incluir todo o dia final
       const dataFim = new Date(filtros.dataFim);
       dataFim.setHours(23, 59, 59, 999);
       whereCondition[campoData].lte = dataFim;
     }
   }
 
-  // Define ordenação baseada no status
   let orderBy;
   if (filtros.status === 'CONCLUIDA' || filtros.status === 'CANCELADA') {
     orderBy = { finalizadoEm: 'desc' };
@@ -911,6 +900,7 @@ async listarPorTecnico(tecnicoId, filtros = {}) {
           id: true,
           descricao: true,
           criadoEm: true,
+          arquivos: true, // ADICIONADO: Incluir arquivos
           criadoPor: {
             select: { nome: true, email: true }
           }
@@ -921,7 +911,6 @@ async listarPorTecnico(tecnicoId, filtros = {}) {
     orderBy: orderBy
   });
 
-  // Converte as datas apenas para status ABERTA ou quando não há filtro
   if (filtros.status === 'ABERTA' || !filtros.status) {
     return ordens.map(os => ({
       ...os,
@@ -960,7 +949,7 @@ async listarPorTecnico(tecnicoId, filtros = {}) {
   }));
 }
 
-async listarPreventivasPorTecnico(tecnicoId) {
+  async listarPreventivasPorTecnico(tecnicoId) {
   const ordens = await prisma.ordemServico.findMany({
     where: {
       tecnicoId,
@@ -986,6 +975,7 @@ async listarPreventivasPorTecnico(tecnicoId) {
           id: true,
           descricao: true,
           criadoEm: true,
+          arquivos: true, // ADICIONADO: Incluir arquivos
           criadoPor: {
             select: { nome: true, email: true }
           }
@@ -1016,37 +1006,31 @@ async listarPreventivasPorTecnico(tecnicoId) {
   }));
 }
 
-async listarPorSolicitante(solicitanteId, filtros = {}) {
+  async listarPorSolicitante(solicitanteId, filtros = {}) {
   const { status, dataInicio, dataFim, preventiva } = filtros;
 
-  // Construir filtros dinâmicos
   const whereClause = {
     solicitanteId: solicitanteId
   };
 
-  // Filtro por status
   if (status && status !== 'TODAS') {
     whereClause.status = status;
   }
 
-  // Filtro por tipo (preventiva/corretiva)
   if (preventiva !== undefined && preventiva !== null && preventiva !== '') {
     whereClause.preventiva = preventiva === 'true' || preventiva === true;
   }
 
-  // Filtro por data de criação
   if (dataInicio || dataFim) {
     whereClause.criadoEm = {};
     
     if (dataInicio) {
-      // Início do dia
       const inicio = new Date(dataInicio);
       inicio.setHours(0, 0, 0, 0);
       whereClause.criadoEm.gte = inicio;
     }
     
     if (dataFim) {
-      // Final do dia
       const fim = new Date(dataFim);
       fim.setHours(23, 59, 59, 999);
       whereClause.criadoEm.lte = fim;
@@ -1105,6 +1089,7 @@ async listarPorSolicitante(solicitanteId, filtros = {}) {
           id: true,
           descricao: true,
           criadoEm: true,
+          arquivos: true, // ADICIONADO: Incluir arquivos
           criadoPor: {
             select: {
               id: true,
@@ -1131,7 +1116,6 @@ async listarPorSolicitante(solicitanteId, filtros = {}) {
     ]
   });
 
-  // Converter datas para formato brasileiro
   const ordensFormatadas = ordens.map(os => ({
     ...os,
     criadoEm: os.criadoEm
@@ -1158,7 +1142,6 @@ async listarPorSolicitante(solicitanteId, filtros = {}) {
     }))
   }));
 
-  // Calcular estatísticas
   const estatisticas = {
     total: ordensFormatadas.length,
     abertas: ordensFormatadas.filter(os => os.status === 'ABERTA').length,
@@ -1184,13 +1167,12 @@ async listarPorSolicitante(solicitanteId, filtros = {}) {
   };
 }
 
-
-// envia notificação quando um acompanhament é registrado
-async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
+  // envia notificação quando um acompanhament é registrado
+  async criarAcompanhamento({ userId, ordemServicoId, descricao, files = [] }) {
   const os = await prisma.ordemServico.findUnique({
     where: { id: ordemServicoId },
-    include: { 
-      solicitante: true, 
+    include: {
+      solicitante: true,
       tecnico: true,
       equipamento: {
         select: {
@@ -1210,7 +1192,7 @@ async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
   // Buscar informações do usuário incluindo o técnico vinculado
   const usuario = await prisma.usuario.findUnique({
     where: { id: userId },
-    include: { 
+    include: {
       tecnico: true
     }
   });
@@ -1219,11 +1201,15 @@ async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
     throw new Error("Usuário não encontrado.");
   }
 
+  // Mapear os arquivos para um array de caminhos
+  const caminhos = files.map(file => file.path);
+
   const acompanhamento = await prisma.acompanhamentoOS.create({
     data: {
       ordemServicoId,
       descricao,
       criadoPorId: userId,
+      arquivos: caminhos, // ADICIONADO: Salvar os caminhos dos arquivos
     },
     include: {
       criadoPor: { select: { id: true, nome: true, email: true } },
@@ -1236,101 +1222,101 @@ async criarAcompanhamento({ userId, ordemServicoId, descricao }) {
   return acompanhamento;
 }
 
-// Novo método para enviar notificações de acompanhamento
-async enviarNotificacoesAcompanhamento(os, acompanhamento, usuarioQueRegistrou) {
-  const emailsParaNotificar = [];
-  
-  // Adiciona o email do solicitante (se não foi ele quem registrou)
-  if (os.solicitante && os.solicitante.email && os.solicitante.id !== usuarioQueRegistrou.id) {
-    emailsParaNotificar.push({
-      email: os.solicitante.email,
-      nome: os.solicitante.nome,
-      tipo: 'solicitante'
-    });
+  // Novo método para enviar notificações de acompanhamento
+  async enviarNotificacoesAcompanhamento(os, acompanhamento, usuarioQueRegistrou) {
+    const emailsParaNotificar = [];
+
+    // Adiciona o email do solicitante (se não foi ele quem registrou)
+    if (os.solicitante && os.solicitante.email && os.solicitante.id !== usuarioQueRegistrou.id) {
+      emailsParaNotificar.push({
+        email: os.solicitante.email,
+        nome: os.solicitante.nome,
+        tipo: 'solicitante'
+      });
+    }
+
+    // Adiciona o email do técnico (se não foi ele quem registrou)
+    if (os.tecnico && os.tecnico.email && os.tecnico.id !== usuarioQueRegistrou.id) {
+      emailsParaNotificar.push({
+        email: os.tecnico.email,
+        nome: os.tecnico.nome,
+        tipo: 'tecnico'
+      });
+    }
+
+    // Envia emails para todos os destinatários
+    for (const destinatario of emailsParaNotificar) {
+      const htmlTemplate = this.gerarTemplateEmailAcompanhamento(
+        os,
+        acompanhamento,
+        usuarioQueRegistrou,
+        destinatario
+      );
+
+      const emailData = {
+        to: destinatario.email,
+        subject: `Nova Atualização na OS #${os.id} - ${os.preventiva ? 'Preventiva' : 'Corretiva'}`,
+        html: htmlTemplate
+      };
+
+      try {
+        await emailUtils.enviarEmail(emailData);
+        console.log(`Email de acompanhamento enviado para ${destinatario.email} - OS #${os.id}`);
+      } catch (error) {
+        console.error('Erro ao enviar email de acompanhamento:', error);
+      }
+    }
+
+    // Notificação no Telegram (opcional - apenas para o técnico)
+    if (os.tecnico &&
+      os.tecnico.telegramChatId &&
+      os.tecnico.id !== usuarioQueRegistrou.id) {
+
+      let msg = `🔔 <b>Nova Atualização na OS #${os.id}</b>\n\n`;
+      msg += `👤 Registrado por: ${usuarioQueRegistrou.nome}\n`;
+      msg += `📝 Descrição: ${os.descricao}\n`;
+      msg += `💬 Acompanhamento: ${acompanhamento.descricao}\n`;
+      msg += `📅 Data: ${new Date().toLocaleString('pt-BR')}`;
+
+      try {
+        await enviarNotificacaoTelegram(os.tecnico.telegramChatId, msg);
+      } catch (error) {
+        console.error('Erro ao enviar notificação Telegram:', error);
+      }
+    }
   }
 
-  // Adiciona o email do técnico (se não foi ele quem registrou)
-  if (os.tecnico && os.tecnico.email && os.tecnico.id !== usuarioQueRegistrou.id) {
-    emailsParaNotificar.push({
-      email: os.tecnico.email,
-      nome: os.tecnico.nome,
-      tipo: 'tecnico'
-    });
-  }
+  // Template de email para acompanhamento
+  gerarTemplateEmailAcompanhamento(os, acompanhamento, usuarioQueRegistrou, destinatario) {
+    const prioridadeEmoji = this.getPrioridadeEmoji(os.prioridade);
+    const prioridadeTexto = this.getPrioridadeTexto(os.prioridade);
 
-  // Envia emails para todos os destinatários
-  for (const destinatario of emailsParaNotificar) {
-    const htmlTemplate = this.gerarTemplateEmailAcompanhamento(
-      os, 
-      acompanhamento, 
-      usuarioQueRegistrou, 
-      destinatario
-    );
-
-    const emailData = {
-      to: destinatario.email,
-      subject: `Nova Atualização na OS #${os.id} - ${os.preventiva ? 'Preventiva' : 'Corretiva'}`,
-      html: htmlTemplate
+    const corPrioridade = {
+      BAIXO: '#10b981',
+      MEDIO: '#f59e0b',
+      ALTO: '#f97316',
+      URGENTE: '#ef4444'
     };
 
-    try {
-      await emailUtils.enviarEmail(emailData);
-      console.log(`Email de acompanhamento enviado para ${destinatario.email} - OS #${os.id}`);
-    } catch (error) {
-      console.error('Erro ao enviar email de acompanhamento:', error);
-    }
-  }
+    const cor = corPrioridade[os.prioridade] || '#f59e0b';
 
-  // Notificação no Telegram (opcional - apenas para o técnico)
-  if (os.tecnico && 
-      os.tecnico.telegramChatId && 
-      os.tecnico.id !== usuarioQueRegistrou.id) {
-    
-    let msg = `🔔 <b>Nova Atualização na OS #${os.id}</b>\n\n`;
-    msg += `👤 Registrado por: ${usuarioQueRegistrou.nome}\n`;
-    msg += `📝 Descrição: ${os.descricao}\n`;
-    msg += `💬 Acompanhamento: ${acompanhamento.descricao}\n`;
-    msg += `📅 Data: ${new Date().toLocaleString('pt-BR')}`;
+    const corStatus = {
+      ABERTA: '#3b82f6',
+      EM_ANDAMENTO: '#f59e0b',
+      CONCLUIDA: '#10b981',
+      CANCELADA: '#ef4444'
+    };
 
-    try {
-      await enviarNotificacaoTelegram(os.tecnico.telegramChatId, msg);
-    } catch (error) {
-      console.error('Erro ao enviar notificação Telegram:', error);
-    }
-  }
-}
+    const statusCor = corStatus[os.status] || '#3b82f6';
 
-// Template de email para acompanhamento
-gerarTemplateEmailAcompanhamento(os, acompanhamento, usuarioQueRegistrou, destinatario) {
-  const prioridadeEmoji = this.getPrioridadeEmoji(os.prioridade);
-  const prioridadeTexto = this.getPrioridadeTexto(os.prioridade);
-  
-  const corPrioridade = {
-    BAIXO: '#10b981',
-    MEDIO: '#f59e0b',
-    ALTO: '#f97316',
-    URGENTE: '#ef4444'
-  };
-  
-  const cor = corPrioridade[os.prioridade] || '#f59e0b';
-  
-  const corStatus = {
-    ABERTA: '#3b82f6',
-    EM_ANDAMENTO: '#f59e0b',
-    CONCLUIDA: '#10b981',
-    CANCELADA: '#ef4444'
-  };
-  
-  const statusCor = corStatus[os.status] || '#3b82f6';
-  
-  const statusTexto = {
-    ABERTA: 'Aberta',
-    EM_ANDAMENTO: 'Em Andamento',
-    CONCLUIDA: 'Concluída',
-    CANCELADA: 'Cancelada'
-  };
+    const statusTexto = {
+      ABERTA: 'Aberta',
+      EM_ANDAMENTO: 'Em Andamento',
+      CONCLUIDA: 'Concluída',
+      CANCELADA: 'Cancelada'
+    };
 
-  return `
+    return `
     <html lang="pt-BR">
     <head>
       <meta charset="UTF-8">
@@ -1383,12 +1369,12 @@ gerarTemplateEmailAcompanhamento(os, acompanhamento, usuarioQueRegistrou, destin
                 </h3>
                 <p style="color:#64748b; margin:5px 0 0; font-size:13px;">
                   ${new Date(acompanhamento.criadoEm).toLocaleString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}
                 </p>
               </div>
             </div>
@@ -1460,12 +1446,12 @@ gerarTemplateEmailAcompanhamento(os, acompanhamento, usuarioQueRegistrou, destin
               </span>
               <p style="color:#1e293b; font-size:15px; margin:5px 0 0;">
                 ${new Date(os.criadoEm).toLocaleString('pt-BR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}
               </p>
             </div>
           </div>
@@ -1500,7 +1486,7 @@ gerarTemplateEmailAcompanhamento(os, acompanhamento, usuarioQueRegistrou, destin
       </div>
     </body>
     </html>`;
-}
+  }
 }
 
 module.exports = new OrdemServicoService();

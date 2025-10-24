@@ -76,12 +76,23 @@ const ordemServicoController = {
     });
   }
 },
-  async  criarAcompanhamentoController(req, res) {
+  async criarAcompanhamentoController(req, res) {
   try {
     const { ordemServicoId, descricao } = req.body;
     const userId = req.usuario.id; // vindo do middleware de autenticação
+    const files = req.files || []; // Pegar os arquivos do multer
 
     if (!descricao || !ordemServicoId) {
+      // Limpar arquivos em caso de erro de validação
+      if (files.length > 0) {
+        files.forEach(file => {
+          const fs = require('fs');
+          fs.unlink(file.path, (err) => {
+            if (err) console.error(`Erro ao deletar arquivo: ${file.path}`, err);
+          });
+        });
+      }
+
       return res
         .status(400)
         .json({ message: "Descrição e ordemServicoId são obrigatórios." });
@@ -91,12 +102,29 @@ const ordemServicoController = {
       userId,
       ordemServicoId: Number(ordemServicoId),
       descricao,
+      files, // Passar os arquivos para o service
     });
 
-    return res.status(201).json(acompanhamento);
+    return res.status(201).json({
+      success: true,
+      data: acompanhamento
+    });
   } catch (error) {
+    // Limpar arquivos em caso de erro
+    if (req.files && req.files.length > 0) {
+      const fs = require('fs');
+      req.files.forEach(file => {
+        fs.unlink(file.path, (err) => {
+          if (err) console.error(`Erro ao deletar arquivo: ${file.path}`, err);
+        });
+      });
+    }
+
     console.error(error);
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 },
 
