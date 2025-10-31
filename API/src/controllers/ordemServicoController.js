@@ -248,16 +248,63 @@ async listarMinhasOS (req, res)  {
 
   ,
 
-  async buscarPorId(req, res) {
-    try {
-      const { id } = req.params;
-      const os = await ordemServicoService.buscarPorId(Number(id));
-      if (!os) return res.status(404).json({ error: 'Ordem de serviço não encontrada' });
-      res.status(200).json(os);
-    } catch (error) {
-      res.status(400).json({ error: 'Erro ao buscar ordem de serviço' });
+ async buscarPorId(req, res) {
+  try {
+    const { id } = req.params;
+    
+    // Log para debug
+    console.log('🔍 Buscando OS:', { id, tipo: typeof id });
+    
+    // Validação do ID
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ 
+        error: 'ID inválido',
+        detalhes: 'O ID deve ser um número válido',
+        recebido: id
+      });
     }
-  },
+    
+    const os = await ordemServicoService.buscarPorId(Number(id));
+    
+    if (!os) {
+      return res.status(404).json({ 
+        error: 'Ordem de serviço não encontrada',
+        detalhes: `Nenhuma OS encontrada com o ID ${id}`
+      });
+    }
+    
+    console.log('✅ OS encontrada:', { id: os.id, descricao: os.descricao });
+    
+    res.status(200).json(os);
+  } catch (error) {
+    console.error('❌ Erro ao buscar ordem de serviço:', error);
+    console.error('Stack:', error.stack);
+    
+    // Erros específicos do Prisma
+    if (error.code === 'P2025') {
+      return res.status(404).json({ 
+        error: 'Ordem de serviço não encontrada',
+        detalhes: error.message
+      });
+    }
+    
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        error: 'Erro de referência',
+        detalhes: 'Problema com chaves estrangeiras'
+      });
+    }
+    
+    // Erro genérico com mais detalhes
+    res.status(500).json({ 
+      error: 'Erro ao buscar ordem de serviço',
+      detalhes: error.message,
+      codigo: error.code,
+      // Só mostra stack em desenvolvimento
+      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    });
+  }
+},
 
   async atualizar(req, res) {
   try {
@@ -407,7 +454,131 @@ async listarMinhasOS (req, res)  {
         detalhes: error.message
       });
     }
+  },
+
+  async previewCriacaoLote(req, res) {
+    try {
+      
+      const { setorId, tipoEquipamentoId } = req.query;
+
+      if (!setorId || !tipoEquipamentoId) {
+        return res.status(400).json({
+          error: 'Parâmetros setorId e tipoEquipamentoId são obrigatórios',
+          received: { setorId, tipoEquipamentoId }
+        });
+      }
+
+
+      const resultado = await ordemServicoService.listarEquipamentosPorSetorETipo(
+        parseInt(setorId),
+        parseInt(tipoEquipamentoId)
+      );
+
+      console.log('✅ Resultado:', {
+        total: resultado.total,
+        setor: resultado.setor?.nome,
+        tipo: resultado.tipoEquipamento?.nome
+      });
+
+      return res.status(200).json(resultado);
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Erro ao buscar equipamentos',
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  },
+  async criarOSEmLote(req, res) {
+    try {
+      const {
+        setorId,
+        tipoEquipamentoId,
+        descricao,
+        tecnicoId,
+        solicitanteId,
+        preventiva,
+        dataAgendada,
+        recorrencia,
+        intervaloDias,
+        quantidadeOcorrencias,
+        prioridade,
+        incluirDescricaoEquipamento
+      } = req.body;
+
+      // Validações com logs
+      if (!setorId) {
+        return res.status(400).json({ 
+          error: 'setorId é obrigatório',
+          received: req.body 
+        });
+      }
+
+      if (!tipoEquipamentoId) {
+        return res.status(400).json({ 
+          error: 'tipoEquipamentoId é obrigatório',
+          received: req.body 
+        });
+      }
+
+      if (!descricao) {
+        return res.status(400).json({ 
+          error: 'descricao é obrigatória',
+          received: req.body 
+        });
+      }
+
+      // Se não tem solicitanteId no body, usa o user autenticado
+      const solicitante = solicitanteId || req.usuario?.id;
+      
+      if (!solicitante) {
+        return res.status(400).json({ 
+          error: 'solicitanteId é obrigatório',
+          received: req.body,
+          user: req.usuario 
+        });
+      }
+
+      if (preventiva && recorrencia && recorrencia !== 'NENHUMA' && !dataAgendada) {
+        return res.status(400).json({
+          error: 'dataAgendada é obrigatória para OSs preventivas com recorrência',
+          received: { preventiva, recorrencia, dataAgendada }
+        });
+      }
+
+
+      const resultado = await ordemServicoService.criarOSEmLotePorSetor({
+        setorId: parseInt(setorId),
+        tipoEquipamentoId: parseInt(tipoEquipamentoId),
+        descricao,
+        tecnicoId: tecnicoId ? parseInt(tecnicoId) : null,
+        solicitanteId: parseInt(solicitante),
+        preventiva: preventiva === true || preventiva === 'true',
+        dataAgendada: dataAgendada || null,
+        recorrencia: recorrencia || 'NENHUMA',
+        intervaloDias: intervaloDias ? parseInt(intervaloDias) : null,
+        quantidadeOcorrencias: quantidadeOcorrencias ? parseInt(quantidadeOcorrencias) : 12,
+        prioridade: prioridade || 'MEDIO',
+        incluirDescricaoEquipamento: incluirDescricaoEquipamento !== false,
+      });
+
+      console.log('✅ OSs criadas:', {
+        total: resultado.totalOSsCriadas,
+        sucessos: resultado.totalEquipamentosComSucesso,
+        erros: resultado.totalEquipamentosComErro
+      });
+
+      return res.status(201).json(resultado);
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Erro ao criar OSs em lote',
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
   }
+
+
 };
 
 module.exports = ordemServicoController;

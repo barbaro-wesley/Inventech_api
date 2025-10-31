@@ -860,83 +860,287 @@ class OrdemServicoService {
 
   // ===== SERVICE =====
   async listarPorTecnico(tecnicoId, filtros = {}) {
-  const whereCondition = {
-    tecnicoId: tecnicoId
-  };
+    const whereCondition = {
+      tecnicoId: tecnicoId
+    };
 
-  if (filtros.status) {
-    whereCondition.status = filtros.status;
-  }
-
-  if (filtros.preventiva !== undefined) {
-    whereCondition.preventiva = filtros.preventiva === 'true' || filtros.preventiva === true;
-  }
-
-  if (filtros.prioridade) {
-    whereCondition.prioridade = filtros.prioridade;
-  }
-
-  if (filtros.dataInicio || filtros.dataFim) {
-    const campoData = filtros.status === 'CONCLUIDA' ? 'finalizadoEm' : 
-                     filtros.status === 'CANCELADA' ? 'canceladaEm' :
-                     filtros.status === 'EM_ANDAMENTO' ? 'iniciadaEm' : 'criadoEm';
-
-    whereCondition[campoData] = {};
-
-    if (filtros.dataInicio) {
-      whereCondition[campoData].gte = new Date(filtros.dataInicio);
+    if (filtros.status) {
+      whereCondition.status = filtros.status;
     }
-    
-    if (filtros.dataFim) {
-      const dataFim = new Date(filtros.dataFim);
-      dataFim.setHours(23, 59, 59, 999);
-      whereCondition[campoData].lte = dataFim;
+
+    if (filtros.preventiva !== undefined) {
+      whereCondition.preventiva = filtros.preventiva === 'true' || filtros.preventiva === true;
     }
-  }
 
-  let orderBy;
-  if (filtros.status === 'CONCLUIDA' || filtros.status === 'CANCELADA') {
-    orderBy = { finalizadoEm: 'desc' };
-  } else {
-    orderBy = [
-      { dataAgendada: 'asc' },
-      { criadoEm: 'desc' }
-    ];
-  }
+    if (filtros.prioridade) {
+      whereCondition.prioridade = filtros.prioridade;
+    }
 
-  const ordens = await prisma.ordemServico.findMany({
-    where: whereCondition,
-    include: {
-      tipoEquipamento: true,
-      tecnico: true,
-      Setor: true,
-      solicitante: { select: { nome: true } },
-      equipamento: {
-        select: {
-          nomeEquipamento: true,
-          marca: true,
-          modelo: true,
-          numeroSerie: true,
-        }
-      },
-      acompanhamentos: {
-        select: {
-          id: true,
-          descricao: true,
-          criadoEm: true,
-          arquivos: true, // ADICIONADO: Incluir arquivos
-          criadoPor: {
-            select: { nome: true, email: true }
+    if (filtros.dataInicio || filtros.dataFim) {
+      const campoData = filtros.status === 'CONCLUIDA' ? 'finalizadoEm' :
+        filtros.status === 'CANCELADA' ? 'canceladaEm' :
+          filtros.status === 'EM_ANDAMENTO' ? 'iniciadaEm' : 'criadoEm';
+
+      whereCondition[campoData] = {};
+
+      if (filtros.dataInicio) {
+        whereCondition[campoData].gte = new Date(filtros.dataInicio);
+      }
+
+      if (filtros.dataFim) {
+        const dataFim = new Date(filtros.dataFim);
+        dataFim.setHours(23, 59, 59, 999);
+        whereCondition[campoData].lte = dataFim;
+      }
+    }
+
+    let orderBy;
+    if (filtros.status === 'CONCLUIDA' || filtros.status === 'CANCELADA') {
+      orderBy = { finalizadoEm: 'desc' };
+    } else {
+      orderBy = [
+        { dataAgendada: 'asc' },
+        { criadoEm: 'desc' }
+      ];
+    }
+
+    const ordens = await prisma.ordemServico.findMany({
+      where: whereCondition,
+      include: {
+        tipoEquipamento: true,
+        tecnico: true,
+        Setor: true,
+        solicitante: { select: { nome: true } },
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            marca: true,
+            modelo: true,
+            numeroSerie: true,
           }
         },
-        orderBy: { criadoEm: 'asc' }
-      }
-    },
-    orderBy: orderBy
-  });
+        acompanhamentos: {
+          select: {
+            id: true,
+            descricao: true,
+            criadoEm: true,
+            arquivos: true, // ADICIONADO: Incluir arquivos
+            criadoPor: {
+              select: { nome: true, email: true }
+            }
+          },
+          orderBy: { criadoEm: 'asc' }
+        }
+      },
+      orderBy: orderBy
+    });
 
-  if (filtros.status === 'ABERTA' || !filtros.status) {
+    if (filtros.status === 'ABERTA' || !filtros.status) {
+      return ordens.map(os => ({
+        ...os,
+        criadoEm: os.criadoEm
+          ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : null,
+        iniciadaEm: os.iniciadaEm
+          ? os.iniciadaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : null,
+        finalizadoEm: os.finalizadoEm
+          ? os.finalizadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : null,
+        canceladaEm: os.canceladaEm
+          ? os.canceladaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : null,
+        dataAgendada: os.dataAgendada
+          ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : null,
+        acompanhamentos: os.acompanhamentos.map(acomp => ({
+          ...acomp,
+          criadoEm: acomp.criadoEm
+            ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+            : null
+        }))
+      }));
+    }
+
     return ordens.map(os => ({
+      ...os,
+      acompanhamentos: os.acompanhamentos.map(acomp => ({
+        ...acomp,
+        criadoEm: acomp.criadoEm
+          ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : null
+      }))
+    }));
+  }
+
+  async listarPreventivasPorTecnico(tecnicoId) {
+    const ordens = await prisma.ordemServico.findMany({
+      where: {
+        tecnicoId,
+        status: "ABERTA",
+        preventiva: true,
+        NOT: { dataAgendada: null }
+      },
+      include: {
+        tecnico: true,
+        tipoEquipamento: true,
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            marca: true,
+            modelo: true,
+            numeroSerie: true,
+          }
+        },
+        solicitante: { select: { nome: true } },
+        Setor: true,
+        acompanhamentos: {
+          select: {
+            id: true,
+            descricao: true,
+            criadoEm: true,
+            arquivos: true, // ADICIONADO: Incluir arquivos
+            criadoPor: {
+              select: { nome: true, email: true }
+            }
+          },
+          orderBy: { criadoEm: 'asc' }
+        }
+      },
+      orderBy: [
+        { dataAgendada: 'asc' },
+        { criadoEm: 'desc' }
+      ]
+    });
+
+    return ordens.map(os => ({
+      ...os,
+      criadoEm: os.criadoEm
+        ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null,
+      dataAgendada: os.dataAgendada
+        ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        : null,
+      acompanhamentos: os.acompanhamentos.map(acomp => ({
+        ...acomp,
+        criadoEm: acomp.criadoEm
+          ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : null
+      }))
+    }));
+  }
+
+  async listarPorSolicitante(solicitanteId, filtros = {}) {
+    const { status, dataInicio, dataFim, preventiva } = filtros;
+
+    const whereClause = {
+      solicitanteId: solicitanteId
+    };
+
+    if (status && status !== 'TODAS') {
+      whereClause.status = status;
+    }
+
+    if (preventiva !== undefined && preventiva !== null && preventiva !== '') {
+      whereClause.preventiva = preventiva === 'true' || preventiva === true;
+    }
+
+    if (dataInicio || dataFim) {
+      whereClause.criadoEm = {};
+
+      if (dataInicio) {
+        const inicio = new Date(dataInicio);
+        inicio.setHours(0, 0, 0, 0);
+        whereClause.criadoEm.gte = inicio;
+      }
+
+      if (dataFim) {
+        const fim = new Date(dataFim);
+        fim.setHours(23, 59, 59, 999);
+        whereClause.criadoEm.lte = fim;
+      }
+    }
+
+    const ordens = await prisma.ordemServico.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        descricao: true,
+        preventiva: true,
+        prioridade: true,
+        status: true,
+        criadoEm: true,
+        iniciadaEm: true,
+        finalizadoEm: true,
+        canceladaEm: true,
+        dataAgendada: true,
+        valorManutencao: true,
+        resolucao: true,
+        tipoEquipamento: {
+          select: {
+            id: true,
+            nome: true
+          }
+        },
+        tecnico: {
+          select: {
+            id: true,
+            nome: true
+          }
+        },
+        solicitante: {
+          select: {
+            nome: true
+          }
+        },
+        Setor: {
+          select: {
+            id: true,
+            nome: true
+          }
+        },
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            marca: true,
+            modelo: true,
+            numeroSerie: true,
+            numeroPatrimonio: true
+          }
+        },
+        acompanhamentos: {
+          select: {
+            id: true,
+            descricao: true,
+            criadoEm: true,
+            arquivos: true, // ADICIONADO: Incluir arquivos
+            criadoPor: {
+              select: {
+                id: true,
+                nome: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            criadoEm: 'desc'
+          }
+        }
+      },
+      orderBy: [
+        {
+          status: 'asc'
+        },
+        {
+          prioridade: 'desc'
+        },
+        {
+          criadoEm: 'desc'
+        }
+      ]
+    });
+
+    const ordensFormatadas = ordens.map(os => ({
       ...os,
       criadoEm: os.criadoEm
         ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
@@ -953,6 +1157,7 @@ class OrdemServicoService {
       dataAgendada: os.dataAgendada
         ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
         : null,
+      valorManutencao: os.valorManutencao ? Number(os.valorManutencao) : null,
       acompanhamentos: os.acompanhamentos.map(acomp => ({
         ...acomp,
         criadoEm: acomp.criadoEm
@@ -960,291 +1165,86 @@ class OrdemServicoService {
           : null
       }))
     }));
-  }
 
-  return ordens.map(os => ({
-    ...os,
-    acompanhamentos: os.acompanhamentos.map(acomp => ({
-      ...acomp,
-      criadoEm: acomp.criadoEm
-        ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-        : null
-    }))
-  }));
-}
+    const estatisticas = {
+      total: ordensFormatadas.length,
+      abertas: ordensFormatadas.filter(os => os.status === 'ABERTA').length,
+      emAndamento: ordensFormatadas.filter(os => os.status === 'EM_ANDAMENTO').length,
+      concluidas: ordensFormatadas.filter(os => os.status === 'CONCLUIDA').length,
+      canceladas: ordensFormatadas.filter(os => os.status === 'CANCELADA').length,
+      preventivas: ordensFormatadas.filter(os => os.preventiva === true).length,
+      corretivas: ordensFormatadas.filter(os => os.preventiva === false).length,
+      valorTotal: ordensFormatadas.reduce((acc, os) => {
+        return acc + (os.valorManutencao || 0);
+      }, 0)
+    };
 
-  async listarPreventivasPorTecnico(tecnicoId) {
-  const ordens = await prisma.ordemServico.findMany({
-    where: {
-      tecnicoId,
-      status: "ABERTA",
-      preventiva: true,
-      NOT: { dataAgendada: null }
-    },
-    include: {
-      tecnico: true,
-      tipoEquipamento: true,
-      equipamento: {
-        select: {
-          nomeEquipamento: true,
-          marca: true,
-          modelo: true,
-          numeroSerie: true,
-        }
-      },
-      solicitante: { select: { nome: true } },
-      Setor: true,
-      acompanhamentos: {
-        select: {
-          id: true,
-          descricao: true,
-          criadoEm: true,
-          arquivos: true, // ADICIONADO: Incluir arquivos
-          criadoPor: {
-            select: { nome: true, email: true }
-          }
-        },
-        orderBy: { criadoEm: 'asc' }
+    return {
+      ordens: ordensFormatadas,
+      estatisticas,
+      filtrosAplicados: {
+        status: status || 'TODAS',
+        dataInicio: dataInicio || null,
+        dataFim: dataFim || null,
+        preventiva: preventiva !== undefined ? preventiva : null
       }
-    },
-    orderBy: [
-      { dataAgendada: 'asc' },
-      { criadoEm: 'desc' }
-    ]
-  });
-
-  return ordens.map(os => ({
-    ...os,
-    criadoEm: os.criadoEm
-      ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    dataAgendada: os.dataAgendada
-      ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    acompanhamentos: os.acompanhamentos.map(acomp => ({
-      ...acomp,
-      criadoEm: acomp.criadoEm
-        ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-        : null
-    }))
-  }));
-}
-
-  async listarPorSolicitante(solicitanteId, filtros = {}) {
-  const { status, dataInicio, dataFim, preventiva } = filtros;
-
-  const whereClause = {
-    solicitanteId: solicitanteId
-  };
-
-  if (status && status !== 'TODAS') {
-    whereClause.status = status;
+    };
   }
-
-  if (preventiva !== undefined && preventiva !== null && preventiva !== '') {
-    whereClause.preventiva = preventiva === 'true' || preventiva === true;
-  }
-
-  if (dataInicio || dataFim) {
-    whereClause.criadoEm = {};
-    
-    if (dataInicio) {
-      const inicio = new Date(dataInicio);
-      inicio.setHours(0, 0, 0, 0);
-      whereClause.criadoEm.gte = inicio;
-    }
-    
-    if (dataFim) {
-      const fim = new Date(dataFim);
-      fim.setHours(23, 59, 59, 999);
-      whereClause.criadoEm.lte = fim;
-    }
-  }
-
-  const ordens = await prisma.ordemServico.findMany({
-    where: whereClause,
-    select: {
-      id: true,
-      descricao: true,
-      preventiva: true,
-      prioridade: true,
-      status: true,
-      criadoEm: true,
-      iniciadaEm: true,
-      finalizadoEm: true,
-      canceladaEm: true,
-      dataAgendada: true,
-      valorManutencao: true,
-      resolucao: true,
-      tipoEquipamento: {
-        select: {
-          id: true,
-          nome: true
-        }
-      },
-      tecnico: {
-        select: {
-          id: true,
-          nome: true
-        }
-      },
-      solicitante: { 
-        select: { 
-          nome: true 
-        } 
-      },
-      Setor: {
-        select: {
-          id: true,
-          nome: true
-        }
-      },
-      equipamento: {
-        select: {
-          nomeEquipamento: true,
-          marca: true,
-          modelo: true,
-          numeroSerie: true,
-          numeroPatrimonio: true
-        }
-      },
-      acompanhamentos: {
-        select: {
-          id: true,
-          descricao: true,
-          criadoEm: true,
-          arquivos: true, // ADICIONADO: Incluir arquivos
-          criadoPor: {
-            select: {
-              id: true,
-              nome: true,
-              email: true
-            }
-          }
-        },
-        orderBy: {
-          criadoEm: 'desc'
-        }
-      }
-    },
-    orderBy: [
-      {
-        status: 'asc'
-      },
-      {
-        prioridade: 'desc'
-      },
-      {
-        criadoEm: 'desc'
-      }
-    ]
-  });
-
-  const ordensFormatadas = ordens.map(os => ({
-    ...os,
-    criadoEm: os.criadoEm
-      ? os.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    iniciadaEm: os.iniciadaEm
-      ? os.iniciadaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    finalizadoEm: os.finalizadoEm
-      ? os.finalizadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    canceladaEm: os.canceladaEm
-      ? os.canceladaEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    dataAgendada: os.dataAgendada
-      ? os.dataAgendada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      : null,
-    valorManutencao: os.valorManutencao ? Number(os.valorManutencao) : null,
-    acompanhamentos: os.acompanhamentos.map(acomp => ({
-      ...acomp,
-      criadoEm: acomp.criadoEm
-        ? acomp.criadoEm.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-        : null
-    }))
-  }));
-
-  const estatisticas = {
-    total: ordensFormatadas.length,
-    abertas: ordensFormatadas.filter(os => os.status === 'ABERTA').length,
-    emAndamento: ordensFormatadas.filter(os => os.status === 'EM_ANDAMENTO').length,
-    concluidas: ordensFormatadas.filter(os => os.status === 'CONCLUIDA').length,
-    canceladas: ordensFormatadas.filter(os => os.status === 'CANCELADA').length,
-    preventivas: ordensFormatadas.filter(os => os.preventiva === true).length,
-    corretivas: ordensFormatadas.filter(os => os.preventiva === false).length,
-    valorTotal: ordensFormatadas.reduce((acc, os) => {
-      return acc + (os.valorManutencao || 0);
-    }, 0)
-  };
-
-  return {
-    ordens: ordensFormatadas,
-    estatisticas,
-    filtrosAplicados: {
-      status: status || 'TODAS',
-      dataInicio: dataInicio || null,
-      dataFim: dataFim || null,
-      preventiva: preventiva !== undefined ? preventiva : null
-    }
-  };
-}
 
   // envia notificação quando um acompanhament é registrado
   async criarAcompanhamento({ userId, ordemServicoId, descricao, files = [] }) {
-  const os = await prisma.ordemServico.findUnique({
-    where: { id: ordemServicoId },
-    include: {
-      solicitante: true,
-      tecnico: true,
-      equipamento: {
-        select: {
-          nomeEquipamento: true,
-          numeroPatrimonio: true,
-          numeroSerie: true,
-        }
+    const os = await prisma.ordemServico.findUnique({
+      where: { id: ordemServicoId },
+      include: {
+        solicitante: true,
+        tecnico: true,
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            numeroPatrimonio: true,
+            numeroSerie: true,
+          }
+        },
+        Setor: true
       },
-      Setor: true
-    },
-  });
+    });
 
-  if (!os) {
-    throw new Error("Ordem de Serviço não encontrada.");
-  }
-
-  // Buscar informações do usuário incluindo o técnico vinculado
-  const usuario = await prisma.usuario.findUnique({
-    where: { id: userId },
-    include: {
-      tecnico: true
+    if (!os) {
+      throw new Error("Ordem de Serviço não encontrada.");
     }
-  });
 
-  if (!usuario) {
-    throw new Error("Usuário não encontrado.");
+    // Buscar informações do usuário incluindo o técnico vinculado
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: userId },
+      include: {
+        tecnico: true
+      }
+    });
+
+    if (!usuario) {
+      throw new Error("Usuário não encontrado.");
+    }
+
+    // Mapear os arquivos para um array de caminhos
+    const caminhos = files.map(file => file.path);
+
+    const acompanhamento = await prisma.acompanhamentoOS.create({
+      data: {
+        ordemServicoId,
+        descricao,
+        criadoPorId: userId,
+        arquivos: caminhos, // ADICIONADO: Salvar os caminhos dos arquivos
+      },
+      include: {
+        criadoPor: { select: { id: true, nome: true, email: true } },
+      },
+    });
+
+    // ====== ENVIO DE NOTIFICAÇÕES ======
+    await this.enviarNotificacoesAcompanhamento(os, acompanhamento, usuario);
+
+    return acompanhamento;
   }
-
-  // Mapear os arquivos para um array de caminhos
-  const caminhos = files.map(file => file.path);
-
-  const acompanhamento = await prisma.acompanhamentoOS.create({
-    data: {
-      ordemServicoId,
-      descricao,
-      criadoPorId: userId,
-      arquivos: caminhos, // ADICIONADO: Salvar os caminhos dos arquivos
-    },
-    include: {
-      criadoPor: { select: { id: true, nome: true, email: true } },
-    },
-  });
-
-  // ====== ENVIO DE NOTIFICAÇÕES ======
-  await this.enviarNotificacoesAcompanhamento(os, acompanhamento, usuario);
-
-  return acompanhamento;
-}
 
   // Novo método para enviar notificações de acompanhamento
   async enviarNotificacoesAcompanhamento(os, acompanhamento, usuarioQueRegistrou) {
@@ -1511,6 +1511,462 @@ class OrdemServicoService {
     </body>
     </html>`;
   }
+  // cria OS por Lote Passando setor e tipo de equipamento 
+  // Adicione estes métodos à classe OrdemServicoService
+
+  /**
+   * Cria OSs em lote para todos os equipamentos de um setor específico
+   * @param {Object} data - Dados para criação das OSs
+   * @returns {Object} - Resultado com OSs criadas e estatísticas
+   */
+  async criarOSEmLotePorSetor(data) {
+    const {
+      setorId,
+      tipoEquipamentoId,
+      descricao,
+      tecnicoId,
+      solicitanteId,
+      preventiva = false,
+      dataAgendada,
+      recorrencia = 'NENHUMA',
+      intervaloDias,
+      quantidadeOcorrencias = 12,
+      prioridade = 'MEDIO',
+      incluirDescricaoEquipamento = true, // Adiciona nome do equipamento na descrição
+    } = data;
+
+    // Validações básicas
+    if (!setorId) {
+      throw new Error('ID do setor é obrigatório');
+    }
+
+    if (!tipoEquipamentoId) {
+      throw new Error('Tipo de equipamento é obrigatório');
+    }
+
+    if (!descricao) {
+      throw new Error('Descrição é obrigatória');
+    }
+
+    if (!solicitanteId) {
+      throw new Error('Solicitante é obrigatório');
+    }
+
+    // Busca todos os equipamentos do setor e tipo especificado
+    const equipamentos = await prisma.hcrEquipamentosMedicos.findMany({
+      where: {
+        setorId: setorId,
+        tipoEquipamentoId: tipoEquipamentoId,
+      },
+      include: {
+        setor: true,
+        tipoEquipamento: true,
+        localizacao: true,
+      },
+    });
+
+    if (equipamentos.length === 0) {
+      throw new Error(
+        `Nenhum equipamento encontrado no setor especificado com o tipo "${(await prisma.tipoEquipamento.findUnique({ where: { id: tipoEquipamentoId } }))?.nome || 'desconhecido'
+        }"`
+      );
+    }
+
+    const ossCriadas = [];
+    const erros = [];
+
+    // Normaliza recorrência
+    const recorrenciaNormalizada = !recorrencia ||
+      recorrencia === '' ||
+      recorrencia === null ||
+      recorrencia === undefined
+      ? 'NENHUMA'
+      : recorrencia;
+
+    // Itera sobre cada equipamento e cria as OSs
+    for (const equipamento of equipamentos) {
+      try {
+        // Monta a descrição personalizada
+        let descricaoFinal = descricao;
+
+        if (incluirDescricaoEquipamento && equipamento.nomeEquipamento) {
+          descricaoFinal = `${descricao} - ${equipamento.nomeEquipamento}`;
+
+          if (equipamento.numeroPatrimonio) {
+            descricaoFinal += ` (Pat: ${equipamento.numeroPatrimonio})`;
+          }
+
+          if (equipamento.localizacao?.nome) {
+            descricaoFinal += ` - ${equipamento.localizacao.nome}`;
+          }
+        }
+
+        // Dados da OS
+        const dadosOS = {
+          descricao: descricaoFinal,
+          tipoEquipamentoId,
+          equipamentoId: equipamento.id,
+          tecnicoId: tecnicoId || null,
+          solicitanteId,
+          preventiva,
+          dataAgendada: dataAgendada || null,
+          recorrencia: recorrenciaNormalizada,
+          intervaloDias: intervaloDias || null,
+          prioridade,
+          setorId,
+        };
+
+        // Se é preventiva com recorrência, usa o método de criação com recorrência
+        if (preventiva && recorrenciaNormalizada !== 'NENHUMA' && recorrenciaNormalizada !== 'SEM_RECORRENCIA') {
+          const resultado = await this.criar({
+            ...dadosOS,
+            quantidadeOcorrencias,
+          });
+
+          ossCriadas.push({
+            equipamentoId: equipamento.id,
+            equipamentoNome: equipamento.nomeEquipamento || 'Sem nome',
+            numeroPatrimonio: equipamento.numeroPatrimonio || 'N/A',
+            ossCriadas: resultado.ossCriadas || 1,
+            primeiraOS: resultado.primeiraOS || resultado,
+          });
+        } else {
+          // Cria apenas uma OS (corretiva ou preventiva sem recorrência)
+          const os = await this.criarOSUnica(dadosOS, false); // false = não envia notificação ainda
+
+          ossCriadas.push({
+            equipamentoId: equipamento.id,
+            equipamentoNome: equipamento.nomeEquipamento || 'Sem nome',
+            numeroPatrimonio: equipamento.numeroPatrimonio || 'N/A',
+            ossCriadas: 1,
+            primeiraOS: os,
+          });
+        }
+      } catch (error) {
+        erros.push({
+          equipamentoId: equipamento.id,
+          equipamentoNome: equipamento.nomeEquipamento || 'Sem nome',
+          numeroPatrimonio: equipamento.numeroPatrimonio || 'N/A',
+          erro: error.message,
+        });
+      }
+    }
+
+    // Envia notificação única para o técnico (se houver)
+    if (tecnicoId && ossCriadas.length > 0) {
+      await this.enviarNotificacaoLote(tecnicoId, ossCriadas, data);
+    }
+
+    // Monta resposta
+    const totalOSsCriadas = ossCriadas.reduce((acc, item) => acc + item.ossCriadas, 0);
+
+    return {
+      sucesso: ossCriadas.length > 0,
+      message: `${totalOSsCriadas} ordem(ns) de serviço criada(s) com sucesso para ${ossCriadas.length} equipamento(s)`,
+      totalEquipamentosProcessados: equipamentos.length,
+      totalEquipamentosComSucesso: ossCriadas.length,
+      totalEquipamentosComErro: erros.length,
+      totalOSsCriadas,
+      ossCriadas,
+      erros: erros.length > 0 ? erros : undefined,
+    };
+  }
+  /**
+   * Envia notificação única para o técnico sobre OSs criadas em lote
+   */
+  async enviarNotificacaoLote(tecnicoId, ossCriadas, dadosOriginais) {
+    const tecnico = await prisma.tecnico.findUnique({
+      where: { id: tecnicoId },
+    });
+
+    if (!tecnico) return;
+
+    const totalOSs = ossCriadas.reduce((acc, item) => acc + item.ossCriadas, 0);
+    const prioridadeEmoji = this.getPrioridadeEmoji(dadosOriginais.prioridade);
+    const prioridadeTexto = this.getPrioridadeTexto(dadosOriginais.prioridade);
+
+    // Notificação Telegram
+    if (tecnico.telegramChatId) {
+      let msg = `📦 <b>Novas OSs Criadas em Lote</b>\n\n`;
+      msg += `🔧 Técnico: ${tecnico.nome}\n`;
+      msg += `${prioridadeEmoji} Prioridade: <b>${prioridadeTexto}</b>\n`;
+      msg += `📊 Total de OSs: <b>${totalOSs}</b>\n`;
+      msg += `⚙️ Equipamentos: <b>${ossCriadas.length}</b>\n`;
+      msg += `📌 Tipo: ${dadosOriginais.preventiva ? 'Preventiva' : 'Corretiva'}\n`;
+      msg += `📝 Descrição Base: ${dadosOriginais.descricao}\n`;
+
+      if (dadosOriginais.dataAgendada) {
+        const dataFormatada = new Date(dadosOriginais.dataAgendada).toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        msg += `📅 Data Agendada: ${dataFormatada}\n`;
+      }
+
+      if (dadosOriginais.preventiva && dadosOriginais.recorrencia !== 'NENHUMA') {
+        msg += `🔄 Recorrência: ${this.getTextoRecorrencia(dadosOriginais.recorrencia, dadosOriginais.intervaloDias)}\n`;
+      }
+
+      msg += `\n💡 Acesse o sistema para visualizar todas as OSs criadas.`;
+
+      try {
+        await enviarNotificacaoTelegram(tecnico.telegramChatId, msg);
+      } catch (error) {
+        console.error('Erro ao enviar notificação Telegram em lote:', error);
+      }
+    }
+
+    // Notificação por Email
+    if (tecnico.email) {
+      const htmlTemplate = this.gerarTemplateEmailLote(tecnico, ossCriadas, dadosOriginais, totalOSs);
+
+      const emailData = {
+        to: tecnico.email,
+        subject: `${totalOSs} Nova(s) Ordem(ns) de Serviço Atribuída(s) - Criação em Lote`,
+        html: htmlTemplate,
+      };
+
+      try {
+        await emailUtils.enviarEmail(emailData);
+      } catch (error) {
+        console.error('Erro ao enviar email de lote:', error);
+      }
+    }
+  }
+
+  /**
+   * Template de email para criação em lote
+   */
+  gerarTemplateEmailLote(tecnico, ossCriadas, dadosOriginais, totalOSs) {
+    const prioridadeEmoji = this.getPrioridadeEmoji(dadosOriginais.prioridade);
+    const prioridadeTexto = this.getPrioridadeTexto(dadosOriginais.prioridade);
+
+    const corPrioridade = {
+      BAIXO: '#10b981',
+      MEDIO: '#f59e0b',
+      ALTO: '#f97316',
+      URGENTE: '#ef4444'
+    };
+
+    const cor = corPrioridade[dadosOriginais.prioridade] || '#f59e0b';
+
+    // Lista os primeiros 10 equipamentos
+    const equipamentosExibir = ossCriadas.slice(0, 10);
+    const temMais = ossCriadas.length > 10;
+
+    return `
+  <html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novas Ordens de Serviço - Criação em Lote</title>
+  </head>
+  <body style="margin:0; padding:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:#f8fafc; line-height:1.6;">
+    <div style="max-width:600px; margin:0 auto; background-color:#ffffff; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+      
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg, hsl(215, 85%, 20%) 0%, hsl(215, 85%, 30%) 40%, hsl(215, 85%, 45%) 70%, hsl(40, 95%, 60%) 100%); padding:40px 30px; text-align:center;">
+        <div style="background-color:rgba(255,255,255,0.15); width:80px; height:80px; border-radius:50%; margin:0 auto 20px; display:flex; align-items:center; justify-content:center;">
+          <div style="font-size:36px;">📦</div>
+        </div>
+        <h1 style="color:#ffffff; margin:0; font-size:28px; font-weight:700; text-shadow:0 2px 4px rgba(0,0,0,0.1);">
+          Novas OSs Criadas em Lote
+        </h1>
+        <p style="color:rgba(255,255,255,0.9); margin:10px 0 0; font-size:16px;">
+          ${totalOSs} ordem(ns) de serviço atribuída(s) a você
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div style="padding:40px 30px;">
+
+        <!-- Estatísticas -->
+        <div style="text-align:center; margin-bottom:35px;">
+          <div style="display:inline-block; background-color:${cor}; color:#ffffff; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; margin:5px;">
+            ${prioridadeEmoji} Prioridade: ${prioridadeTexto}
+          </div>
+          <div style="display:inline-block; background-color:#6366f1; color:#ffffff; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; margin:5px;">
+            ${dadosOriginais.preventiva ? '🔄 Preventiva' : '🔧 Corretiva'}
+          </div>
+          ${dadosOriginais.preventiva && dadosOriginais.recorrencia !== 'NENHUMA' && dadosOriginais.recorrencia !== 'SEM_RECORRENCIA' ? `
+          <div style="display:inline-block; background-color:#8b5cf6; color:#ffffff; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:600; margin:5px;">
+            📅 ${this.getTextoRecorrencia(dadosOriginais.recorrencia, dadosOriginais.intervaloDias)}
+          </div>` : ''}
+        </div>
+
+        <!-- Resumo -->
+        <div style="background-color:#f8fafc; border-radius:12px; padding:30px; margin-bottom:30px; border-left:4px solid hsl(215,85%,45%);">
+          <h3 style="color:#1e293b; font-size:18px; margin:0 0 20px; font-weight:600;">
+            📊 Resumo da Criação
+          </h3>
+          
+          <div style="display:flex; justify-content:space-around; text-align:center; margin-bottom:20px;">
+            <div>
+              <div style="font-size:32px; font-weight:700; color:#3b82f6;">${totalOSs}</div>
+              <div style="font-size:13px; color:#64748b; text-transform:uppercase;">OSs Criadas</div>
+            </div>
+            <div>
+              <div style="font-size:32px; font-weight:700; color:#10b981;">${ossCriadas.length}</div>
+              <div style="font-size:13px; color:#64748b; text-transform:uppercase;">Equipamentos</div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px;">
+            <h4 style="color:#374151; font-size:14px; font-weight:600; margin:0 0 10px; text-transform:uppercase; letter-spacing:0.5px;">
+              📝 Descrição Base
+            </h4>
+            <p style="color:#1e293b; font-size:15px; margin:0;">
+              ${dadosOriginais.descricao}
+            </p>
+          </div>
+
+          ${dadosOriginais.dataAgendada ? `
+          <div style="margin-top:15px;">
+            <h4 style="color:#374151; font-size:14px; font-weight:600; margin:0 0 10px; text-transform:uppercase; letter-spacing:0.5px;">
+              📅 Data Agendada
+            </h4>
+            <p style="color:#1e293b; font-size:15px; margin:0;">
+              ${new Date(dadosOriginais.dataAgendada).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}
+            </p>
+          </div>` : ''}
+        </div>
+
+        <!-- Lista de Equipamentos -->
+        <div style="background-color:#f8fafc; border-radius:12px; padding:25px; margin-bottom:30px;">
+          <h3 style="color:#1e293b; font-size:18px; margin:0 0 20px; font-weight:600;">
+            ⚙️ Equipamentos (${ossCriadas.length > 10 ? 'primeiros 10' : 'todos'})
+          </h3>
+          
+          ${equipamentosExibir.map((item, index) => `
+          <div style="background-color:#ffffff; border-radius:8px; padding:15px; margin-bottom:10px; border:1px solid #e2e8f0;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="flex:1;">
+                <div style="color:#1e293b; font-size:15px; font-weight:600; margin-bottom:5px;">
+                  ${index + 1}. ${item.equipamentoNome}
+                </div>
+                <div style="color:#64748b; font-size:13px;">
+                  Patrimônio: ${item.numeroPatrimonio} | 
+                  ${item.ossCriadas > 1 ? `${item.ossCriadas} OSs criadas` : '1 OS criada'}
+                </div>
+              </div>
+              <div style="background-color:#10b981; color:#ffffff; padding:5px 12px; border-radius:12px; font-size:12px; font-weight:600;">
+                OS #${item.primeiraOS.id}
+              </div>
+            </div>
+          </div>
+          `).join('')}
+
+          ${temMais ? `
+          <div style="text-align:center; margin-top:20px; padding:15px; background-color:#fef3c7; border-radius:8px;">
+            <p style="color:#92400e; font-size:14px; margin:0;">
+              <strong>+ ${ossCriadas.length - 10} equipamento(s) adicional(is)</strong><br>
+              <span style="font-size:13px;">Acesse o sistema para visualizar todos</span>
+            </p>
+          </div>` : ''}
+        </div>
+
+        <!-- Message -->
+        <div style="background:linear-gradient(135deg, hsl(215, 40%, 98%) 0%, hsl(215, 40%, 95%) 100%); border-radius:12px; padding:25px; margin-bottom:30px; border:1px solid hsl(215, 40%, 85%);">
+          <p style="color:#0f172a; font-size:16px; margin:0; text-align:center; line-height:1.6;">
+            <strong>Atenção!</strong> ${totalOSs} Ordem(ns) de Serviço foram criadas e atribuídas a você para ${ossCriadas.length} equipamento(s).
+            Acesse o sistema para visualizar os detalhes e iniciar o atendimento.
+          </p>
+        </div>
+
+        <!-- CTA -->
+        <div style="text-align:center; margin-bottom:30px;">
+          <a href="${process.env.APP_URL || '#'}" style="display:inline-block; background:linear-gradient(135deg, hsl(215, 85%, 20%) 0%, hsl(215, 85%, 30%) 40%, hsl(215, 85%, 45%) 70%, hsl(40, 95%, 60%) 100%); padding:12px 30px; border-radius:8px; text-decoration:none; color:#ffffff; font-weight:600; font-size:16px; box-shadow:0 4px 15px rgba(8,43,94,0.3);">
+            🔗 Acessar Sistema
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div style="background-color:#f8fafc; padding:30px; text-align:center; border-top:1px solid #e2e8f0;">
+        <p style="color:#64748b; font-size:14px; margin:0 0 10px;">
+          <strong>Departamento de Manutenção</strong>
+        </p>
+        <p style="color:#94a3b8; font-size:12px; margin:0; line-height:1.5;">
+          Este é um e-mail automático do sistema de gestão de Ordens de Serviço.<br>
+          Para dúvidas, entre em contato com o setor responsável.
+        </p>
+      </div>
+
+    </div>
+  </body>
+  </html>`;
+  }
+
+  /**
+   * Lista equipamentos de um setor por tipo (útil para preview antes de criar OSs)
+   */
+  async listarEquipamentosPorSetorETipo(setorId, tipoEquipamentoId) {
+    console.log('=== SERVICE: listarEquipamentosPorSetorETipo ===');
+    console.log('Params:', { setorId, tipoEquipamentoId });
+
+    try {
+      const equipamentos = await prisma.hcrEquipamentosMedicos.findMany({
+        where: {
+          setorId: setorId,
+          tipoEquipamentoId: tipoEquipamentoId,
+        },
+        select: {
+          id: true,
+          nomeEquipamento: true,
+          numeroPatrimonio: true,
+          numeroSerie: true,
+          marca: true,
+          modelo: true,
+          estado: true,
+          setor: {
+            select: {
+              id: true,
+              nome: true,
+            },
+          },
+          tipoEquipamento: {
+            select: {
+              id: true,
+              nome: true,
+            },
+          },
+          localizacao: {
+            select: {
+              id: true,
+              nome: true,
+            },
+          },
+        },
+        orderBy: {
+          nomeEquipamento: 'asc',
+        },
+      });
+
+
+      return {
+        total: equipamentos.length,
+        equipamentos,
+        setor: equipamentos[0]?.setor || null,
+        tipoEquipamento: equipamentos[0]?.tipoEquipamento || null,
+      };
+    } catch (error) {
+      console.error('❌ Erro no service:', error);
+      throw error;
+    }
+  }
+
+
+
 }
 
 module.exports = new OrdemServicoService();

@@ -31,40 +31,35 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
   cb(null, allowed.includes(file.mimetype));
 };
 
 const upload = multer({ storage, fileFilter });
 
 router.use(autenticarUsuario);
-router.get('/tecnico', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPorTecnico);
-router.get('/ordens/preventivas', autenticarUsuario, permitirSomente('admin', 'tecnico','cadastro'), ordemServicoController.listarPreventivasPorTecnico);
-router.get('/minhas-os', autenticarUsuario, ordemServicoController.listarMinhasOS);
 
-
-router.post('/',autenticarUsuario, permitirSomente('admin','cadastro','visualizador','tecnico'),upload.array('arquivos', 5),ordemServicoController.criar);
+// Rotas estáticas sem parâmetros (organizadas por método HTTP)
 router.get('/', ordemServicoController.listar);
-router.get('/:id', permitirSomente('admin','cadastro','tecnico','visualizador'),ordemServicoController.buscarPorId);
-router.put('/ordens-servico/:id', autenticarUsuario, permitirSomente('admin','cadastro'),ordemServicoController.atualizar);
-router.delete('/:id',autenticarUsuario, permitirSomente('admin'), ordemServicoController.deletar);
-router.put(
-  '/:id/concluir',
-  autenticarUsuario,
-  permitirSomente('admin', 'tecnico','cadastro'),
-  upload.array('arquivos',5), 
-  ordemServicoController.concluir
-);
-router.put("/:id/iniciar", autenticarUsuario,permitirSomente('admin', 'tecnico','cadastro'),ordemServicoController.iniciar);
-router.put("/:id/cancelar", autenticarUsuario,permitirSomente('admin', 'tecnico','cadastro'),ordemServicoController.cancelar);
-// ROTAS DE ADICIONAR E PEGAR ACOMPANHAMENTOS
-router.post(
-  "/acompanhamento",
-  autenticarUsuario,
-  upload.array('arquivos', 5),
-  ordemServicoController.criarAcompanhamentoController
-);
-router.get("acompanhamento/:id", ordemServicoController.listarAcompanhamentosController);
+router.get('/tecnico', permitirSomente('admin', 'tecnico', 'cadastro'), ordemServicoController.listarPorTecnico);
+router.get('/ordens/preventivas', permitirSomente('admin', 'tecnico', 'cadastro'), ordemServicoController.listarPreventivasPorTecnico);
+router.get('/minhas-os', ordemServicoController.listarMinhasOS);
+router.get('/preview-lote', ordemServicoController.previewCriacaoLote);
 
+router.post('/', permitirSomente('admin', 'cadastro', 'visualizador', 'tecnico'), upload.array('arquivos', 5), ordemServicoController.criar);
+router.post('/criar-lote', ordemServicoController.criarOSEmLote);
+router.post('/acompanhamento', upload.array('arquivos', 5), ordemServicoController.criarAcompanhamentoController);
+
+// Rotas com parâmetros específicos (mais específicas primeiro)
+router.get('/acompanhamento/:id', ordemServicoController.listarAcompanhamentosController); // Corrigido: adicionado '/' antes de 'acompanhamento'
+
+router.put('/:id/concluir', permitirSomente('admin', 'tecnico', 'cadastro'), upload.array('arquivos', 5), ordemServicoController.concluir);
+router.put('/:id/iniciar', permitirSomente('admin', 'tecnico', 'cadastro'), ordemServicoController.iniciar);
+router.put('/:id/cancelar', permitirSomente('admin', 'tecnico', 'cadastro'), ordemServicoController.cancelar);
+
+// Rotas dinâmicas gerais (por último)
+router.get('/:id', permitirSomente('admin', 'cadastro', 'tecnico', 'visualizador'), ordemServicoController.buscarPorId);
+router.put('/ordens-servico/:id', permitirSomente('admin', 'cadastro'), ordemServicoController.atualizar); // Mantido como está, mas considere padronizar para '/:id'
+router.delete('/:id', permitirSomente('admin'), ordemServicoController.deletar);
 
 module.exports = router;

@@ -1,9 +1,9 @@
 node_modules
 # Keep environment variables out of version control
 .env
-
+migration_lock.toml
 /generated/prisma
-
+/prisma/migrations
 /uploads
 /storage
 

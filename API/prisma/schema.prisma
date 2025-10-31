@@ -466,6 +466,7 @@ enum PapelUsuario {
   visualizador
   usuario_comum
   CEP
+  Gerente_Manutencao
 }
 
 enum StatusOS {
