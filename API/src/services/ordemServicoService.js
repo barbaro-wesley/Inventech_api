@@ -688,9 +688,33 @@ class OrdemServicoService {
       where: { id },
       include: {
         tipoEquipamento: true,
-        tecnico: true,
+        tecnico: {
+          include: {
+            grupo: true
+          }
+        },
+        Setor: true,
         solicitante: { select: { nome: true } },
-        Setor: true
+        equipamento: {
+          select: {
+            nomeEquipamento: true,
+            marca: true,
+            modelo: true,
+            numeroSerie: true,
+          }
+        },
+        acompanhamentos: {
+          select: {
+            id: true,
+            descricao: true,
+            criadoEm: true,
+            arquivos: true,
+            criadoPor: {
+              select: { nome: true, email: true }
+            }
+          },
+          orderBy: { criadoEm: 'asc' }
+        }
       },
     });
   }
