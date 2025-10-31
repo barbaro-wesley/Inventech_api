@@ -1,15 +1,507 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Setor {
+  id                     Int                      @id @default(autoincrement())
+  nome                   String                   @unique
+  funcionarios           Funcionario[]
+  HcrAirConditioning     HcrAirConditioning[]
+  HcrComputer            HcrComputer[]
+  HcrEquipamentosMedicos HcrEquipamentosMedicos[]
+  HcrMobilia             HcrMobilia[]
+  HcrPrinter             HcrPrinter[]
+  localizacoes           Localizacao[]
+  os                     OrdemServico[]
+}
+
+model Localizacao {
+  id                     Int                      @id @default(autoincrement())
+  nome                   String
+  setorId                Int?
+  HcrAirConditioning     HcrAirConditioning[]
+  HcrComputer            HcrComputer[]
+  HcrEquipamentosMedicos HcrEquipamentosMedicos[]
+  HcrMobilia             HcrMobilia[]
+  HcrPrinter             HcrPrinter[]
+  setor                  Setor?                   @relation(fields: [setorId], references: [id])
+}
+
+model Usuario {
+  id               Int                @id @default(autoincrement())
+  nome             String
+  email            String             @unique
+  senha            String
+  papel            PapelUsuario
+  tecnicoId        Int?
+  OrdemServico     OrdemServico[]
+  movimentacoes    StockMovement[]
+  tecnico          Tecnico?           @relation(fields: [tecnicoId], references: [id])
+  modulos          UsuarioModulo[]
+  AcompanhamentoOS AcompanhamentoOS[]
+}
+
+model Modulo {
+  id        Int             @id @default(autoincrement())
+  nome      String          @unique
+  descricao String?
+  usuarios  UsuarioModulo[]
+}
+
+model UsuarioModulo {
+  usuarioId   Int
+  moduloId    Int
+  dataVinculo DateTime @default(now())
+  ativo       Boolean  @default(true)
+  modulo      Modulo   @relation(fields: [moduloId], references: [id])
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@id([usuarioId, moduloId])
+  @@map("UsuarioModulo")
+}
+
+model GrupoManutencao {
+  id        Int               @id @default(autoincrement())
+  nome      String
+  descricao String?
+  tecnicos  Tecnico[]
+  tipos     TipoEquipamento[] @relation("GrupoTipos")
+}
+
+model TipoEquipamento {
+  id                     Int                      @id @default(autoincrement())
+  nome                   String                   @unique
+  taxaDepreciacao        Float?
+  HcrAirConditioning     HcrAirConditioning[]
+  HcrComputer            HcrComputer[]
+  HcrEquipamentosMedicos HcrEquipamentosMedicos[]
+  HcrMobilia             HcrMobilia[]
+  HcrPrinter             HcrPrinter[]
+  OrdemServico           OrdemServico[]
+  grupos                 GrupoManutencao[]        @relation("GrupoTipos")
+}
+
+model Tecnico {
+  id             Int             @id @default(autoincrement())
+  nome           String
+  email          String          @unique
+  telefone       String
+  cpf            String?         @unique
+  matricula      String?
+  admissao       DateTime?
+  ativo          Boolean         @default(true)
+  telegramChatId String?
+  grupoId        Int
+  os             OrdemServico[]
+  grupo          GrupoManutencao @relation(fields: [grupoId], references: [id])
+  Usuario        Usuario[]
+}
+
+model OrdemServico {
+  id                Int                    @id @default(autoincrement())
+  descricao         String
+  tipoEquipamentoId Int
+  equipamentoId     Int
+  tecnicoId         Int?
+  solicitanteId     Int
+  status            StatusOS               @default(ABERTA)
+  criadoEm          DateTime               @default(now())
+  finalizadoEm      DateTime?
+  resolucao         String?
+  arquivos          String[]
+  preventiva        Boolean
+  setorId           Int?
+  valorManutencao   Decimal?
+  dataAgendada      DateTime?
+  intervaloDias     Int?
+  recorrencia       Recorrencia?           @default(NENHUMA)
+  canceladaEm       DateTime?
+  iniciadaEm        DateTime?
+  prioridade        Prioridade             @default(MEDIO)
+  equipamento       HcrEquipamentosMedicos @relation("EquipamentoOrdens", fields: [equipamentoId], references: [id])
+  Setor             Setor?                 @relation(fields: [setorId], references: [id])
+  solicitante       Usuario                @relation(fields: [solicitanteId], references: [id])
+  tecnico           Tecnico?               @relation(fields: [tecnicoId], references: [id])
+  tipoEquipamento   TipoEquipamento        @relation(fields: [tipoEquipamentoId], references: [id])
+  acompanhamentos   AcompanhamentoOS[]
+}
+
+model HcrComputer {
+  id                 Int             @id @default(autoincrement())
+  nPatrimonio        String
+  nomePC             String
+  ip                 String?
+  sistemaOperacional String
+  tipoEquipamentoId  Int
+  localizacaoId      Int
+  setorId            Int
+  localizacao        Localizacao     @relation(fields: [localizacaoId], references: [id])
+  setor              Setor           @relation(fields: [setorId], references: [id])
+  tipoEquipamento    TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
+
+model AcompanhamentoOS {
+  id             Int      @id @default(autoincrement())
+  ordemServicoId Int
+  descricao      String
+  criadoPorId    Int
+  criadoEm       DateTime @default(now())
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+  criadoPor    Usuario      @relation(fields: [criadoPorId], references: [id])
+  arquivos          String[]
+}
+
+model HcrPrinter {
+  id                Int             @id @default(autoincrement())
+  nPatrimonio       String
+  ip                String?
+  marca             String
+  modelo            String
+  tipoEquipamentoId Int
+  localizacaoId     Int
+  setorId           Int
+  localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
+  setor             Setor           @relation(fields: [setorId], references: [id])
+  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
+
+model HcrAirConditioning {
+  id                Int              @id @default(autoincrement())
+  nPatrimonio       String
+  nControle         String
+  marca             String
+  modelo            String
+  tipoEquipamentoId Int?
+  localizacaoId     Int?
+  setorId           Int?
+  BTUS              String
+  numeroSerie       String?
+  obs               String?
+  dataCompra        DateTime?
+  inicioGarantia    DateTime?
+  notaFiscal        String?
+  terminoGarantia   DateTime?
+  valorCompra       Float?
+  arquivos          String[]         @default([])
+  localizacao       Localizacao?     @relation(fields: [localizacaoId], references: [id])
+  setor             Setor?           @relation(fields: [setorId], references: [id])
+  tipoEquipamento   TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
+}
+
+model HcrMobilia {
+  id                Int             @id @default(autoincrement())
+  nPatrimonio       String
+  nome              String
+  estado            String
+  obs               String?
+  tipoEquipamentoId Int
+  localizacaoId     Int
+  setorId           Int
+  dataCompra        DateTime?
+  inicioGarantia    DateTime?
+  notaFiscal        String?
+  taxaDepreciacao   Float?
+  terminoGarantia   DateTime?
+  valorCompra       Float?
+  valorAtual        Float?
+  localizacao       Localizacao     @relation(fields: [localizacaoId], references: [id])
+  setor             Setor           @relation(fields: [setorId], references: [id])
+  tipoEquipamento   TipoEquipamento @relation(fields: [tipoEquipamentoId], references: [id])
+}
+
+model HcrEquipamentosMedicos {
+  id                 Int              @id @default(autoincrement())
+  numeroPatrimonio   String?
+  numeroSerie        String?
+  numeroAnvisa       String?
+  nomeEquipamento    String?
+  modelo             String?
+  valorCompra        Float?
+  dataCompra         DateTime?
+  inicioGarantia     DateTime?
+  terminoGarantia    DateTime?
+  notaFiscal         String?
+  obs                String?
+  setorId            Int?
+  localizacaoId      Int?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime?        @updatedAt
+  tipoEquipamentoId  Int?
+  fabricante         String?
+  identificacao      String?
+  arquivos           String[]         @default([])
+  BTUS               String?
+  estado             String?
+  ip                 String?
+  marca              String?
+  nControle          String?
+  sistemaOperacional String?
+  taxaDepreciacao    Float?
+  valorAtual         Float?
+  gestaoSoftware     GestaoSoftware?
+  localizacao        Localizacao?     @relation(fields: [localizacaoId], references: [id])
+  setor              Setor?           @relation(fields: [setorId], references: [id])
+  tipoEquipamento    TipoEquipamento? @relation(fields: [tipoEquipamentoId], references: [id])
+  ordensServico      OrdemServico[]   @relation("EquipamentoOrdens")
+}
+
+model Chamado {
+  id              Int        @id @default(autoincrement())
+  numero          Int        @unique
+  descricao       String
+  status          String     @default("Aberto")
+  dataCriacao     DateTime   @default(now())
+  dataFinalizacao DateTime?
+  prioridade      Prioridade @default(MEDIO)
+  SistemaId       Int?
+  Sistema         Sistema?   @relation(fields: [SistemaId], references: [id])
+}
+
+model Sistema {
+  id       Int       @id @default(autoincrement())
+  nome     String    @unique
+  chamados Chamado[]
+}
+
+model Sobreaviso {
+  id           Int      @id @default(autoincrement())
+  data         DateTime
+  horaInicio   DateTime
+  horaFim      DateTime
+  motivo       String
+  aSerFeito    String
+  observacoes  String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  colaborador  Int
+}
+
+model Incidente {
+  id           Int      @id @default(autoincrement())
+  data         DateTime
+  motivo       String
+  quemRelatou  String
+  local        String
+  descricao    String
+  oQueFoiFeito String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+model ProductCategory {
+  id       Int       @id @default(autoincrement())
+  nome     String    @unique
+  produtos Product[]
+}
+
+model Product {
+  id            Int             @id @default(autoincrement())
+  nome          String
+  descricao     String?
+  categoriaId   Int
+  quantidade    Int             @default(0)
+  quantidadeMin Int             @default(0)
+  categoria     ProductCategory @relation(fields: [categoriaId], references: [id])
+  movimentacoes StockMovement[]
+}
+
+model StockMovement {
+  id         Int           @id @default(autoincrement())
+  tipo       TipoMovimento
+  produtoId  Int
+  quantidade Int
+  motivo     String?
+  data       DateTime      @default(now())
+  usuarioId  Int
+  produto    Product       @relation(fields: [produtoId], references: [id])
+  usuario    Usuario       @relation(fields: [usuarioId], references: [id])
+}
+
+model Funcionario {
+  id            Int                       @id @default(autoincrement())
+  nome          String
+  cpf           String                    @unique
+  cargo         String?
+  email         String                    @unique
+  telefone      String?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  setorId       Int?
+  participacoes CapacitacaoParticipante[]
+  setor         Setor?                    @relation(fields: [setorId], references: [id])
+}
+
+model TipoDocumento {
+  id           Int           @id @default(autoincrement())
+  nome         String        @unique
+  descricao    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  capacitacoes Capacitacao[]
+}
+
+model Capacitacao {
+  id              Int                       @id @default(autoincrement())
+  titulo          String
+  data            DateTime
+  local           String?
+  instrutor       String?
+  tipoDocumentoId Int
+  arquivoPdf      String?
+  arquivoAssinado String?
+  status          String                    @default("pendente")
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  tipoDocumento   TipoDocumento             @relation(fields: [tipoDocumentoId], references: [id])
+  participantes   CapacitacaoParticipante[]
+}
+
+model CapacitacaoParticipante {
+  id               Int         @id @default(autoincrement())
+  capacitacaoId    Int
+  funcionarioId    Int
+  assinaturaStatus String      @default("pendente")
+  assinaturaData   DateTime?
+  capacitacao      Capacitacao @relation(fields: [capacitacaoId], references: [id])
+  funcionario      Funcionario @relation(fields: [funcionarioId], references: [id])
+
+  @@unique([capacitacaoId, funcionarioId])
+}
+
+model GestaoSoftware {
+  id               Int                    @id @default(autoincrement())
+  equipamentoId    Int                    @unique
+  software         String
+  versao           String
+  dataInstalacao   DateTime
+  responsavel      String
+  licencaSerial    String
+  statusLicenca    String
+  dataExpiracao    DateTime
+  motivoInstalacao String
+  observacoes      String?
+  criadoEm         DateTime               @default(now())
+  atualizadoEm     DateTime               @updatedAt
+  equipamento      HcrEquipamentosMedicos @relation(fields: [equipamentoId], references: [id])
+}
+
+model FluxoAssinatura {
+  id                    BigInt    @id @default(autoincrement())
+  organizationAccountId BigInt
+  documentStatusTypeId  Int
+  documentTypesId       Int
+  envelopesId           BigInt
+  filesId               BigInt
+  status                Int
+  name                  String
+  label                 String
+  uuid                  String    @unique @db.Uuid
+  resolution            Int?
+  pages                 Int?
+  size                  Int?
+  createdAt             DateTime  @map("created_at")
+  updatedAt             DateTime  @map("updated_at")
+  language              String?   @db.VarChar(10)
+  timezone              Int?
+  versionId             BigInt
+  dtTimezoneZero        DateTime  @map("dt_timezone_zero")
+  links                 Json?
+  signatureLimitDate    DateTime? @map("signature_limit_date")
+
+  @@map("fluxosAssinaturas")
+}
+
+model Folder {
+  id                      Int      @id @default(autoincrement())
+  cailun_id               Int      @unique
+  organization_account_id Int?
+  name                    String
+  label                   String?
+  hash                    String?
+  downward                Int?
+  is_root                 Int      @default(0)
+  users_id                Int?
+  local_path              String?
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+  cailun_created_at       String?
+  cailun_updated_at       String?
+  cailun_deleted_at       String?
+  files                   File[]
+  parent_folder           Folder?  @relation("FolderHierarchy", fields: [downward], references: [cailun_id])
+  child_folders           Folder[] @relation("FolderHierarchy")
+
+  @@map("folders")
+}
+
+model File {
+  id                Int      @id @default(autoincrement())
+  cailun_id         Int?
+  name              String
+  original_name     String
+  file_path         String
+  file_size         Int
+  mime_type         String
+  folder_cailun_id  Int
+  hash              String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  cailun_created_at String?
+  cailun_updated_at String?
+  folder            Folder   @relation(fields: [folder_cailun_id], references: [cailun_id], onDelete: Cascade)
+
+  @@map("files")
+}
+
+enum PapelUsuario {
+  admin
+  cadastro
+  tecnico
+  visualizador
+  usuario_comum
+  CEP
+}
+
+enum StatusOS {
+  ABERTA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+enum Prioridade {
+  BAIXO
+  MEDIO
+  ALTO
+  URGENTE
+}
+
+enum StatusChamado {
+  ABERTO
+  EM_ANDAMENTO
+  FECHADO
+  CANCELADO
+}
+
+enum Recorrencia {
+  NENHUMA
+  SEMANAL
+  QUINZENAL
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+  PERSONALIZADA
+  DIARIA
+}
+
+enum TipoMovimento {
+  ENTRADA
+  SAIDA
 }
