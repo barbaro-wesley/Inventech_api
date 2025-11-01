@@ -278,60 +278,74 @@ class OrdemServicoService {
   }
 
   async enviarNotificacoes(novaOS) {
-    // Notificação no Telegram
-    if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
-      const prioridadeEmoji = this.getPrioridadeEmoji(novaOS.prioridade);
-      const prioridadeTexto = this.getPrioridadeTexto(novaOS.prioridade);
+  // Retorna imediatamente sem aguardar
+  // As notificações são processadas em background
+  this._enviarNotificacoesBackground(novaOS).catch(error => {
+    console.error('Erro ao enviar notificações em background:', error);
+  });
+}
 
-      let msg = `📄 <b>Nova OS Atribuída</b>\n\n`;
-      msg += `🔧 Técnico: ${novaOS.tecnico.nome}\n`;
-      msg += `${prioridadeEmoji} Prioridade: <b>${prioridadeTexto}</b>\n`;
-      msg += `📌 Descrição: ${novaOS.descricao}\n`;
-      msg += `📍 Setor: ${novaOS.Setor?.nome || 'Não informado'}\n`;
-      msg += `🙋 Solicitante: ${novaOS.solicitante?.nome || 'Não informado'}\n`;
+// Método privado que faz o envio real
+async _enviarNotificacoesBackground(novaOS) {
+  // NotificaÃ§Ã£o no Telegram
+  if (novaOS.tecnico && novaOS.tecnico.telegramChatId) {
+    const prioridadeEmoji = this.getPrioridadeEmoji(novaOS.prioridade);
+    const prioridadeTexto = this.getPrioridadeTexto(novaOS.prioridade);
 
-      if (novaOS.equipamento) {
-        msg += `\n⚙️ Equipamento: ${novaOS.equipamento.nomeEquipamento || 'Não informado'}\n`;
-        msg += `🔖 Patrimônio: ${novaOS.equipamento.numeroPatrimonio || 'Não informado'}\n`;
-        msg += `🔢 Nº Série: ${novaOS.equipamento.numeroSerie || 'Não informado'}\n`;
-      }
+    let msg = `📄 <b>Nova OS Atribuída</b>\n\n`;
+    msg += `👨 Técnico: ${novaOS.tecnico.nome}\n`;
+    msg += `${prioridadeEmoji} Prioridade: <b>${prioridadeTexto}</b>\n`;
+    msg += `📋 Descrição: ${novaOS.descricao}\n`;
+    msg += `📍 Setor: ${novaOS.Setor?.nome || 'Não informado'}\n`;
+    msg += `🙋 Solicitante: ${novaOS.solicitante?.nome || 'Não informado'}\n`;
 
-      if (novaOS.dataAgendada) {
-        const dataFormatada = new Date(novaOS.dataAgendada).toLocaleString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-        msg += `\n📅 Data Agendada: ${dataFormatada}\n`;
-      }
-
-      if (novaOS.preventiva && novaOS.recorrencia !== 'NENHUMA' && novaOS.recorrencia !== 'SEM_RECORRENCIA') {
-        msg += `🔄 Recorrência: ${this.getTextoRecorrencia(novaOS.recorrencia, novaOS.intervaloDias)}\n`;
-      }
-
-      await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
+    if (novaOS.equipamento) {
+      msg += `\n⚙️ Equipamento: ${novaOS.equipamento.nomeEquipamento || 'Não informado'}\n`;
+      msg += `🏷 Patrimônio: ${novaOS.equipamento.numeroPatrimonio || 'Não informado'}\n`;
+      msg += `🔢 Nº Série: ${novaOS.equipamento.numeroSerie || 'Não informado'}\n`;
     }
 
-    // Notificação por Email
-    if (novaOS.tecnico && novaOS.tecnico.email) {
-      const htmlTemplate = this.gerarTemplateEmail(novaOS);
+    if (novaOS.dataAgendada) {
+      const dataFormatada = new Date(novaOS.dataAgendada).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      msg += `\n📅 Data Agendada: ${dataFormatada}\n`;
+    }
 
-      const emailData = {
-        to: novaOS.tecnico.email,
-        subject: `Nova Ordem de Serviço Atribuída - OS #${novaOS.id} [${this.getPrioridadeTexto(novaOS.prioridade)}]`,
-        html: htmlTemplate
-      };
+    if (novaOS.preventiva && novaOS.recorrencia !== 'NENHUMA' && novaOS.recorrencia !== 'SEM_RECORRENCIA') {
+      msg += `📄 Recorrência: ${this.getTextoRecorrencia(novaOS.recorrencia, novaOS.intervaloDias)}\n`;
+    }
 
-      try {
-        await emailUtils.enviarEmail(emailData);
-        console.log(`Email enviado para ${novaOS.tecnico.email} - OS #${novaOS.id}`);
-      } catch (error) {
-        console.error('Erro ao enviar email:', error);
-      }
+    try {
+      await enviarNotificacaoTelegram(novaOS.tecnico.telegramChatId, msg);
+      console.log(`✅ Telegram enviado para ${novaOS.tecnico.nome}`);
+    } catch (error) {
+      console.error('❌ Erro ao enviar Telegram:', error);
     }
   }
+
+  // NotificaÃ§Ã£o por Email
+  if (novaOS.tecnico && novaOS.tecnico.email) {
+    const htmlTemplate = this.gerarTemplateEmail(novaOS);
+
+    const emailData = {
+      to: novaOS.tecnico.email,
+      subject: `Nova Ordem de Serviço Atribuída - OS #${novaOS.id} [${this.getPrioridadeTexto(novaOS.prioridade)}]`,
+      html: htmlTemplate
+    };
+
+    try {
+      await emailUtils.enviarEmail(emailData);
+      console.log(`✅ Email enviado para ${novaOS.tecnico.email} - OS #${novaOS.id}`);
+    } catch (error) {
+      console.error('❌ Erro ao enviar email:', error);
+    }
+  }
+}
 
   // Função auxiliar para converter enum em texto legível - ATUALIZADA
   getTextoRecorrencia(recorrencia, intervaloDias = null) {
@@ -1248,67 +1262,147 @@ class OrdemServicoService {
 
   // Novo método para enviar notificações de acompanhamento
   async enviarNotificacoesAcompanhamento(os, acompanhamento, usuarioQueRegistrou) {
-    const emailsParaNotificar = [];
+  // Retorna imediatamente
+  this._enviarNotificacoesAcompanhamentoBackground(os, acompanhamento, usuarioQueRegistrou).catch(error => {
+    console.error('Erro ao enviar notificações de acompanhamento em background:', error);
+  });
+}
 
-    // Adiciona o email do solicitante (se não foi ele quem registrou)
-    if (os.solicitante && os.solicitante.email && os.solicitante.id !== usuarioQueRegistrou.id) {
-      emailsParaNotificar.push({
-        email: os.solicitante.email,
-        nome: os.solicitante.nome,
-        tipo: 'solicitante'
-      });
-    }
+// Método privado que faz o envio real
+async _enviarNotificacoesAcompanhamentoBackground(os, acompanhamento, usuarioQueRegistrou) {
+  const emailsParaNotificar = [];
 
-    // Adiciona o email do técnico (se não foi ele quem registrou)
-    if (os.tecnico && os.tecnico.email && os.tecnico.id !== usuarioQueRegistrou.id) {
-      emailsParaNotificar.push({
-        email: os.tecnico.email,
-        nome: os.tecnico.nome,
-        tipo: 'tecnico'
-      });
-    }
+  // Adiciona o email do solicitante (se não foi ele quem registrou)
+  if (os.solicitante && os.solicitante.email && os.solicitante.id !== usuarioQueRegistrou.id) {
+    emailsParaNotificar.push({
+      email: os.solicitante.email,
+      nome: os.solicitante.nome,
+      tipo: 'solicitante'
+    });
+  }
 
-    // Envia emails para todos os destinatários
-    for (const destinatario of emailsParaNotificar) {
-      const htmlTemplate = this.gerarTemplateEmailAcompanhamento(
-        os,
-        acompanhamento,
-        usuarioQueRegistrou,
-        destinatario
-      );
+  // Adiciona o email do técnico (se não foi ele quem registrou)
+  if (os.tecnico && os.tecnico.email && os.tecnico.id !== usuarioQueRegistrou.id) {
+    emailsParaNotificar.push({
+      email: os.tecnico.email,
+      nome: os.tecnico.nome,
+      tipo: 'tecnico'
+    });
+  }
 
-      const emailData = {
-        to: destinatario.email,
-        subject: `Nova Atualização na OS #${os.id} - ${os.preventiva ? 'Preventiva' : 'Corretiva'}`,
-        html: htmlTemplate
-      };
+  // Envia emails para todos os destinatários
+  for (const destinatario of emailsParaNotificar) {
+    const htmlTemplate = this.gerarTemplateEmailAcompanhamento(
+      os,
+      acompanhamento,
+      usuarioQueRegistrou,
+      destinatario
+    );
 
-      try {
-        await emailUtils.enviarEmail(emailData);
-        console.log(`Email de acompanhamento enviado para ${destinatario.email} - OS #${os.id}`);
-      } catch (error) {
-        console.error('Erro ao enviar email de acompanhamento:', error);
-      }
-    }
+    const emailData = {
+      to: destinatario.email,
+      subject: `Nova Atualização na OS #${os.id} - ${os.preventiva ? 'Preventiva' : 'Corretiva'}`,
+      html: htmlTemplate
+    };
 
-    // Notificação no Telegram (opcional - apenas para o técnico)
-    if (os.tecnico &&
-      os.tecnico.telegramChatId &&
-      os.tecnico.id !== usuarioQueRegistrou.id) {
-
-      let msg = `🔔 <b>Nova Atualização na OS #${os.id}</b>\n\n`;
-      msg += `👤 Registrado por: ${usuarioQueRegistrou.nome}\n`;
-      msg += `📝 Descrição: ${os.descricao}\n`;
-      msg += `💬 Acompanhamento: ${acompanhamento.descricao}\n`;
-      msg += `📅 Data: ${new Date().toLocaleString('pt-BR')}`;
-
-      try {
-        await enviarNotificacaoTelegram(os.tecnico.telegramChatId, msg);
-      } catch (error) {
-        console.error('Erro ao enviar notificação Telegram:', error);
-      }
+    try {
+      await emailUtils.enviarEmail(emailData);
+      console.log(`✅ Email de acompanhamento enviado para ${destinatario.email} - OS #${os.id}`);
+    } catch (error) {
+      console.error('❌ Erro ao enviar email de acompanhamento:', error);
     }
   }
+
+  // NotificaÃ§Ã£o no Telegram (opcional - apenas para o técnico)
+  if (os.tecnico && os.tecnico.telegramChatId && os.tecnico.id !== usuarioQueRegistrou.id) {
+    let msg = `📬 <b>Nova Atualização na OS #${os.id}</b>\n\n`;
+    msg += `👤 Registrado por: ${usuarioQueRegistrou.nome}\n`;
+    msg += `📝 Descrição: ${os.descricao}\n`;
+    msg += `💬 Acompanhamento: ${acompanhamento.descricao}\n`;
+    msg += `📅 Data: ${new Date().toLocaleString('pt-BR')}`;
+
+    try {
+      await enviarNotificacaoTelegram(os.tecnico.telegramChatId, msg);
+      console.log(`✅ Telegram de acompanhamento enviado para ${os.tecnico.nome}`);
+    } catch (error) {
+      console.error('❌ Erro ao enviar Telegram de acompanhamento:', error);
+    }
+  }
+}
+
+// MÉTODO: enviarNotificacaoLote
+async enviarNotificacaoLote(tecnicoId, ossCriadas, dadosOriginais) {
+  // Retorna imediatamente
+  this._enviarNotificacaoLoteBackground(tecnicoId, ossCriadas, dadosOriginais).catch(error => {
+    console.error('Erro ao enviar notificações de lote em background:', error);
+  });
+}
+
+// Método privado que faz o envio real
+async _enviarNotificacaoLoteBackground(tecnicoId, ossCriadas, dadosOriginais) {
+  const tecnico = await prisma.tecnico.findUnique({
+    where: { id: tecnicoId },
+  });
+
+  if (!tecnico) return;
+
+  const totalOSs = ossCriadas.reduce((acc, item) => acc + item.ossCriadas, 0);
+  const prioridadeEmoji = this.getPrioridadeEmoji(dadosOriginais.prioridade);
+  const prioridadeTexto = this.getPrioridadeTexto(dadosOriginais.prioridade);
+
+  // NotificaÃ§Ã£o Telegram
+  if (tecnico.telegramChatId) {
+    let msg = `📦 <b>Novas OSs Criadas em Lote</b>\n\n`;
+    msg += `👨 Técnico: ${tecnico.nome}\n`;
+    msg += `${prioridadeEmoji} Prioridade: <b>${prioridadeTexto}</b>\n`;
+    msg += `📊 Total de OSs: <b>${totalOSs}</b>\n`;
+    msg += `⚙️ Equipamentos: <b>${ossCriadas.length}</b>\n`;
+    msg += `📋 Tipo: ${dadosOriginais.preventiva ? 'Preventiva' : 'Corretiva'}\n`;
+    msg += `📌 Descrição Base: ${dadosOriginais.descricao}\n`;
+
+    if (dadosOriginais.dataAgendada) {
+      const dataFormatada = new Date(dadosOriginais.dataAgendada).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      msg += `📅 Data Agendada: ${dataFormatada}\n`;
+    }
+
+    if (dadosOriginais.preventiva && dadosOriginais.recorrencia !== 'NENHUMA') {
+      msg += `📄 Recorrência: ${this.getTextoRecorrencia(dadosOriginais.recorrencia, dadosOriginais.intervaloDias)}\n`;
+    }
+
+    msg += `\n💡 Acesse o sistema para visualizar todas as OSs criadas.`;
+
+    try {
+      await enviarNotificacaoTelegram(tecnico.telegramChatId, msg);
+      console.log(`✅ Telegram de lote enviado para ${tecnico.nome}`);
+    } catch (error) {
+      console.error('❌ Erro ao enviar Telegram de lote:', error);
+    }
+  }
+
+  // NotificaÃ§Ã£o por Email
+  if (tecnico.email) {
+    const htmlTemplate = this.gerarTemplateEmailLote(tecnico, ossCriadas, dadosOriginais, totalOSs);
+
+    const emailData = {
+      to: tecnico.email,
+      subject: `${totalOSs} Nova(s) Ordem(ns) de Serviço Atribuída(s) - Criação em Lote`,
+      html: htmlTemplate,
+    };
+
+    try {
+      await emailUtils.enviarEmail(emailData);
+      console.log(`✅ Email de lote enviado para ${tecnico.email}`);
+    } catch (error) {
+      console.error('❌ Erro ao enviar email de lote:', error);
+    }
+  }
+}
 
   // Template de email para acompanhamento
   gerarTemplateEmailAcompanhamento(os, acompanhamento, usuarioQueRegistrou, destinatario) {
